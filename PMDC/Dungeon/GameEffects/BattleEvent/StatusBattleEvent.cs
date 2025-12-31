@@ -1208,21 +1208,37 @@ namespace PMDC.Dungeon
         /// </summary>
         public bool WaitAnimations;
 
+        /// <inheritdoc/>
         public RemoveOnActionEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance with the specified message setting.
+        /// </summary>
+        /// <param name="showMessage">Whether to display a message when the status is removed.</param>
         public RemoveOnActionEvent(bool showMessage)
         {
             ShowMessage = showMessage;
         }
+
+        /// <summary>
+        /// Initializes a new instance with the specified message and animation settings.
+        /// </summary>
+        /// <param name="showMessage">Whether to display a message when the status is removed.</param>
+        /// <param name="waitAnimations">Whether to wait for animations to finish before removing.</param>
         public RemoveOnActionEvent(bool showMessage, bool waitAnimations)
         {
             ShowMessage = showMessage;
             WaitAnimations = waitAnimations;
         }
+
+        /// <inheritdoc/>
         protected RemoveOnActionEvent(RemoveOnActionEvent other)
         {
             ShowMessage = other.ShowMessage;
             WaitAnimations = other.WaitAnimations;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveOnActionEvent(this); }
 
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
