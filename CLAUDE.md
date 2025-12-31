@@ -1,6 +1,11 @@
-# PMDC - Pokemon Mystery Dungeon Clone
+# PMDC - Mystery Dungeon Clone
 
-A roguelike dungeon crawler built on the **RogueEssence** engine, featuring procedural dungeon generation, turn-based combat, and Pokemon-style mechanics.
+A roguelike dungeon crawler built on the **RogueEssence** engine, featuring procedural dungeon generation, turn-based combat, and tactical mechanics.
+
+## Claude Code Rules
+
+- **Do not commit without explicit user consent** - Always ask before running `git commit`
+- **Do not push without explicit user consent** - Always ask before running `git push`
 
 ## Quick Reference
 
