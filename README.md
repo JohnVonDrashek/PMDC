@@ -5,12 +5,12 @@
 [![License](https://img.shields.io/github/license/PMDCollab/PMDC)](LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/PMDCollab/PMDC)](https://github.com/PMDCollab/PMDC/releases)
 
-A Pokemon Mystery Dungeon fangame built on the [RogueEssence](https://github.com/audinowho/RogueEssence) engine. Features procedurally generated dungeons, turn-based tactical combat, and extensive modding support via Lua scripting.
+A Mystery Dungeon fangame built on the [RogueEssence](https://github.com/audinowho/RogueEssence) engine. Features procedurally generated dungeons, turn-based tactical combat, and extensive modding support via Lua scripting.
 
 ## Features
 
 - Roguelike dungeon exploration with procedural generation
-- Turn-based Pokemon battles with abilities and items
+- Turn-based tactical combat with abilities and items
 - Avalonia-based editor for creating content
 - Lua scripting for mods and custom content
 - Cross-platform support (Windows, Linux, macOS)
