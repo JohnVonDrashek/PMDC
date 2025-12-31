@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "rogueelements": {
+      "command": "node",
+      "args": ["/Users/gfelter/code/RogueElements/mcp-server/dist/index.js"]
+    },
+    "rogueessence": {
+      "command": "node",
+      "args": ["/Users/gfelter/code/RogueEssence/rogueessence-mcp-server/dist/index.js"]
+    }
+  }
+}
