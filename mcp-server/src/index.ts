@@ -264,8 +264,26 @@ async function parseClassFile(filePath: string): Promise<ClassDoc[]> {
         const fieldDoc = getDocComments(field);
         const { summary: fieldSummary } = parseDocComment(fieldDoc);
 
-        // Get type
-        const fieldType = getFieldText(field, "type") || "unknown";
+        // Get type from variable_declaration child
+        // Structure: field_declaration -> variable_declaration -> type
+        const varDecl = findNodesByType(field, "variable_declaration")[0];
+        let fieldType = "unknown";
+        if (varDecl) {
+          // Try to get type as a named field first
+          const typeNode = varDecl.childForFieldName("type");
+          if (typeNode) {
+            fieldType = typeNode.text;
+          } else {
+            // Fallback: find first child that looks like a type
+            for (let i = 0; i < varDecl.childCount; i++) {
+              const child = varDecl.child(i);
+              if (child && child.type !== "variable_declarator" && child.type !== "," && child.type !== ";") {
+                fieldType = child.text;
+                break;
+              }
+            }
+          }
+        }
 
         // Get variable name(s)
         const variableDeclarators = findNodesByType(field, "variable_declarator");
@@ -288,9 +306,38 @@ async function parseClassFile(filePath: string): Promise<ClassDoc[]> {
         const { summary: methodSummary, inheritdoc } = parseDocComment(methodDoc);
 
         const methodName = getFieldText(method, "name");
-        const returnType = getFieldText(method, "type") || "void";
         const paramsNode = method.childForFieldName("parameters");
         const params = paramsNode ? paramsNode.text : "()";
+
+        // Get return type - try multiple approaches
+        let returnType = "void";
+        // Try "type" field first (standard location)
+        const typeNode = method.childForFieldName("type");
+        if (typeNode) {
+          returnType = typeNode.text;
+        } else {
+          // Fallback: look for type before the method name
+          // Method structure: modifiers type name parameters body
+          for (let i = 0; i < method.childCount; i++) {
+            const child = method.child(i);
+            if (!child) continue;
+            // Stop when we hit the method name
+            if (child.type === "identifier" && child.text === methodName) break;
+            // Skip modifiers and attributes
+            if (child.type === "modifier" || child.type === "attribute_list") continue;
+            // This should be the return type
+            if (child.type.includes("type") ||
+                child.type === "predefined_type" ||
+                child.type === "identifier" ||
+                child.type === "generic_name" ||
+                child.type === "qualified_name" ||
+                child.type === "nullable_type" ||
+                child.type === "array_type") {
+              returnType = child.text;
+              break;
+            }
+          }
+        }
 
         const signature = `${returnType} ${methodName}${params}`;
 
@@ -323,7 +370,10 @@ async function parseClassFile(filePath: string): Promise<ClassDoc[]> {
 /**
  * Check if a class inherits from a target base class (directly or indirectly through naming).
  */
-function matchesBaseClass(classBaseClass: string, targetBaseClass: string): boolean {
+function matchesBaseClass(classBaseClass: string, targetBaseClass: string, className?: string): boolean {
+  // Also match if this IS the base class itself (e.g., AIPlan class for aiplan category)
+  if (className && className === targetBaseClass) return true;
+
   if (!classBaseClass) return false;
 
   // Direct match
@@ -382,7 +432,8 @@ async function findClassesInCategory(category: ClassCategory): Promise<ClassDoc[
     const fileDocs = await parseClassFile(filePath);
     for (const classDoc of fileDocs) {
       // Filter by base class to ensure we only get classes of the right type
-      if (matchesBaseClass(classDoc.baseClass, categoryInfo.baseClass)) {
+      // Also pass the class name to match the base class itself (e.g., AIPlan for aiplan category)
+      if (matchesBaseClass(classDoc.baseClass, categoryInfo.baseClass, classDoc.name)) {
         classes.push(classDoc);
       }
     }
@@ -670,6 +721,9 @@ Use this when you're not sure which category a class belongs to, or to find clas
       score: number;
     }> = [];
 
+    // Split query into words for multi-word matching
+    const queryWords = queryLower.split(/\s+/).filter(w => w.length >= 2);
+
     // Search across all categories
     for (const category of Object.keys(CLASS_CATEGORIES) as ClassCategory[]) {
       const classes = await findClassesInCategory(category);
@@ -677,6 +731,11 @@ Use this when you're not sure which category a class belongs to, or to find clas
       for (const cls of classes) {
         const nameLower = cls.name.toLowerCase();
         const summaryLower = (cls.summary || "").toLowerCase();
+
+        // Also search in property and method names
+        const propNames = cls.properties.map(p => p.name.toLowerCase()).join(" ");
+        const methodNames = cls.methods.map(m => m.name.toLowerCase()).join(" ");
+        const allText = `${nameLower} ${summaryLower} ${propNames} ${methodNames}`;
 
         let score = 1000; // Start with high score (lower is better)
 
@@ -692,9 +751,25 @@ Use this when you're not sure which category a class belongs to, or to find clas
         else if (nameLower.includes(queryLower)) {
           score = 20;
         }
+        // All query words found in name (for multi-word queries like "sleep event")
+        else if (queryWords.length > 1 && queryWords.every(w => nameLower.includes(w))) {
+          score = 25;
+        }
         // Summary contains query
         else if (summaryLower.includes(queryLower)) {
           score = 50;
+        }
+        // All query words found in summary
+        else if (queryWords.length > 1 && queryWords.every(w => summaryLower.includes(w))) {
+          score = 55;
+        }
+        // Property or method name contains query
+        else if (propNames.includes(queryLower) || methodNames.includes(queryLower)) {
+          score = 70;
+        }
+        // Any query word found in any text
+        else if (queryWords.some(w => allText.includes(w))) {
+          score = 80;
         }
         // Fuzzy match on name
         else {
@@ -1105,6 +1180,118 @@ namespace PMDC.LevelGen
         public override void Apply(T map)
         {
             // TODO: Implement your generation logic here
+        }
+    }
+}`;
+
+    return {
+      content: [{ type: "text", text: code }]
+    };
+  }
+);
+
+// Tool: Scaffold RoomGen
+server.tool(
+  "pmdc_scaffold_roomgen",
+  `Generate boilerplate C# code for a new RoomGen.
+
+Creates a properly structured class with:
+- [Serializable] attribute
+- Generic type constraint
+- Copy constructor
+- Copy() override
+- DrawOnMap() method stub
+- PrepareFulfillableBorders() override for room connectivity`,
+  {
+    name: z.string()
+      .min(1)
+      .describe("Name for the RoomGen class (e.g., 'LShape', 'Diamond')"),
+    description: z.string()
+      .describe("What shape this room generator creates")
+  },
+  async ({ name, description }) => {
+    const className = name.startsWith("RoomGen") ? name : `RoomGen${name}`;
+
+    const code = `using System;
+using System.Collections.Generic;
+using RogueElements;
+using RogueEssence.LevelGen;
+
+namespace PMDC.LevelGen
+{
+    /// <summary>
+    /// ${description}
+    /// </summary>
+    [Serializable]
+    public class ${className}<T> : RoomGen<T> where T : ITiledGenContext
+    {
+        /// <summary>
+        /// Width of the room.
+        /// </summary>
+        public RandRange Width;
+
+        /// <summary>
+        /// Height of the room.
+        /// </summary>
+        public RandRange Height;
+
+        public ${className}() { }
+
+        public ${className}(RandRange width, RandRange height)
+        {
+            Width = width;
+            Height = height;
+        }
+
+        protected ${className}(${className}<T> other)
+        {
+            Width = other.Width;
+            Height = other.Height;
+        }
+
+        public override RoomGen<T> Copy() { return new ${className}<T>(this); }
+
+        public override Loc ProposeSize(IRandom rand)
+        {
+            return new Loc(Width.Pick(rand), Height.Pick(rand));
+        }
+
+        public override void DrawOnMap(T map)
+        {
+            // Get the room bounds from the floor plan
+            Rect roomRect = new Rect(Draw.Start, Draw.Size);
+
+            // TODO: Draw your room shape here
+            // Example: Fill with floor tiles
+            for (int x = roomRect.X; x < roomRect.End.X; x++)
+            {
+                for (int y = roomRect.Y; y < roomRect.End.Y; y++)
+                {
+                    map.SetTile(new Loc(x, y), map.RoomTerrain.Copy());
+                }
+            }
+
+            // Required: Set room borders for connectivity
+            SetRoomBorders(map);
+        }
+
+        protected override void PrepareFulfillableBorders(IRandom rand)
+        {
+            // Define which borders can accept hallway connections
+            // Call FulfillableBorder.Add for each valid connection point
+
+            // Example: Allow connections on all four sides at the center
+            int centerX = Draw.Width / 2;
+            int centerY = Draw.Height / 2;
+
+            // Top border
+            FulfillableBorder[Dir4.Up].Add(new IntRange(centerX, centerX + 1));
+            // Bottom border
+            FulfillableBorder[Dir4.Down].Add(new IntRange(centerX, centerX + 1));
+            // Left border
+            FulfillableBorder[Dir4.Left].Add(new IntRange(centerY, centerY + 1));
+            // Right border
+            FulfillableBorder[Dir4.Right].Add(new IntRange(centerY, centerY + 1));
         }
     }
 }`;
