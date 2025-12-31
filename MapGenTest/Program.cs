@@ -14,9 +14,42 @@ using System.Xml.Linq;
 
 namespace MapGenTest
 {
-    class Program
+    /// <summary>
+    /// Entry point for the MapGenTest application, a standalone test harness
+    /// for debugging and stress-testing procedural map generation in the RogueEssence engine.
+    /// </summary>
+    /// <remarks>
+    /// This console application initializes the RogueEssence game engine subsystems without graphics,
+    /// allowing for headless testing and debugging of procedural dungeon generation. It supports
+    /// loading custom quests and mods, Lua debugging, and experience testing modes.
+    /// </remarks>
+    public class Program
     {
-        static void Main()
+        /// <summary>
+        /// Main entry point that initializes the engine and launches either the experience tester
+        /// or the interactive map generation debugger based on command-line arguments.
+        /// </summary>
+        /// <remarks>
+        /// Initializes core engine systems including:
+        /// - Serializer with contract resolver and upgrade binder
+        /// - Path and namespace configuration
+        /// - Diagnostic manager in development mode
+        /// - Text localization system
+        /// - Data and Lua engine managers
+        ///
+        /// Supported command-line arguments:
+        /// - -lua: Enable Lua debugging
+        /// - -asset [path]: Set custom asset path
+        /// - -raw [path]: Set custom dev/raw asset path
+        /// - -exp: Run experience testing mode instead of interactive debugger
+        /// - -expdir [path]: Set directory for experience logs
+        /// - -quest [name]: Load a specific quest from the MODS folder
+        /// - -mod [names...]: Load one or more additional mods (space-separated, before next flag)
+        ///
+        /// On Windows, the console window is enlarged to maximum dimensions for better visibility.
+        /// If mods are specified, their dependencies and compatibility are validated before loading.
+        /// </remarks>
+        private static void Main()
         {
             if (OperatingSystem.IsWindows())
                 enlargeConsole();
@@ -198,6 +231,14 @@ namespace MapGenTest
             Console.ReadKey();
         }
 
+        /// <summary>
+        /// Enlarges the console window to the maximum size supported by the Windows platform.
+        /// </summary>
+        /// <remarks>
+        /// Sets both the console window width and height to their maximum allowed values,
+        /// providing a larger display area for debug output and interactive testing.
+        /// This method is only available on Windows and should not be called on other platforms.
+        /// </remarks>
         [SupportedOSPlatform("windows")]
         private static void enlargeConsole()
         {

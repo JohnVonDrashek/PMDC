@@ -21,13 +21,18 @@ namespace PMDC.Dungeon
     // Batle events used by utility items, which often have a pre-used dialogue and then an on-use effect that processes the choice
 
     /// <summary>
-    /// Event that checks if the tile can be unlocked by checking if the item matches in the UnlockState tile state 
+    /// Event that checks if the tile can be unlocked by checking if the item matches in the UnlockState tile state.
     /// </summary>
     [Serializable]
     public class KeyCheckEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public KeyCheckEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new KeyCheckEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)
@@ -69,13 +74,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that applies the effects of the unlockable tile if the item matches in the UnlockState tile state 
+    /// Event that applies the effects of the unlockable tile if the item matches in the UnlockState tile state.
     /// </summary>
     [Serializable]
     public class KeyUnlockEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public KeyUnlockEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new KeyUnlockEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Tile tile = ZoneManager.Instance.CurrentMap.GetTile(context.TargetTile);
@@ -99,12 +109,15 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that teaches the user the move in the item's ItemIDState
+    /// Event that teaches the user the move in the item's ItemIDState.
     /// </summary>
     [Serializable]
     public class TMEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TMEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BaseMonsterForm entry = DataManager.Instance.GetMonster(context.User.BaseForm.Species).Forms[context.User.BaseForm.Form];
@@ -155,27 +168,39 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that prompts the user which form to change to and sets the value in SwitchFormContext
+    /// Event that prompts the user which form to change to and sets the value in SwitchFormContext.
     /// </summary>
     [Serializable]
     public class FormChoiceEvent : BattleEvent
     {
         /// <summary>
-        /// The required species for this event to have effect 
+        /// The required species for this event to have effect.
         /// </summary>
         [JsonConverter(typeof(MonsterConverter))]
         [DataType(0, DataManager.DataType.Monster, false)]
         public string Species;
 
         /// <summary>
-        /// Whether to include temporary forms as an option 
+        /// Whether to include temporary forms as an option.
         /// </summary>
         public bool IncludeTemp;
 
+        /// <inheritdoc/>
         public FormChoiceEvent() { Species = ""; }
+
+        /// <summary>
+        /// Creates a new FormChoiceEvent for the specified species.
+        /// </summary>
+        /// <param name="species">The required species ID.</param>
         public FormChoiceEvent(string species) { Species = species; }
+
+        /// <inheritdoc/>
         public FormChoiceEvent(FormChoiceEvent other) { Species = other.Species; IncludeTemp = other.IncludeTemp; }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FormChoiceEvent(this); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)
@@ -253,13 +278,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that deactivates the use of the item by setting its hidden value 
+    /// Event that deactivates the use of the item by setting its hidden value.
     /// </summary>
     [Serializable]
     public class DeactivateItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public DeactivateItemEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DeactivateItemEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.UsageSlot > BattleContext.EQUIP_ITEM_SLOT)//item in inventory
@@ -283,13 +313,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that changes the form of the user using the value in SwitchFormContext
+    /// Event that changes the form of the user using the value in SwitchFormContext.
     /// </summary>
     [Serializable]
     public class SwitchFormEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public SwitchFormEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SwitchFormEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int form = -1;
@@ -306,17 +341,23 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that prompts the user to recall or delete moves and sets up MoveLearnContext and MoveDeleteContext
+    /// Event that prompts the user to recall or delete moves and sets up MoveLearnContext and MoveDeleteContext.
     /// </summary>
     [Serializable]
     public class LinkBoxEvent : BattleEvent
     {
         /// <summary>
-        /// Whether pre-evolution moves can be relearned
+        /// Whether pre-evolution moves can be relearned.
         /// </summary>
         public bool IncludePreEvolutions;
+
+        /// <inheritdoc/>
         public LinkBoxEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LinkBoxEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             List<string> forgottenMoves = context.User.GetRelearnableSkills(IncludePreEvolutions);
@@ -428,13 +469,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to relearn a move using the value in MoveLearnContext 
+    /// Event that causes the user to relearn a move using the value in MoveLearnContext.
     /// </summary>
     [Serializable]
     public class MoveLearnEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public MoveLearnEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MoveLearnEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             string moveNum = "";
@@ -451,13 +497,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to delete a move using the value in MoveDeleteContext 
+    /// Event that causes the user to delete a move using the value in MoveDeleteContext.
     /// </summary>
     [Serializable]
     public class MoveDeleteEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public MoveDeleteEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MoveDeleteEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int slot = -1;
@@ -474,13 +525,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that prompts the user to learn a new ability and sets up AbilityLearnContext 
+    /// Event that prompts the user to learn a new ability and sets up AbilityLearnContext.
     /// </summary>
     [Serializable]
     public class AbilityCapsuleEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public AbilityCapsuleEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AbilityCapsuleEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)
@@ -530,13 +586,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to learn a new ability using the value in AbilityLearnContext 
+    /// Event that causes the user to learn a new ability using the value in AbilityLearnContext.
     /// </summary>
     [Serializable]
     public class AbilityLearnEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public AbilityLearnEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AbilityLearnEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             string abilityNum = "";
@@ -558,13 +619,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that deletes the user's ability based on the value in the AbilityDeleteContext 
+    /// Event that deletes the user's ability based on the value in the AbilityDeleteContext.
     /// </summary>
     [Serializable]
     public class AbilityDeleteEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public AbilityDeleteEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AbilityDeleteEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int slot = -1;
@@ -583,13 +649,18 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that prompts the user which item to withdraw from the storage and sets up WithdrawStorageContext 
+    /// Event that prompts the user which item to withdraw from the storage and sets up WithdrawStorageContext.
     /// </summary>
     [Serializable]
     public class StorageBoxEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public StorageBoxEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StorageBoxEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)
@@ -652,13 +723,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that withdraws an item from storage using the value in WithdrawStorageContext
+    /// Event that withdraws an item from storage using the value in WithdrawStorageContext.
     /// </summary>
     [Serializable]
     public class WithdrawItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public WithdrawItemEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WithdrawItemEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             WithdrawStorageContext withdraw = context.ContextStates.GetWithDefault<WithdrawStorageContext>();
@@ -684,13 +760,18 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that selects the item currently held by the user to send to the storage 
+    /// Event that selects the item currently held by the user to send to the storage.
     /// </summary>
     [Serializable]
     public class DepositBoxEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public DepositBoxEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DepositBoxEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)
@@ -720,13 +801,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that stores an item using the value in DepositStorageContext
+    /// Event that stores an item using the value in DepositStorageContext.
     /// </summary>
     [Serializable]
     public class StoreItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public StoreItemEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StoreItemEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             DepositStorageContext deposit = context.ContextStates.GetWithDefault<DepositStorageContext>();
@@ -758,13 +844,18 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that prompts the user which assembly member to add to the team the sets up WithdrawStorageContext 
+    /// Event that prompts the user which assembly member to add to the team and sets up WithdrawAssemblyContext.
     /// </summary>
     [Serializable]
     public class AssemblyBoxEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public AssemblyBoxEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AssemblyBoxEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)
@@ -822,13 +913,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that adds a team member from assembly using the value in WithdrawStorageContext
+    /// Event that adds a team member from assembly using the value in WithdrawAssemblyContext.
     /// </summary>
     [Serializable]
     public class WithdrawRecruitEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public WithdrawRecruitEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WithdrawRecruitEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int slot = -1;

@@ -8,28 +8,50 @@ using System.Collections.Generic;
 
 namespace PMDC.LevelGen
 {
+    /// <summary>
+    /// Base class for generation steps that seal rooms with barriers.
+    /// Provides common functionality for surrounding filtered rooms with walls and special tiles.
+    /// Identifies rooms matching filter criteria and surrounds them with sealed borders, creating vault-like structures.
+    /// </summary>
+    /// <typeparam name="T">The map generation context type, must implement ListMapGenContext.</typeparam>
     [Serializable]
     public abstract class BaseSealStep<T> : GenStep<T> where T : ListMapGenContext
     {
+        /// <summary>
+        /// Defines the types of seals that can be applied to border tiles around sealed rooms.
+        /// </summary>
         protected enum SealType
         {
+            /// <summary>Tile should be made impassable, blocking movement.</summary>
             Blocked,
+            /// <summary>Tile should be locked with a special barrier that requires a key.</summary>
             Locked,
+            /// <summary>Tile should serve as the key/entrance point to bypass the seal.</summary>
             Key
         }
 
+        /// <summary>
+        /// Initializes a new instance of the BaseSealStep class with an empty filter list.
+        /// </summary>
         public BaseSealStep()
         {
             this.Filters = new List<BaseRoomFilter>();
         }
 
         /// <summary>
-        /// Determines the rooms that serve as a vault and are to be locked away.
+        /// Gets or sets the list of room filters that determine which rooms should be sealed.
+        /// Only rooms passing all filters will have barrier tiles placed around them.
         /// </summary>
         public List<BaseRoomFilter> Filters { get; set; }
 
+        /// <summary>
+        /// When overridden in a derived class, places the actual barrier tiles based on the calculated seal types.
+        /// </summary>
+        /// <param name="map">The map generation context containing room and tile information.</param>
+        /// <param name="sealList">Dictionary mapping tile locations to their seal types (Blocked, Locked, or Key).</param>
         protected abstract void PlaceBorders(T map, Dictionary<Loc, SealType> sealList);
 
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             //Iterate every room/hall and coat the ones filtered
@@ -89,14 +111,16 @@ namespace PMDC.LevelGen
         }
 
         /// <summary>
-        /// chooses and caegorizes the tile to be sealed
+        /// Analyzes a border tile and determines whether it should be sealed based on adjacent room filter conditions.
+        /// Categorizes tiles as Blocked, Locked, or Key depending on whether adjacent rooms pass the seal filters.
         /// </summary>
-        /// <param name="map"></param>
-        /// <param name="sealList"></param>
-        /// <param name="plan"></param>
-        /// <param name="loc"></param>
-        /// <param name="dir"></param>
-        /// <returns>Whether it affected the tile outwards or not</returns>
+        /// <param name="map">The map generation context containing tile and room information.</param>
+        /// <param name="sealList">Dictionary to accumulate the seal types for border tiles.</param>
+        /// <param name="plan">The floor room plan containing adjacency information.</param>
+        /// <param name="locRay">A ray from the room border outward in a specific direction.</param>
+        /// <param name="side1">The first perpendicular direction to check for additional sealing.</param>
+        /// <param name="side2">The second perpendicular direction to check for additional sealing.</param>
+        /// <returns>True if the tile outward from the room should remain accessible; false if sealed inward.</returns>
         private bool sealBorderRay(T map, Dictionary<Loc, SealType> sealList, IFloorRoomPlan plan, LocRay8 locRay, Dir8 side1, Dir8 side2)
         {
             Loc forthLoc = locRay.Loc + locRay.Dir.GetLoc();
@@ -165,6 +189,14 @@ namespace PMDC.LevelGen
         }
 
 
+        /// <summary>
+        /// Seals a corner tile of a room by analyzing both horizontal and vertical directions.
+        /// Ensures consistent sealing across diagonal room corners.
+        /// </summary>
+        /// <param name="map">The map generation context containing tile and room information.</param>
+        /// <param name="sealList">Dictionary to accumulate the seal types for border tiles.</param>
+        /// <param name="plan">The floor room plan containing adjacency information.</param>
+        /// <param name="locRay">A ray from the corner of the room pointing diagonally outward.</param>
         private void sealCornerRay(T map, Dictionary<Loc, SealType> sealList, IFloorRoomPlan plan, LocRay8 locRay)
         {
             DirH dirH;
@@ -186,6 +218,14 @@ namespace PMDC.LevelGen
                 sealBorderRay(map, sealList, plan, locRay, Dir8.None, Dir8.None);
         }
 
+        /// <summary>
+        /// Registers or updates a border tile's seal type in the seal list.
+        /// If the tile is already blocked, it remains Blocked. Otherwise, higher-priority seals override lower ones.
+        /// </summary>
+        /// <param name="map">The map generation context for checking if tiles are already blocked.</param>
+        /// <param name="sealList">Dictionary to store the seal type for this tile location.</param>
+        /// <param name="seal">The seal type to apply (Blocked, Locked, or Key).</param>
+        /// <param name="loc">The location of the tile to seal.</param>
         private void sealBorderTile(T map, Dictionary<Loc, SealType> sealList, SealType seal, Loc loc)
         {
             if (map.TileBlocked(loc))

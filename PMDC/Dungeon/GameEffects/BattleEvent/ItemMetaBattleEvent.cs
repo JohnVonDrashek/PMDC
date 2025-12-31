@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,35 +18,53 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events thatdo things to items in the player's inventory or equip
+    /// <summary>
+    /// Battle events that manipulate items in the player's inventory or equipment slot.
+    /// </summary>
 
+    /// <summary>
+    /// Abstract base class for events that select and operate on items from inventory or equipment.
+    /// Provides item eligibility checking and selection logic based on price, priority, and item states.
+    /// </summary>
     [Serializable]
     public abstract class ItemMetaEvent : BattleEvent
     {
         /// <summary>
-        /// Whether to select the highest price item or not
+        /// Whether to select the highest price item (true) or lowest price item (false).
         /// </summary>
         public bool TopDown;
 
         /// <summary>
-        /// Whether or not the item needs to be held for the effect to work 
+        /// Whether the item must be held for the effect to work.
+        /// If true, only the equipped item is considered; inventory items are ignored.
         /// </summary>
         public bool HeldOnly;
 
         /// <summary>
-        /// The item to check for first, regardless of price 
+        /// The item to check for first, regardless of price.
+        /// If the character has this item, it will be selected before considering other items.
         /// </summary>
         [JsonConverter(typeof(ItemConverter))]
         [DataType(0, DataManager.DataType.Item, false)]
         public string PriorityItem;
 
         /// <summary>
-        /// If the item has one of the specified ItemStates, then it be picked
+        /// If the item has one of the specified ItemStates, it can be selected.
+        /// If empty, all items are eligible.
         /// </summary>
         [StringTypeConstraint(1, typeof(ItemState))]
         public HashSet<FlagType> States;
 
+        /// <inheritdoc/>
         public ItemMetaEvent() { States = new HashSet<FlagType>(); PriorityItem = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemMetaEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public ItemMetaEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles)
         {
             TopDown = topDown;
@@ -54,6 +72,8 @@ namespace PMDC.Dungeon
             PriorityItem = priorityItem;
             States = eligibles;
         }
+
+        /// <inheritdoc/>
         protected ItemMetaEvent(ItemMetaEvent other)
             : this()
         {
@@ -64,6 +84,11 @@ namespace PMDC.Dungeon
                 States.Add(useType);
         }
 
+        /// <summary>
+        /// Determines whether the specified item is eligible for this event's effect.
+        /// </summary>
+        /// <param name="item">The item to check.</param>
+        /// <returns>True if the item is eligible; otherwise, false.</returns>
         protected virtual bool ItemEligible(InvItem item)
         {
             ItemData entry = DataManager.Instance.GetItem(item.ID);
@@ -84,6 +109,11 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Selects an item from the target character based on priority and eligibility rules.
+        /// </summary>
+        /// <param name="targetChar">The character to select an item from.</param>
+        /// <returns>-1 for held item, inventory index for bag items, or -2 if no eligible item found.</returns>
         protected int SelectItemTarget(Character targetChar)
         {
             //first check priority item
@@ -136,36 +166,52 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that pulls all items held by enemies to the user
+    /// Event that pulls all eligible items held by enemies to the user's location.
+    /// Items are dropped near the user rather than being added to their inventory.
     /// </summary>
     [Serializable]
     public class MugItemEvent : ItemMetaEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log when an item is mugged.
         /// </summary>
         [StringKey(0, true)]
         public StringKey Message;
 
         /// <summary>
-        /// Whether to display a message if the item cannot be taken 
+        /// Whether to suppress the failure message if the item cannot be taken.
         /// </summary>
         public bool SilentCheck;
 
+        /// <inheritdoc/>
         public MugItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MugItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
+        /// <param name="msg">The message to display.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public MugItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles, StringKey msg, bool silentCheck) : base(topDown, heldOnly, priorityItem, eligibles)
         {
             Message = msg;
             SilentCheck = silentCheck;
         }
+
+        /// <inheritdoc/>
         protected MugItemEvent(MugItemEvent other) : base(other)
         {
             Message = other.Message;
             SilentCheck = other.SilentCheck;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MugItemEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<StickyHoldState>())
@@ -200,36 +246,52 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the character to drop their item
+    /// Event that causes the target to drop their item on the ground.
+    /// The item bounces in the attacker's direction.
     /// </summary>
     [Serializable]
     public class DropItemEvent : ItemMetaEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log when an item is dropped.
         /// </summary>
         [StringKey(0, true)]
         public StringKey Message;
 
         /// <summary>
-        /// Whether to display a message if the item cannot be dropped
+        /// Whether to suppress the failure message if the item cannot be dropped.
         /// </summary>
         public bool SilentCheck;
 
+        /// <inheritdoc/>
         public DropItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DropItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
+        /// <param name="msg">The message to display.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public DropItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles, StringKey msg, bool silentCheck) : base(topDown, heldOnly, priorityItem, eligibles)
         {
             Message = msg;
             SilentCheck = silentCheck;
         }
+
+        /// <inheritdoc/>
         protected DropItemEvent(DropItemEvent other) : base(other)
         {
             Message = other.Message;
             SilentCheck = other.SilentCheck;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DropItemEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<StickyHoldState>())
@@ -258,17 +320,31 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the target's item to fly off
+    /// Event that causes the target's item to fly off and be thrown as a projectile.
+    /// The item is thrown in the attacker's direction and can hit other targets.
     /// </summary>
     [Serializable]
     public class KnockItemEvent : ItemMetaEvent
     {
+        /// <inheritdoc/>
         public KnockItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="KnockItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public KnockItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles) : base(topDown, heldOnly, priorityItem, eligibles) { }
+
+        /// <inheritdoc/>
         protected KnockItemEvent(KnockItemEvent other) : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new KnockItemEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<StickyHoldState>())
@@ -393,31 +469,47 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that transforms the character's item to another item
+    /// Event that transforms a character's item into a different item.
+    /// The original item ID is stored in the HiddenValue for potential restoration.
     /// </summary>
     [Serializable]
     public class TransformItemEvent : ItemMetaEvent
     {
         /// <summary>
-        /// The item to transform to
+        /// The item ID to transform the selected item into.
         /// </summary>
         [JsonConverter(typeof(ItemConverter))]
         [DataType(0, DataManager.DataType.Item, false)]
         public string NewItem;
 
+        /// <inheritdoc/>
         public TransformItemEvent() { NewItem = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransformItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="newItem">The item ID to transform to.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public TransformItemEvent(bool topDown, bool heldOnly, string priorityItem, string newItem, HashSet<FlagType> eligibles)
             : base(topDown, heldOnly, priorityItem, eligibles)
         {
             NewItem = newItem;
         }
+
+        /// <inheritdoc/>
         protected TransformItemEvent(TransformItemEvent other)
             : base(other)
         {
             NewItem = other.NewItem;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TransformItemEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ItemEligible(InvItem item)
         {
             if (item.ID == NewItem)
@@ -426,6 +518,7 @@ namespace PMDC.Dungeon
             return base.ItemEligible(item);
         }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int itemIndex = SelectItemTarget(context.Target);
@@ -461,29 +554,45 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that makes the character's item sticky or unsticks it
+    /// Event that makes a character's item sticky (cursed) or removes the sticky status.
+    /// Sticky items cannot be unequipped normally.
     /// </summary>
     [Serializable]
     public class SetItemStickyEvent : ItemMetaEvent
     {
         /// <summary>
-        /// Whether to make the item sticky or unsticks it
+        /// Whether to make the item sticky (true) or remove the sticky status (false).
         /// </summary>
         public bool Sticky;
 
+        /// <inheritdoc/>
         public SetItemStickyEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SetItemStickyEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="sticky">Whether to apply or remove sticky status.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public SetItemStickyEvent(bool topDown, bool heldOnly, string priorityItem, bool sticky, HashSet<FlagType> eligibles)
             : base(topDown, heldOnly, priorityItem, eligibles)
         {
             Sticky = sticky;
         }
+
+        /// <inheritdoc/>
         protected SetItemStickyEvent(SetItemStickyEvent other)
             : base(other)
         {
             Sticky = other.Sticky;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SetItemStickyEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ItemEligible(InvItem item)
         {
             if (item.Cursed == Sticky)
@@ -492,6 +601,7 @@ namespace PMDC.Dungeon
             return base.ItemEligible(item);
         }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int itemIndex = SelectItemTarget(context.Target);
@@ -539,17 +649,32 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that destroy the character's item
+    /// Event that destroys a character's item completely.
+    /// The item is removed from the game without being dropped.
     /// </summary>
     [Serializable]
     public class DestroyItemEvent : ItemMetaEvent
     {
+        /// <inheritdoc/>
         public DestroyItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DestroyItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public DestroyItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles) : base(topDown, heldOnly, priorityItem, eligibles) { }
+
+        /// <inheritdoc/>
         protected DestroyItemEvent(DestroyItemEvent other) : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DestroyItemEvent(this); }
 
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int itemIndex = SelectItemTarget(context.Target);
@@ -573,28 +698,41 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event the causes the user to steal the target's item
+    /// Event that causes the user to steal the target's item and equip it.
+    /// The stolen item replaces the user's current held item if they have one.
     /// </summary>
     [Serializable]
     public class StealItemEvent : ItemMetaEvent
     {
 
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log when an item is stolen.
         /// </summary>
         public StringKey Message;
 
         /// <summary>
-        /// Whether the character attacked instead steals the item
+        /// Whether the target steals from the user (true) or the user steals from the target (false).
         /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// Whether to display a message if the item cannot be dropped
+        /// Whether to suppress failure messages if the steal cannot occur.
         /// </summary>
         public bool SilentCheck;
 
+        /// <inheritdoc/>
         public StealItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StealItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
+        /// <param name="msg">The message to display on success.</param>
+        /// <param name="affectTarget">Whether the roles are reversed.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public StealItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles, StringKey msg, bool affectTarget, bool silentCheck)
             : base(topDown, heldOnly, priorityItem, eligibles)
         {
@@ -602,6 +740,8 @@ namespace PMDC.Dungeon
             AffectTarget = affectTarget;
             SilentCheck = silentCheck;
         }
+
+        /// <inheritdoc/>
         protected StealItemEvent(StealItemEvent other)
             : base(other)
         {
@@ -609,9 +749,12 @@ namespace PMDC.Dungeon
             AffectTarget = other.AffectTarget;
             SilentCheck = other.SilentCheck;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StealItemEvent(this); }
 
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -706,19 +849,34 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to steal the target's item and replaced the item they are currently holding
+    /// Event that causes the target to willingly give their item to the user.
+    /// Similar to steal but triggered by the target rather than forced by the user.
     /// </summary>
     [Serializable]
     public class BegItemEvent : ItemMetaEvent
     {
+        /// <inheritdoc/>
         public BegItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BegItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public BegItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles)
             : base(topDown, heldOnly, priorityItem, eligibles) { }
+
+        /// <inheritdoc/>
         protected BegItemEvent(BegItemEvent other)
             : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BegItemEvent(this); }
 
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = context.Target;
@@ -817,17 +975,32 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to exchange items with the target
+    /// Event that causes the user and target to exchange items.
+    /// Both characters' items are swapped simultaneously.
     /// </summary>
     [Serializable]
     public class TrickItemEvent : ItemMetaEvent
     {
+        /// <inheritdoc/>
         public TrickItemEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TrickItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
         public TrickItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles) : base(topDown, heldOnly, priorityItem, eligibles) { }
+
+        /// <inheritdoc/>
         protected TrickItemEvent(TrickItemEvent other) : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TrickItemEvent(this); }
 
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<StickyHoldState>())
@@ -874,14 +1047,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that unsticks all the team's items. 
+    /// Event that removes the sticky (cursed) status from all items held by team members and in the team's inventory.
     /// </summary>
     [Serializable]
     public class CleanseTeamEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public CleanseTeamEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CleanseTeamEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //cleanse
@@ -905,14 +1082,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to exchange items with the target, unless the inventory is full
+    /// Event that causes the user and target to exchange their held items.
+    /// Fails if either character has a full inventory and no held item.
     /// </summary>
     [Serializable]
     public class SwitchHeldItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public SwitchHeldItemEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SwitchHeldItemEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<StickyHoldState>())
@@ -963,29 +1145,45 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the character to use the enemy's item
+    /// Event that causes a character to forcibly use an item from the target's inventory or equipment.
+    /// The item is consumed and its effects are applied to the user.
     /// </summary>
     [Serializable]
     public class UseFoeItemEvent : ItemMetaEvent
     {
         /// <summary>
-        /// Whether the attacker uses the held item. Otherwise, the enemy uses the attacker's held item.
+        /// Whether the target uses their own item (true) or the user uses the target's item (false).
         /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// Whether to display a message if the item cannot be dropped
+        /// Whether to suppress failure messages if the item cannot be used.
         /// </summary>
         public bool SilentCheck;
 
 
+        /// <summary>
+        /// Messages to display based on the item's use type (eat, drink, use, etc.).
+        /// </summary>
         [StringKey(2, false)]
         public Dictionary<ItemData.UseType, StringKey> UseMsgs;
 
+        /// <inheritdoc/>
         public UseFoeItemEvent()
         {
             UseMsgs = new Dictionary<ItemData.UseType, StringKey>();
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UseFoeItemEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="topDown">Whether to prefer higher-priced items.</param>
+        /// <param name="heldOnly">Whether to only consider held items.</param>
+        /// <param name="priorityItem">The item ID to prioritize.</param>
+        /// <param name="eligibles">The item states that make an item eligible.</param>
+        /// <param name="affectTarget">Whether the target uses their own item.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="useMsgs">Messages to display based on item use type.</param>
         public UseFoeItemEvent(bool topDown, bool heldOnly, string priorityItem, HashSet<FlagType> eligibles, bool affectTarget, bool silentCheck, Dictionary<ItemData.UseType, StringKey> useMsgs)
             : base(topDown, heldOnly, priorityItem, eligibles)
         {
@@ -993,6 +1191,8 @@ namespace PMDC.Dungeon
             SilentCheck = silentCheck;
             UseMsgs = useMsgs;
         }
+
+        /// <inheritdoc/>
         protected UseFoeItemEvent(UseFoeItemEvent other)
             : base(other)
         {
@@ -1003,9 +1203,12 @@ namespace PMDC.Dungeon
             foreach (ItemData.UseType useType in other.UseMsgs.Keys)
                 UseMsgs[useType] = other.UseMsgs[useType];
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new UseFoeItemEvent(this); }
 
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -1120,32 +1323,46 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that converts an item to another item
+    /// Event that converts a specific item to another item, restoring it from its transformed state.
+    /// Uses the HiddenValue of the item to determine the original item, or picks from defaults.
     /// </summary>
     [Serializable]
     public class ItemRestoreEvent : BattleEvent
     {
         /// <summary>
-        /// Whether or not the item needs to be held for the effect to work 
+        /// Whether the item must be held for the effect to work.
         /// </summary>
         public bool HeldOnly;
 
         /// <summary>
-        /// The item being converted
+        /// The item ID that can be converted/restored.
         /// </summary>
         [JsonConverter(typeof(ItemConverter))]
         [DataType(0, DataManager.DataType.Item, false)]
         public string ItemIndex;
 
         /// <summary>
-        /// The list of possible items to convert to 
+        /// The list of possible items to restore to if no HiddenValue is set.
         /// </summary>
         [JsonConverter(typeof(ItemListConverter))]
         [DataType(1, DataManager.DataType.Item, false)]
         public List<string> DefaultItems;
+
+        /// <summary>
+        /// The message displayed when an item is successfully restored.
+        /// </summary>
         public StringKey SuccessMsg;
 
+        /// <inheritdoc/>
         public ItemRestoreEvent() { DefaultItems = new List<string>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemRestoreEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="heldOnly">Whether to only affect held items.</param>
+        /// <param name="itemIndex">The item ID that can be restored.</param>
+        /// <param name="defaultItems">Default items to restore to if no hidden value.</param>
+        /// <param name="successMsg">Message to display on success.</param>
         public ItemRestoreEvent(bool heldOnly, string itemIndex, List<string> defaultItems, StringKey successMsg)
         {
             HeldOnly = heldOnly;
@@ -1153,6 +1370,8 @@ namespace PMDC.Dungeon
             SuccessMsg = successMsg;
             DefaultItems = defaultItems;
         }
+
+        /// <inheritdoc/>
         protected ItemRestoreEvent(ItemRestoreEvent other) : this()
         {
             HeldOnly = other.HeldOnly;
@@ -1160,8 +1379,11 @@ namespace PMDC.Dungeon
             SuccessMsg = other.SuccessMsg;
             DefaultItems.AddRange(other.DefaultItems);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ItemRestoreEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //if target has a held item, and it's eligible, use it

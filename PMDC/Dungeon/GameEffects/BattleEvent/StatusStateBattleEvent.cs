@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,33 +18,45 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle effects that use or modify status state
-
-
+    /// <summary>
+    /// Battle events that use or modify status state values.
+    /// </summary>
 
 
     /// <summary>
-    /// Event that modifies the specified stack boost by adding the value in the StackState status state
+    /// Event that modifies the user's specified stat boost by adding the value from the StackState status state.
+    /// This event can only be used on statuses that have a StackState.
     /// </summary>
     [Serializable]
     public class UserStatBoostEvent : BattleEvent
     {
         /// <summary>
-        /// The stat to modify
+        /// The stat to modify with the stack value.
         /// </summary>
         public Stat Stat;
 
+        /// <inheritdoc/>
         public UserStatBoostEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStatBoostEvent"/> class for the specified stat.
+        /// </summary>
+        /// <param name="stat">The stat to boost.</param>
         public UserStatBoostEvent(Stat stat)
         {
             Stat = stat;
         }
+
+        /// <inheritdoc/>
         protected UserStatBoostEvent(UserStatBoostEvent other)
         {
             Stat = other.Stat;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new UserStatBoostEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int boost = ((StatusEffect)owner).StatusStates.GetWithDefault<StackState>().Stack;
@@ -74,28 +86,39 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the specified stack boost by adding the value in the StackState status state
+    /// Event that modifies the target's stat boost by adding the value from the StackState status state.
+    /// This event can only be used on statuses that have a StackState.
     /// </summary>
     [Serializable]
     public class TargetStatBoostEvent : BattleEvent
     {
-
         /// <summary>
-        /// The stat to modify
+        /// The stat to modify with the stack value.
         /// </summary>
         public Stat Stat;
 
+        /// <inheritdoc/>
         public TargetStatBoostEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TargetStatBoostEvent"/> class for the specified stat.
+        /// </summary>
+        /// <param name="stat">The stat to boost.</param>
         public TargetStatBoostEvent(Stat stat)
         {
             Stat = stat;
         }
+
+        /// <inheritdoc/>
         protected TargetStatBoostEvent(TargetStatBoostEvent other)
         {
             Stat = other.Stat;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TargetStatBoostEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int boost = ((StatusEffect)owner).StatusStates.GetWithDefault<StackState>().Stack;
@@ -122,35 +145,48 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the specified stack boost
+    /// Event that modifies the target's specified stat boost by a fixed amount.
+    /// Unlike TargetStatBoostEvent, this uses a constant value rather than reading from a status state.
     /// </summary>
     [Serializable]
     public class TargetStatAddEvent : BattleEvent
     {
 
         /// <summary>
-        /// The stat to modify
+        /// The stat to modify.
         /// </summary>
         public Stat Stat;
 
         /// <summary>
-        /// The value to modify the stat by
+        /// The fixed value to add to the stat boost.
         /// </summary>
         public int Mod;
 
+        /// <inheritdoc/>
         public TargetStatAddEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TargetStatAddEvent"/> class with the specified stat and modifier.
+        /// </summary>
+        /// <param name="stat">The stat to modify.</param>
+        /// <param name="mod">The value to add to the stat boost.</param>
         public TargetStatAddEvent(Stat stat, int mod)
         {
             Stat = stat;
             Mod = mod;
         }
+
+        /// <inheritdoc/>
         protected TargetStatAddEvent(TargetStatAddEvent other)
         {
             Stat = other.Stat;
             Mod = other.Mod;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TargetStatAddEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             switch (Stat)
@@ -178,14 +214,16 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that sets the AttackedThisTurnState status state to be true, indicating that the character attacked this turn
-    /// This event can only be used on statuses
+    /// Event that sets the AttackedThisTurnState status state to true, indicating that the character attacked this turn.
+    /// This event can only be used on statuses that have an AttackedThisTurnState.
     /// </summary>
     [Serializable]
     public class AttackedThisTurnEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AttackedThisTurnEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             AttackedThisTurnState recent = ((StatusEffect)owner).StatusStates.GetWithDefault<AttackedThisTurnState>();
@@ -198,43 +236,57 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that reverses the character's stat changes
+    /// Event that reverses the character's stat changes by negating StackState values.
+    /// Only affects statuses that contain one of the specified status states.
     /// </summary>
     [Serializable]
     public class ReverseStateStatusBattleEvent : BattleEvent
     {
         /// <summary>
-        /// If the status contains the one of the specified status states, then it's stack amount can be reverted
+        /// If the status contains one of the specified status states, its stack amount will be negated.
         /// </summary>
         [StringTypeConstraint(1, typeof(StatusState))]
         public List<FlagType> States;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target (true) or user (false).
         /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log when stat changes are reversed.
         /// </summary>
         [StringKey(0, true)]
         public StringKey Msg;
 
+        /// <inheritdoc/>
         public ReverseStateStatusBattleEvent() { States = new List<FlagType>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReverseStateStatusBattleEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="state">The status state type to check for.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="msg">The message to display.</param>
         public ReverseStateStatusBattleEvent(Type state, bool affectTarget, StringKey msg) : this()
         {
             States.Add(new FlagType(state));
             AffectTarget = affectTarget;
             Msg = msg;
         }
+
+        /// <inheritdoc/>
         protected ReverseStateStatusBattleEvent(ReverseStateStatusBattleEvent other) : this()
         {
             States.AddRange(other.States);
             AffectTarget = other.AffectTarget;
             Msg = other.Msg;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ReverseStateStatusBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -264,29 +316,40 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that decreases the counter in the status's CountDownState when the character does an action
-    /// The status is removed when the countdown reaches 0
-    /// This event can only be used on statuses
+    /// Event that decreases the counter in the status's CountDownState when the character performs an action.
+    /// The status is removed when the countdown reaches 0.
+    /// This event can only be used on statuses that have a CountDownState.
     /// </summary>
     [Serializable]
     public class CountDownOnActionEvent : BattleEvent
     {
         /// <summary>
-        /// Whether to display the message when the status is removed 
+        /// Whether to display the removal message when the status is removed.
         /// </summary>
         public bool ShowMessage;
 
+        /// <inheritdoc/>
         public CountDownOnActionEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CountDownOnActionEvent"/> class with the specified message visibility.
+        /// </summary>
+        /// <param name="showMessage">Whether to show a message when the status is removed.</param>
         public CountDownOnActionEvent(bool showMessage)
         {
             ShowMessage = showMessage;
         }
+
+        /// <inheritdoc/>
         protected CountDownOnActionEvent(CountDownOnActionEvent other)
         {
             ShowMessage = other.ShowMessage;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CountDownOnActionEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.UsageSlot == BattleContext.FORCED_SLOT)
@@ -299,15 +362,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that removes the RecentState status state
-    /// This event can only be used on statuses 
-    /// </summary> 
+    /// Event that removes the RecentState from the status, allowing countdown mechanics to proceed.
+    /// This event can only be used on statuses that have a RecentState.
+    /// </summary>
     [Serializable]
     public class RemoveRecentEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public RemoveRecentEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveRecentEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             ((StatusEffect)owner).StatusStates.Remove<RecentState>();//allow the counter to count down
@@ -316,14 +383,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the CountDownState counter to 0 if the character receives any damage
-    /// </summary> 
+    /// Event that sets the CountDownState counter to 0 if the character receives damage, causing immediate wake-up.
+    /// Non-damaging hits will still reduce the counter by 1.
+    /// </summary>
     [Serializable]
     public class ForceWakeEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public ForceWakeEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ForceWakeEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageDealt>(0);

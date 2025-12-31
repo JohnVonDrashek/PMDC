@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,11 +18,19 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events the handle direct damage
-
+    /// <summary>
+    /// Abstract base class for battle events that handle direct damage calculations and application.
+    /// Provides common functionality for inflicting damage with type effectiveness feedback.
+    /// </summary>
     [Serializable]
     public abstract class DirectDamageEvent : BattleEvent
     {
+        /// <summary>
+        /// Inflicts damage to the target with visual and audio feedback based on type effectiveness.
+        /// </summary>
+        /// <param name="context">The battle context containing user, target, and action data.</param>
+        /// <param name="dmg">The amount of damage to inflict. Use -1 for OHKO.</param>
+        /// <returns>A coroutine that handles the damage animation and application.</returns>
         protected IEnumerator<YieldInstruction> InflictDamage(BattleContext context, int dmg)
         {
             bool fastSpeed = (DiagManager.Instance.CurSettings.BattleFlow > Settings.BattleSpeed.Fast);
@@ -71,6 +79,13 @@ namespace PMDC.Dungeon
                 context.AddContextStateInt<TotalKnockouts>(true, 1);
             }
         }
+
+        /// <summary>
+        /// Records damage dealt and HP lost in the battle context for use by subsequent events.
+        /// </summary>
+        /// <param name="context">The battle context to update.</param>
+        /// <param name="dmg">The calculated damage amount.</param>
+        /// <param name="hpLost">The actual HP lost by the target.</param>
         protected void ReportDamage(BattleContext context, int dmg, int hpLost)
         {
             context.ContextStates.Set(new DamageDealt(dmg));
@@ -81,14 +96,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that OHKOs the target
+    /// Event that inflicts a one-hit knockout (OHKO) on the target.
+    /// Respects type immunity and damage multiplier modifiers.
     /// </summary>
     [Serializable]
     public class OHKODamageEvent : DirectDamageEvent
     {
+        /// <inheritdoc/>
         public OHKODamageEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new OHKODamageEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int prevHP = context.Target.HP;
@@ -119,9 +139,14 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Abstract base class for damage events that require custom damage calculation logic.
+    /// Subclasses implement the CalculateDamage method to define their specific damage formula.
+    /// </summary>
     [Serializable]
     public abstract class CalculatedDamageEvent : DirectDamageEvent
     {
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = CalculateDamage(owner, context);
@@ -134,23 +159,41 @@ namespace PMDC.Dungeon
             ReportDamage(context, Math.Max(0, damage), hpLost);
         }
 
+        /// <summary>
+        /// Calculates the damage to be dealt based on the specific event implementation.
+        /// </summary>
+        /// <param name="owner">The owner of this event.</param>
+        /// <param name="context">The battle context.</param>
+        /// <returns>The calculated damage value. Negative values indicate the attack should not deal damage.</returns>
         public abstract int CalculateDamage(GameEventOwner owner, BattleContext context);
     }
 
     /// <summary>
-    /// Event that calculates the damage of the action, taking account into effectiveness, critical hits, stat boosts, and STAB
+    /// Event that calculates damage using the standard damage formula.
+    /// Takes into account type effectiveness, critical hits, stat boosts, and STAB (Same Type Attack Bonus).
     /// </summary>
     [Serializable]
     public class DamageFormulaEvent : CalculatedDamageEvent
     {
+        /// <inheritdoc/>
         public DamageFormulaEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DamageFormulaEvent(); }
 
+        /// <inheritdoc/>
         public override int CalculateDamage(GameEventOwner owner, BattleContext context)
         {
             return CalculateDamageFormula(owner, context);
         }
 
+        /// <summary>
+        /// Static method that performs the full damage formula calculation including
+        /// attack/defense stats, type effectiveness, STAB, and critical hits.
+        /// </summary>
+        /// <param name="owner">The owner of this event.</param>
+        /// <param name="context">The battle context.</param>
+        /// <returns>The calculated damage value.</returns>
         public static int CalculateDamageFormula(GameEventOwner owner, BattleContext context)
         {
             //PreExecuteAction: attacker attack/spAtk and level are assigned
@@ -252,9 +295,14 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Abstract base class for damage events that deal fixed damage amounts.
+    /// Bypasses the normal damage formula but still respects type immunity.
+    /// </summary>
     [Serializable]
     public abstract class FixedDamageEvent : CalculatedDamageEvent
     {
+        /// <inheritdoc/>
         public override int CalculateDamage(GameEventOwner owner, BattleContext context)
         {
             int damage = CalculateFixedDamage(owner, context);
@@ -269,13 +317,25 @@ namespace PMDC.Dungeon
             return damage;
         }
 
+        /// <summary>
+        /// Calculates the fixed damage amount for this event.
+        /// </summary>
+        /// <param name="owner">The owner of this event.</param>
+        /// <param name="context">The battle context.</param>
+        /// <returns>The fixed damage value.</returns>
         protected abstract int CalculateFixedDamage(GameEventOwner owner, BattleContext context);
     }
 
+    /// <summary>
+    /// Event that deals fixed damage equal to the skill's base power value.
+    /// </summary>
     [Serializable]
     public class BasePowerDamageEvent : FixedDamageEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BasePowerDamageEvent(); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             BasePowerState state = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -286,24 +346,35 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the specified damage the character will take 
+    /// Event that deals a specific fixed damage amount to the target.
     /// </summary>
     [Serializable]
     public class SpecificDamageEvent : FixedDamageEvent
     {
         /// <summary>
-        /// The damage amount
+        /// The fixed damage amount to deal.
         /// </summary>
         public int Damage;
 
+        /// <inheritdoc/>
         public SpecificDamageEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpecificDamageEvent"/> class with the specified damage amount.
+        /// </summary>
+        /// <param name="dmg">The fixed damage to deal.</param>
         public SpecificDamageEvent(int dmg) { Damage = dmg; }
+
+        /// <inheritdoc/>
         public SpecificDamageEvent(SpecificDamageEvent other)
         {
             Damage = other.Damage;
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SpecificDamageEvent(this); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             return Damage;
@@ -311,39 +382,55 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that calculates the damage based on the character's level
+    /// Event that calculates damage based on a character's level.
+    /// The formula is: level * Numerator / Denominator.
     /// </summary>
     [Serializable]
     public class LevelDamageEvent : FixedDamageEvent
     {
         /// <summary>
-        /// Whether to calculate with the target or user's level
+        /// Whether to calculate with the target's level (true) or user's level (false).
         /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// The numerator of the modifier
+        /// The numerator of the level modifier fraction.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the modifier
+        /// The denominator of the level modifier fraction.
         /// </summary>
         public int Denominator;
+
+        /// <inheritdoc/>
         public LevelDamageEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LevelDamageEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="affectTarget">Whether to use the target's level.</param>
+        /// <param name="numerator">The numerator for level calculation.</param>
+        /// <param name="denominator">The denominator for level calculation.</param>
         public LevelDamageEvent(bool affectTarget, int numerator, int denominator)
         {
             AffectTarget = affectTarget;
             Numerator = numerator;
             Denominator = denominator;
         }
+
+        /// <inheritdoc/>
         protected LevelDamageEvent(LevelDamageEvent other)
         {
             AffectTarget = other.AffectTarget;
             Numerator = other.Numerator;
             Denominator = other.Denominator;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LevelDamageEvent(this); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             int level = (AffectTarget ? context.Target.Level : context.GetContextStateInt<UserLevel>(0));
@@ -352,12 +439,16 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that deals fixed damage depending on the target's distance from the attack and the user's level
+    /// Event that deals fixed damage based on the target's distance from the attack origin and the user's level.
+    /// Damage follows a wave pattern (0, 1, 2, 1, 0, 1, 2, 1...) based on distance modulo 4.
     /// </summary>
     [Serializable]
     public class PsywaveDamageEvent : FixedDamageEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PsywaveDamageEvent(); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             // 1 2 1 0 1 2 1 0
@@ -371,25 +462,38 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that deals fixed damage based on the user's current HP.
+    /// Event that deals fixed damage based on the user's current HP or missing HP.
     /// </summary>
     [Serializable]
     public class UserHPDamageEvent : FixedDamageEvent
     {
         /// <summary>
-        /// Instead, deal damage based on the HP the user is missing.
+        /// When true, deals damage based on the HP the user is missing (MaxHP - HP) instead of current HP.
         /// </summary>
         public bool Reverse;
+
+        /// <inheritdoc/>
         public UserHPDamageEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserHPDamageEvent"/> class.
+        /// </summary>
+        /// <param name="reverse">If true, use missing HP; if false, use current HP.</param>
         public UserHPDamageEvent(bool reverse)
         {
             Reverse = reverse;
         }
+
+        /// <inheritdoc/>
         protected UserHPDamageEvent(UserHPDamageEvent other)
         {
             Reverse = other.Reverse;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new UserHPDamageEvent(this); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             return Reverse ? (context.User.MaxHP - context.User.HP) : context.User.HP;
@@ -397,12 +501,16 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that reduces the target's HP to the user's HP
+    /// Event that reduces the target's HP to match the user's HP.
+    /// Deals damage equal to the difference if the target has more HP than the user.
     /// </summary>
     [Serializable]
     public class EndeavorEvent : FixedDamageEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new EndeavorEvent(); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             return Math.Max(0, context.Target.HP - context.User.HP);
@@ -410,12 +518,15 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that reduces the target's HP by half
+    /// Event that reduces the target's HP by half their current HP.
     /// </summary>
     [Serializable]
     public class CutHPDamageEvent : FixedDamageEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CutHPDamageEvent(); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             return Math.Max(1, context.GetContextStateMult<HPDmgMult>().Multiply(context.Target.HP / 2));
@@ -423,23 +534,39 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that reduces the target's HP by the specified HP fraction 
+    /// Event that deals damage equal to a fraction of the target's maximum HP.
     /// </summary>
     [Serializable]
     public class MaxHPDamageEvent : FixedDamageEvent
     {
+        /// <summary>
+        /// The divisor for the target's max HP to calculate damage.
+        /// For example, a value of 4 deals 25% of max HP as damage.
+        /// </summary>
         public int HPFraction;
 
+        /// <inheritdoc/>
         public MaxHPDamageEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MaxHPDamageEvent"/> class with the specified HP fraction divisor.
+        /// </summary>
+        /// <param name="hpFraction">The divisor for max HP calculation.</param>
         public MaxHPDamageEvent(int hpFraction)
         {
             HPFraction = hpFraction;
         }
+
+        /// <inheritdoc/>
         protected MaxHPDamageEvent(MaxHPDamageEvent other)
         {
             HPFraction = other.HPFraction;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MaxHPDamageEvent(this); }
+
+        /// <inheritdoc/>
         protected override int CalculateFixedDamage(GameEventOwner owner, BattleContext context)
         {
             return Math.Max(1, context.GetContextStateMult<HPDmgMult>().Multiply(context.Target.MaxHP / HPFraction));

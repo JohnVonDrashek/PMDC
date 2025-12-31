@@ -11,29 +11,45 @@ using Newtonsoft.Json;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// Orients all already-placed compass tiles to point to points of interest.
+    /// A generation step that orients all already-placed compass tiles to point to points of interest.
+    /// This step searches for compass tiles in the floor, identifies eligible destination tiles,
+    /// and configures each compass tile's state to track these destinations.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type, must inherit from StairsMapGenContext.</typeparam>
     [Serializable]
     public class SetCompassStep<T> : GenStep<T>
         where T : StairsMapGenContext
     {
         /// <summary>
-        /// Tile used as compass.
+        /// Gets or sets the ID of the tile to use as a compass.
+        /// This tile should have a CompassEvent in its InteractWithTiles to define eligible destinations.
         /// </summary>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
         public string CompassTile;
 
+        /// <summary>
+        /// Initializes a new instance of the SetCompassStep class with default values.
+        /// </summary>
         public SetCompassStep()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the SetCompassStep class with the specified compass tile ID.
+        /// </summary>
+        /// <param name="tile">The ID of the tile to use as a compass.</param>
         public SetCompassStep(string tile)
         {
             CompassTile = tile;
         }
 
+        /// <summary>
+        /// Applies the compass orientation step to the provided map.
+        /// Locates all compass tiles and eligible destination tiles, then configures each compass
+        /// tile to point to all eligible destinations and map exits.
+        /// </summary>
+        /// <param name="map">The map generation context to apply the step to.</param>
         public override void Apply(T map)
         {
             List<Tile> compassTiles = new List<Tile>();

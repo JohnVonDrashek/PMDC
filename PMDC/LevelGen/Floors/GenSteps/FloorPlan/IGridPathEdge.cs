@@ -4,12 +4,30 @@ using RogueElements;
 
 namespace PMDC.LevelGen
 {
+    /// <summary>
+    /// Interface for configuring grid path generation along a map edge.
+    /// </summary>
     public interface IGridPathEdge
     {
+        /// <summary>
+        /// The edge of the map where rooms will be placed (Up, Down, Left, or Right).
+        /// </summary>
         Dir4 Edge { get; set; }
+
+        /// <summary>
+        /// The percentage of total rooms along the edge that the step aims to fill.
+        /// </summary>
         RandRange RoomRatio { get; set; }
+
+        /// <summary>
+        /// The percentage of total halls not on the chosen edge that the step aims to fill.
+        /// </summary>
         RandRange HallRatio { get; set; }
 
+        /// <summary>
+        /// The percent amount of branching paths relative to straight paths.
+        /// 0 = Linear layout. 50 = Tree. 100 = Dense tree. 200+ = Very bushy.
+        /// </summary>
         RandRange HallBranchRatio { get; set; }
     }
 
@@ -46,6 +64,12 @@ namespace PMDC.LevelGen
         /// </summary>
         public RandRange HallBranchRatio { get; set; }
 
+        /// <summary>
+        /// Applies the edge path generation to the floor plan by placing rooms along the specified edge
+        /// and connecting them with branching hall pathways.
+        /// </summary>
+        /// <param name="rand">Random number generator for choosing rooms, halls, and branches.</param>
+        /// <param name="floorPlan">The floor plan to apply the path generation to.</param>
         public override void ApplyToPath(IRandom rand, GridPlan floorPlan)
         {
             if (Edge == Dir4.None)
@@ -247,17 +271,21 @@ namespace PMDC.LevelGen
             return rooms;
         }
 
+        /// <summary>
+        /// Returns a string representation of the grid path edge configuration.
+        /// </summary>
+        /// <returns>A formatted string containing the edge direction and fill percentages.</returns>
         public override string ToString()
         {
             return string.Format("{0}: Edge:{1} Room Fill:{2}% Hall Fill:{3}%", this.GetType().GetFormattedTypeName(), this.Edge, this.RoomRatio, this.HallRatio);
         }
 
         /// <summary>
-        /// Gets the directions a room can expand in.
+        /// Gets the directions a room can expand in from a given location.
         /// </summary>
-        /// <param name="floorPlan"></param>
-        /// <param name="loc"></param>
-        /// <returns></returns>
+        /// <param name="floorPlan">The floor plan to check for valid expansion directions.</param>
+        /// <param name="loc">The current room location to check expansion from.</param>
+        /// <returns>An enumerable of valid directions the room can expand toward (directions without existing rooms).</returns>
         protected static IEnumerable<Dir4> GetRoomExpandDirs(GridPlan floorPlan, Loc loc)
         {
             foreach (Dir4 dir in DirExt.VALID_DIR4)
@@ -270,11 +298,11 @@ namespace PMDC.LevelGen
         }
 
         /// <summary>
-        /// Gets a possible terminal room to expand.  Equal distribution.
+        /// Pops a random location from the list with equal probability distribution.
         /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="locs"></param>
-        /// <returns></returns>
+        /// <param name="rand">Random number generator for selecting a location.</param>
+        /// <param name="locs">The list of locations to select from. The selected location is removed from this list.</param>
+        /// <returns>A randomly selected location from the list (which is then removed from the list).</returns>
         protected static Loc PopRandomLocEqual(IRandom rand, List<Loc> locs)
         {
             int branchIdx = rand.Next(locs.Count);
@@ -283,11 +311,25 @@ namespace PMDC.LevelGen
             return newBranch;
         }
 
+        /// <summary>
+        /// Pops a random location from the list for expansion. Can be overridden by subclasses for different selection algorithms.
+        /// </summary>
+        /// <param name="floorPlan">The floor plan context (may be used by overriding classes).</param>
+        /// <param name="rand">Random number generator for selecting a location.</param>
+        /// <param name="locs">The list of locations to select from. The selected location is removed from this list.</param>
+        /// <returns>A randomly selected location from the list.</returns>
         protected virtual Loc PopRandomLoc(GridPlan floorPlan, IRandom rand, List<Loc> locs)
         {
             return PopRandomLocEqual(rand, locs);
         }
 
+        /// <summary>
+        /// Expands the path by adding a hall in the specified direction and an empty room at its end.
+        /// </summary>
+        /// <param name="rand">Random number generator for choosing a hall layout.</param>
+        /// <param name="floorPlan">The floor plan to expand the path on.</param>
+        /// <param name="chosenRay">The ray indicating the location and direction of the new hall and room.</param>
+        /// <returns>Always returns true to indicate the expansion was successful.</returns>
         protected bool ExpandPathWithHall(IRandom rand, GridPlan floorPlan, LocRay4 chosenRay)
         {
             floorPlan.SetHall(chosenRay, this.GenericHalls.Pick(rand), this.HallComponents.Clone());
@@ -297,6 +339,12 @@ namespace PMDC.LevelGen
             return true;
         }
 
+        /// <summary>
+        /// Gets the available expansion rays (location + direction pairs) from a terminal room location.
+        /// </summary>
+        /// <param name="floorPlan">The floor plan to check for valid expansion directions.</param>
+        /// <param name="newTerminal">The terminal room location to find expansion rays from.</param>
+        /// <returns>A spawn list of available rays with equal weight distribution for random selection.</returns>
         protected virtual SpawnList<LocRay4> GetExpandDirChances(GridPlan floorPlan, Loc newTerminal)
         {
             SpawnList<LocRay4> availableRays = new SpawnList<LocRay4>();

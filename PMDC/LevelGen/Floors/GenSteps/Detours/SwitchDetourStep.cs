@@ -13,13 +13,14 @@ namespace PMDC.LevelGen
 {
     /// <summary>
     /// Adds an extra room to the layout that can only be accessed by pushing a switch.
+    /// Creates one or more detour rooms sealed by a tile, and places a switch tile that opens them with an optional time limit.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type, must derive from <see cref="BaseMapGenContext"/>.</typeparam>
     [Serializable]
     public class SwitchDetourStep<T> : BaseDetourStep<T> where T : BaseMapGenContext
     {
         /// <summary>
-        /// The tile with which to lock the room with.
+        /// The tile ID used to seal/lock the entrance to the detour room.
         /// </summary>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
@@ -27,25 +28,35 @@ namespace PMDC.LevelGen
 
 
         /// <summary>
-        /// The tile that serves as the switch to open the door.
+        /// The tile ID that serves as the switch to open the sealed door.
         /// </summary>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
         public string SwitchTile;
 
         /// <summary>
-        /// Determines if a time limit is triggered when pressing the switch.
+        /// Determines whether a time limit is triggered when the switch is activated.
         /// </summary>
         public bool TimeLimit;
 
         /// <summary>
-        /// The number of detours created.
+        /// The range of detour rooms to create. The actual count will be randomly selected within this range.
         /// </summary>
         public RandRange EntranceCount;
 
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public SwitchDetourStep()
         { }
 
+        /// <summary>
+        /// Initializes a new instance with the specified configuration.
+        /// </summary>
+        /// <param name="sealedTile">The tile ID used to seal the detour room entrances.</param>
+        /// <param name="switchTile">The tile ID of the switch that opens the sealed doors.</param>
+        /// <param name="entranceCount">The range for the number of detour rooms to create.</param>
+        /// <param name="timeLimit">Whether activating the switch triggers a countdown timer for accessing the detour rooms.</param>
         public SwitchDetourStep(string sealedTile, string switchTile, RandRange entranceCount, bool timeLimit) : this()
         {
             SealedTile = sealedTile;
@@ -54,6 +65,12 @@ namespace PMDC.LevelGen
             TimeLimit = timeLimit;
         }
 
+        /// <summary>
+        /// Applies the switch detour generation step to the map.
+        /// Creates sealed detour rooms and places a switch tile that can open them, optionally with a time limit.
+        /// </summary>
+        /// <param name="map">The map generation context to apply the detour to.</param>
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             //first get all free tiles suitable for the switch

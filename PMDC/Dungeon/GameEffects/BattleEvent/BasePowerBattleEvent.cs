@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -21,33 +21,44 @@ namespace PMDC.Dungeon
     // For battle events that alter or assign basepower
 
     /// <summary>
-    /// Event that changes the move type depending on the character's held item
+    /// Event that changes the move type depending on the character's held item.
     /// </summary>
     [Serializable]
     public class ItemPowerEvent : BattleEvent
     {
 
         /// <summary>
-        /// The item ID mapped to a type
+        /// The item ID mapped to a type.
         /// </summary>
         [JsonConverter(typeof(ItemElementDictConverter))]
         [DataType(1, DataManager.DataType.Item, false)]
         [DataType(2, DataManager.DataType.Element, false)]
         public Dictionary<string, string> ItemPair;
 
+        /// <inheritdoc/>
         public ItemPowerEvent() { ItemPair = new Dictionary<string, string>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemPowerEvent"/> class with the specified item-element pairs.
+        /// </summary>
+        /// <param name="weather">Dictionary mapping item IDs to element types.</param>
         public ItemPowerEvent(Dictionary<string, string> weather)
         {
             ItemPair = weather;
         }
+
+        /// <inheritdoc/>
         protected ItemPowerEvent(ItemPowerEvent other)
             : this()
         {
             foreach (string item in other.ItemPair.Keys)
                 ItemPair.Add(item, other.ItemPair[item]);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ItemPowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             string element;
@@ -62,14 +73,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the base power of the move depending on the weight of the target
+    /// Event that modifies the base power of the move depending on the weight of the target.
+    /// Heavier targets result in higher base power.
     /// </summary>
     [Serializable]
     public class WeightBasePowerEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public WeightBasePowerEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WeightBasePowerEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BasePowerState basePower = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -102,31 +118,46 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that boosts the power of moves depending on the total stat changes
+    /// Event that boosts the power of moves depending on the total stat changes.
+    /// More positive stat changes result in higher base power.
     /// </summary>
     [Serializable]
     public class StatBasePowerEvent : BattleEvent
     {
         /// <summary>
-        /// The base power for each stat change
+        /// The base power added for each stat change stack.
         /// </summary>
         public int AddedPower;
 
         /// <summary>
-        /// Whether to check the target or user
+        /// Whether to check the target's stats instead of the user's stats.
         /// </summary>
         public bool FromTarget;
+
+        /// <summary>
+        /// The set of status IDs representing stat changes to count.
+        /// </summary>
         [JsonConverter(typeof(StatusSetConverter))]
         [DataType(1, DataManager.DataType.Status, false)]
         public HashSet<string> StatChangeIDs;
 
+        /// <inheritdoc/>
         public StatBasePowerEvent() { StatChangeIDs = new HashSet<string>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StatBasePowerEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="addedPower">The power added per stat change stack.</param>
+        /// <param name="fromTarget">Whether to check the target's stats.</param>
+        /// <param name="statChangeIDs">The status IDs to count.</param>
         public StatBasePowerEvent(int addedPower, bool fromTarget, HashSet<string> statChangeIDs)
         {
             AddedPower = addedPower;
             FromTarget = fromTarget;
             StatChangeIDs = statChangeIDs;
         }
+
+        /// <inheritdoc/>
         protected StatBasePowerEvent(StatBasePowerEvent other) : this()
         {
             AddedPower = other.AddedPower;
@@ -134,8 +165,11 @@ namespace PMDC.Dungeon
             foreach (string statID in other.StatChangeIDs)
                 StatChangeIDs.Add(statID);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatBasePowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character source = (FromTarget ? context.Target : context.User);
@@ -160,30 +194,43 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that boosts the power of moves depending on the number of times being hit before acting
+    /// Event that boosts the power of moves depending on the number of times being hit before acting.
+    /// More hits received result in higher base power.
     /// </summary>
     [Serializable]
     public class PrevHitBasePowerEvent : BattleEvent
     {
         /// <summary>
-        /// The base power for each stat change
+        /// The base power added for each hit received.
         /// </summary>
         public int AddedPower;
 
         /// <summary>
-        /// The maximum stack limit
+        /// The maximum stack limit for counting hits.
         /// </summary>
         public int MaxStack;
 
         /// <summary>
-        /// Whether to check the target or user
+        /// Whether to check the target's hit count instead of the user's.
         /// </summary>
         public bool FromTarget;
 
+        /// <summary>
+        /// The status ID that tracks how many times the character has been hit.
+        /// </summary>
         [DataType(0, DataManager.DataType.Status, false)]
         public string PrevHitID;
 
+        /// <inheritdoc/>
         public PrevHitBasePowerEvent() { PrevHitID = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PrevHitBasePowerEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="addedPower">The power added per hit.</param>
+        /// <param name="fromTarget">Whether to check the target's hit count.</param>
+        /// <param name="prevHitID">The status ID tracking hits.</param>
+        /// <param name="limit">The maximum stack limit.</param>
         public PrevHitBasePowerEvent(int addedPower, bool fromTarget, string prevHitID, int limit)
         {
             AddedPower = addedPower;
@@ -191,6 +238,8 @@ namespace PMDC.Dungeon
             PrevHitID = prevHitID;
             MaxStack = limit;
         }
+
+        /// <inheritdoc/>
         protected PrevHitBasePowerEvent(PrevHitBasePowerEvent other) : this()
         {
             AddedPower = other.AddedPower;
@@ -198,8 +247,11 @@ namespace PMDC.Dungeon
             PrevHitID = other.PrevHitID;
             MaxStack = other.MaxStack;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PrevHitBasePowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character source = (FromTarget ? context.Target : context.User);
@@ -219,42 +271,56 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that makes a move deal more or less damage depending on the character's HP
+    /// Event that makes a move deal more or less damage depending on the character's HP.
+    /// Can be configured to deal more damage at low HP or high HP.
     /// </summary>
     [Serializable]
     public class HPBasePowerEvent : BattleEvent
     {
 
         /// <summary>
-        /// The max base power of the move
+        /// The maximum base power of the move at full HP (or minimum HP if reversed).
         /// </summary>
         public int MaxPower;
 
         /// <summary>
-        /// Whether or not the less HP the character has, the more damage 
+        /// Whether the less HP the character has, the more damage dealt.
         /// </summary>
         public bool Reverse;
 
         /// <summary>
-        /// Whether to calculate the power target or user HP
+        /// Whether to calculate the power based on target HP instead of user HP.
         /// </summary>
         public bool FromTarget;
 
+        /// <inheritdoc/>
         public HPBasePowerEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HPBasePowerEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="maxPower">The maximum base power.</param>
+        /// <param name="reverse">Whether lower HP means more damage.</param>
+        /// <param name="affectTarget">Whether to use target's HP.</param>
         public HPBasePowerEvent(int maxPower, bool reverse, bool affectTarget)
         {
             MaxPower = maxPower;
             Reverse = reverse;
             FromTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected HPBasePowerEvent(HPBasePowerEvent other)
         {
             MaxPower = other.MaxPower;
             Reverse = other.Reverse;
             FromTarget = other.FromTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new HPBasePowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character source = (FromTarget ? context.Target : context.User);
@@ -267,41 +333,55 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that makes a move deal more or less damage depending on the PP amount 
+    /// Event that makes a move deal more or less damage depending on the PP amount.
+    /// Can be configured to deal more damage at low PP or high PP.
     /// </summary>
     [Serializable]
     public class PPBasePowerEvent : BattleEvent
     {
         /// <summary>
-        /// The max base power of the move
-        /// </summary> 
+        /// The maximum base power of the move at full PP (or minimum PP if reversed).
+        /// </summary>
         public int MaxPower;
 
         /// <summary>
-        /// Whether or not the less PP, the more damage
-        /// </summary>  
+        /// Whether the less PP remaining, the more damage dealt.
+        /// </summary>
         public bool Reverse;
 
         /// <summary>
-        /// Whether to also consider the PP of other moves
-        /// </summary>  
+        /// Whether to also consider the PP of other moves in the calculation.
+        /// </summary>
         public bool Total;
 
+        /// <inheritdoc/>
         public PPBasePowerEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PPBasePowerEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="maxPower">The maximum base power.</param>
+        /// <param name="reverse">Whether lower PP means more damage.</param>
+        /// <param name="total">Whether to include all moves' PP.</param>
         public PPBasePowerEvent(int maxPower, bool reverse, bool total)
         {
             MaxPower = maxPower;
             Reverse = reverse;
             Total = total;
         }
+
+        /// <inheritdoc/>
         protected PPBasePowerEvent(PPBasePowerEvent other)
         {
             MaxPower = other.MaxPower;
             Reverse = other.Reverse;
             Total = other.Total;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PPBasePowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int pp = 0;
@@ -349,28 +429,40 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the base power of the move based on the number of allies around the character 
+    /// Event that modifies the base power of the move based on the number of allies around the character.
+    /// More allies nearby can increase or decrease damage depending on configuration.
     /// </summary>
     [Serializable]
     public class AllyBasePowerEvent : BattleEvent
     {
 
         /// <summary>
-        /// Whether or not the more allies, the less damage 
-        /// </summary>  
+        /// Whether the more allies nearby, the less damage dealt.
+        /// </summary>
         public bool Reverse;
 
+        /// <inheritdoc/>
         public AllyBasePowerEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AllyBasePowerEvent"/> class with the specified parameter.
+        /// </summary>
+        /// <param name="reverse">Whether more allies means less damage.</param>
         public AllyBasePowerEvent(bool reverse)
         {
             Reverse = reverse;
         }
+
+        /// <inheritdoc/>
         protected AllyBasePowerEvent(AllyBasePowerEvent other)
         {
             Reverse = other.Reverse;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AllyBasePowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BasePowerState basePower = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -393,28 +485,40 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the base power of the move based on the movement speed differences
+    /// Event that modifies the base power of the move based on the movement speed differences.
+    /// Faster users deal more damage when speed difference is positive.
     /// </summary>
     [Serializable]
     public class SpeedPowerEvent : BattleEvent
     {
 
         /// <summary>
-        /// Whether the less movement speed the user has, the more damage
-        /// </summary>  
+        /// Whether the less movement speed the user has relative to the target, the more damage dealt.
+        /// </summary>
         public bool Reverse;
 
+        /// <inheritdoc/>
         public SpeedPowerEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpeedPowerEvent"/> class with the specified parameter.
+        /// </summary>
+        /// <param name="reverse">Whether slower user means more damage.</param>
         public SpeedPowerEvent(bool reverse)
         {
             Reverse = reverse;
         }
+
+        /// <inheritdoc/>
         protected SpeedPowerEvent(SpeedPowerEvent other)
         {
             Reverse = other.Reverse;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SpeedPowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BasePowerState basePower = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -432,14 +536,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that increases the base power of the move based on the weight ratio difference 
+    /// Event that increases the base power of the move based on the weight ratio difference.
+    /// Heavier users deal more damage to lighter targets.
     /// </summary>
     [Serializable]
     public class WeightCrushBasePowerEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public WeightCrushBasePowerEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WeightCrushBasePowerEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BasePowerState basePower = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -479,36 +588,49 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the base power of the move if the character is inflicted with the specified status 
-    /// </summary> 
+    /// Event that modifies the base power of the move if the character is inflicted with the specified status.
+    /// Doubles the base power when the status is present.
+    /// </summary>
     [Serializable]
     public class StatusPowerEvent : BattleEvent
     {
         /// <summary>
-        /// The status ID to check for
-        /// </summary> 
+        /// The status ID to check for.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string StatusID;
 
         /// <summary>
-        /// Whether to check the status on the target or user
-        /// </summary> 
+        /// Whether to check the status on the target instead of the user.
+        /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public StatusPowerEvent() { StatusID = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StatusPowerEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to check for.</param>
+        /// <param name="affectTarget">Whether to check the target's status.</param>
         public StatusPowerEvent(string statusID, bool affectTarget)
         {
             StatusID = statusID;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected StatusPowerEvent(StatusPowerEvent other)
         {
             StatusID = other.StatusID;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusPowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -528,14 +650,19 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that modifies the base power of the move if the target's HP is below the specified threshold
-    /// </summary> 
+    /// Event that modifies the base power of the move if the target's HP is below 50%.
+    /// Doubles the base power when the target is at low HP.
+    /// </summary>
     [Serializable]
     public class BrineEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public BrineEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BrineEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BasePowerState basePower = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -552,14 +679,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the base power of the move if the user isn't holding an item
-    /// </summary> 
+    /// Event that modifies the base power of the move if the user is not holding an item.
+    /// Doubles the base power when the user has no equipped item.
+    /// </summary>
     [Serializable]
     public class AcrobaticEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public AcrobaticEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AcrobaticEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BasePowerState basePower = context.Data.SkillStates.GetWithDefault<BasePowerState>();
@@ -578,40 +710,51 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that modifies the damage multiplier if the target in the status matches the enemy
+    /// Event that modifies the damage multiplier if the target in the status matches the enemy.
+    /// Used for revenge-style attacks that deal more damage to enemies that recently attacked.
     /// </summary>
     [Serializable]
     public class RevengeEvent : BattleEvent
     {
         /// <summary>
-        /// The status which contains the target
-        /// Should usally be "last targeted by"
-        /// </summary> 
+        /// The status which contains the target.
+        /// Should usually be "last targeted by".
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string TargetStatusID;
 
         /// <summary>
-        /// Numerator of the modifier
+        /// Numerator of the damage modifier.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// Denominator of the modifier
+        /// Denominator of the damage modifier.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to check the status on the target instead of the user.
         /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// Whether to display the message associated with this event
-        /// </summary> 
+        /// Whether to display the message associated with this event.
+        /// </summary>
         public bool Msg;
 
+        /// <inheritdoc/>
         public RevengeEvent() { TargetStatusID = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RevengeEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="targetStatusID">The status ID containing the attacker reference.</param>
+        /// <param name="numerator">The damage multiplier numerator.</param>
+        /// <param name="denominator">The damage multiplier denominator.</param>
+        /// <param name="affectTarget">Whether to check the target's status.</param>
+        /// <param name="msg">Whether to display the boost message.</param>
         public RevengeEvent(string targetStatusID, int numerator, int denominator, bool affectTarget, bool msg)
         {
             TargetStatusID = targetStatusID;
@@ -620,6 +763,8 @@ namespace PMDC.Dungeon
             AffectTarget = affectTarget;
             Msg = msg;
         }
+
+        /// <inheritdoc/>
         protected RevengeEvent(RevengeEvent other)
         {
             TargetStatusID = other.TargetStatusID;
@@ -628,8 +773,11 @@ namespace PMDC.Dungeon
             AffectTarget = other.AffectTarget;
             Msg = other.Msg;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RevengeEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -655,41 +803,55 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that modifies the damage multiplier if the character is inflicted with a major status condition
-    /// </summary> 
+    /// Event that modifies the damage multiplier if the character is inflicted with a major status condition.
+    /// Applies a damage multiplier when any major status is present.
+    /// </summary>
     [Serializable]
     public class MajorStatusPowerEvent : BattleEvent
     {
         /// <summary>
-        /// Whether to check the status on the target or user
-        /// </summary> 
+        /// Whether to check the status on the target instead of the user.
+        /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// The numerator of the modifier
+        /// The numerator of the damage modifier.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the modifier
+        /// The denominator of the damage modifier.
         /// </summary>
         public int Denominator;
 
+        /// <inheritdoc/>
         public MajorStatusPowerEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MajorStatusPowerEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="affectTarget">Whether to check the target's status.</param>
+        /// <param name="numerator">The damage multiplier numerator.</param>
+        /// <param name="denominator">The damage multiplier denominator.</param>
         public MajorStatusPowerEvent(bool affectTarget, int numerator, int denominator)
         {
             AffectTarget = affectTarget;
             Numerator = numerator;
             Denominator = denominator;
         }
+
+        /// <inheritdoc/>
         protected MajorStatusPowerEvent(MajorStatusPowerEvent other)
         {
             AffectTarget = other.AffectTarget;
             Numerator = other.Numerator;
             Denominator = other.Denominator;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MajorStatusPowerEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -716,4 +878,3 @@ namespace PMDC.Dungeon
     }
 
 }
-

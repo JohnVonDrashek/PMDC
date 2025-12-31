@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,33 +18,46 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events that force the user to peform a specific move
+    /// <summary>
+    /// Battle events that force the user to perform a specific move.
+    /// </summary>
 
     /// <summary>
-    /// Event that forces the character to use the specified move
-    /// Usually used for moves that charge up
+    /// Event that forces the character to use the specified move.
+    /// Usually used for moves that charge up.
     /// </summary>
     [Serializable]
     public class ForceMoveEvent : BattleEvent
     {
         /// <summary>
-        /// The move ID
+        /// The move ID to force the character to use.
         /// </summary>
         [JsonConverter(typeof(SkillConverter))]
         [DataType(0, DataManager.DataType.Skill, false)]
         public string MoveIndex;
 
+        /// <inheritdoc/>
         public ForceMoveEvent() { MoveIndex = ""; }
+
+        /// <summary>
+        /// Creates a new ForceMoveEvent for the specified move.
+        /// </summary>
+        /// <param name="moveIndex">The move ID to force the character to use.</param>
         public ForceMoveEvent(string moveIndex)
         {
             MoveIndex = moveIndex;
         }
+
+        /// <inheritdoc/>
         protected ForceMoveEvent(ForceMoveEvent other)
         {
             MoveIndex = other.MoveIndex;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ForceMoveEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.UsageSlot == BattleContext.FORCED_SLOT)
@@ -67,42 +80,55 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event tha changes the hitbox action, explosion data, and battle data
-    /// if the MoveCharge context state is not present
+    /// Event that changes the hitbox action, explosion data, and battle data
+    /// if the MoveCharge context state is not present.
     /// </summary>
     [Serializable]
     public class ChargeCustomEvent : BattleEvent
     {
         /// <summary>
-        /// The alternate hitbox action
+        /// The alternate hitbox action.
         /// </summary>
         public CombatAction HitboxAction;
 
         /// <summary>
-        /// The alternate explosion data
+        /// The alternate explosion data.
         /// </summary>
         public ExplosionData Explosion;
 
         /// <summary>
-        /// The alternate battle data
+        /// The alternate battle data.
         /// </summary>
         public BattleData NewData;
 
+        /// <inheritdoc/>
         public ChargeCustomEvent() { }
+
+        /// <summary>
+        /// Creates a new ChargeCustomEvent with alternate action, explosion, and battle data.
+        /// </summary>
+        /// <param name="action">The alternate hitbox action.</param>
+        /// <param name="explosion">The alternate explosion data.</param>
+        /// <param name="moveData">The alternate battle data.</param>
         public ChargeCustomEvent(CombatAction action, ExplosionData explosion, BattleData moveData)
         {
             HitboxAction = action;
             Explosion = explosion;
             NewData = moveData;
         }
+
+        /// <inheritdoc/>
         protected ChargeCustomEvent(ChargeCustomEvent other)
         {
             HitboxAction = other.HitboxAction;
             Explosion = other.Explosion;
             NewData = new BattleData(other.NewData);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ChargeCustomEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!context.ContextStates.Contains<MoveCharge>())
@@ -126,37 +152,49 @@ namespace PMDC.Dungeon
 
     /// <summary>
     /// Event that sets the specified charge status and alternate hitbox action
-    /// if the MoveCharge context state is not present
-    /// Usually used for moves that charge up
+    /// if the MoveCharge context state is not present.
+    /// Usually used for moves that charge up.
     /// </summary>
     [Serializable]
     public class ChargeOrReleaseEvent : BattleEvent
     {
         /// <summary>
-        /// The status representing the move charging up
+        /// The status representing the move charging up.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string ChargeStatus;
 
         /// <summary>
-        /// Alternate data on the hitbox of the attack. Controls range and targeting
+        /// Alternate data on the hitbox of the attack. Controls range and targeting.
         /// </summary>
         public CombatAction HitboxAction;
 
+        /// <inheritdoc/>
         public ChargeOrReleaseEvent() { ChargeStatus = ""; }
+
+        /// <summary>
+        /// Creates a new ChargeOrReleaseEvent with the specified charge status and hitbox action.
+        /// </summary>
+        /// <param name="chargeStatus">The status representing the move charging up.</param>
+        /// <param name="action">The alternate hitbox action.</param>
         public ChargeOrReleaseEvent(string chargeStatus, CombatAction action)
         {
             ChargeStatus = chargeStatus;
             HitboxAction = action;
         }
+
+        /// <inheritdoc/>
         protected ChargeOrReleaseEvent(ChargeOrReleaseEvent other)
         {
             ChargeStatus = other.ChargeStatus;
             HitboxAction = other.HitboxAction.Clone();
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ChargeOrReleaseEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!context.ContextStates.Contains<MoveCharge>())
@@ -186,45 +224,58 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the specified charge status if the MoveCharge context state is not present
-    /// Used specifically for the move Bide
+    /// Event that sets the specified charge status if the MoveCharge context state is not present.
+    /// Used specifically for the move Bide.
     /// </summary>
     [Serializable]
     public class BideOrReleaseEvent : BattleEvent
     {
         /// <summary>
-        /// The status representing the move charging up
+        /// The status representing the move charging up.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string ChargeStatus;
 
         /// <summary>
-        /// The particle VFX
+        /// The particle VFX emitter.
         /// </summary>
         public FiniteEmitter IntroEmitter;
 
         /// <summary>
-        /// The sound effect of the VFX
+        /// The sound effect of the VFX.
         /// </summary>
         [Sound(0)]
         public string IntroSound;
 
+        /// <inheritdoc/>
         public BideOrReleaseEvent() { ChargeStatus = ""; }
+
+        /// <summary>
+        /// Creates a new BideOrReleaseEvent with the specified parameters.
+        /// </summary>
+        /// <param name="chargeStatus">The status representing the move charging up.</param>
+        /// <param name="introEmitter">The particle VFX emitter.</param>
+        /// <param name="introSound">The sound effect to play.</param>
         public BideOrReleaseEvent(string chargeStatus, FiniteEmitter introEmitter, string introSound)
         {
             ChargeStatus = chargeStatus;
             IntroEmitter = introEmitter;
             IntroSound = introSound;
         }
+
+        /// <inheritdoc/>
         protected BideOrReleaseEvent(BideOrReleaseEvent other)
         {
             ChargeStatus = other.ChargeStatus;
             IntroEmitter = (FiniteEmitter)other.IntroEmitter.Clone();
             IntroSound = other.IntroSound;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BideOrReleaseEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!context.ContextStates.Contains<MoveBide>())
@@ -263,45 +314,58 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the specified charge status if the FollowUp context state is not present
-    /// Used specifically for the moves Retaliate and Fire/Water/Grass Pledge
+    /// Event that sets the specified charge status if the FollowUp context state is not present.
+    /// Used specifically for the moves Retaliate and Fire/Water/Grass Pledge.
     /// </summary>
     [Serializable]
     public class WatchOrStrikeEvent : BattleEvent
     {
         /// <summary>
-        /// The status representing the move charging up
+        /// The status representing the move charging up.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string ChargeStatus;
 
         /// <summary>
-        /// The particle VFX
+        /// The particle VFX emitter.
         /// </summary>
         public FiniteEmitter IntroEmitter;
 
         /// <summary>
-        /// The sound effect of the VFX
+        /// The sound effect of the VFX.
         /// </summary>
         [Sound(0)]
         public string IntroSound;
 
+        /// <inheritdoc/>
         public WatchOrStrikeEvent() { ChargeStatus = ""; }
+
+        /// <summary>
+        /// Creates a new WatchOrStrikeEvent with the specified parameters.
+        /// </summary>
+        /// <param name="chargeStatus">The status representing the move charging up.</param>
+        /// <param name="introEmitter">The particle VFX emitter.</param>
+        /// <param name="introSound">The sound effect to play.</param>
         public WatchOrStrikeEvent(string chargeStatus, FiniteEmitter introEmitter, string introSound)
         {
             ChargeStatus = chargeStatus;
             IntroEmitter = introEmitter;
             IntroSound = introSound;
         }
+
+        /// <inheritdoc/>
         protected WatchOrStrikeEvent(WatchOrStrikeEvent other)
         {
             ChargeStatus = other.ChargeStatus;
             IntroEmitter = (FiniteEmitter)other.IntroEmitter.Clone();
             IntroSound = other.IntroSound;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WatchOrStrikeEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!context.ContextStates.Contains<FollowUp>())
@@ -338,13 +402,15 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that increases the HP in the HPState status state by the damage received
+    /// Event that increases the HP in the HPState status state by the damage received.
     /// </summary>
     [Serializable]
     public class BideEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BideEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             HPState state = ((StatusEffect)owner).StatusStates.GetWithDefault<HPState>();
@@ -355,15 +421,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that unleases double the damage in HPState status state when the CountDownState status state reaches 0
-    /// Used by the Biding status
+    /// Event that unleashes double the damage in HPState status state when the CountDownState status state reaches 0.
+    /// Used by the Biding status.
     /// </summary>
     [Serializable]
     public class UnleashEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public UnleashEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new UnleashEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.UsageSlot == BattleContext.FORCED_SLOT)
@@ -387,4 +457,3 @@ namespace PMDC.Dungeon
         }
     }
 }
-

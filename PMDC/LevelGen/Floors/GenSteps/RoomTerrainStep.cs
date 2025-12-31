@@ -7,45 +7,72 @@ using RogueEssence.Dungeon;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// Sets terrain in a number of rooms to a certain value.
+    /// A generation step that paints terrain in a number of randomly selected rooms or halls with the specified tile.
+    /// This step replaces eligible tiles within room/hall bounds with the configured terrain, subject to filter and stencil constraints.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <remarks>
+    /// The step operates by:
+    /// 1. Collecting eligible rooms/halls that pass all configured filters
+    /// 2. Randomly selecting a subset of those eligible candidates
+    /// 3. For each selected room/hall, iterating through its perimeter and interior tiles
+    /// 4. Using the terrain stencil to determine which tiles are actually replaceable
+    /// 5. Setting replaceable tiles to the configured terrain
+    /// </remarks>
+    /// <typeparam name="T">The map generation context type, must implement <see cref="IFloorPlanGenContext"/>.</typeparam>
     [Serializable]
     public class RoomTerrainStep<T> : GenStep<T> where T : class, IFloorPlanGenContext
     {
         /// <summary>
-        /// Number of rooms to paint.
+        /// Gets or sets the range that determines how many rooms or halls to paint with terrain.
+        /// The actual count is randomly selected from this range each time the step is applied.
         /// </summary>
         public RandRange Amount;
 
+        /// <summary>
+        /// Gets or sets the list of filters that determine which rooms and halls are eligible for terrain painting.
+        /// Only rooms/halls that pass all filters are considered for selection.
+        /// </summary>
         public List<BaseRoomFilter> Filters { get; set; }
 
         /// <summary>
-        /// Tile representing the water terrain to paint with.
+        /// Gets or sets the terrain tile to paint with.
+        /// This tile is copied and applied to all eligible locations within selected rooms/halls.
         /// </summary>
         public ITile Terrain { get; set; }
 
         /// <summary>
-        /// Determines which tiles are eligible to be painted on.
+        /// Gets or sets the terrain stencil that determines which tiles within a room/hall are eligible to be painted.
+        /// The stencil acts as a mask, allowing fine-grained control over which tile locations receive the terrain.
         /// </summary>
         public ITerrainStencil<T> TerrainStencil { get; set; }
 
         /// <summary>
-        /// Makes halls eligible for spawn.
+        /// Gets or sets a value indicating whether halls are eligible for terrain painting.
         /// </summary>
         public bool IncludeHalls { get; set; }
 
         /// <summary>
-        /// Makes halls eligible for spawn.
+        /// Gets or sets a value indicating whether rooms are eligible for terrain painting.
         /// </summary>
         public bool IncludeRooms { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomTerrainStep{T}"/> class with default values.
+        /// Sets up an empty filter list and a default terrain stencil.
+        /// </summary>
         public RoomTerrainStep()
         {
             this.Filters = new List<BaseRoomFilter>();
             this.TerrainStencil = new DefaultTerrainStencil<T>();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomTerrainStep{T}"/> class with the specified terrain settings.
+        /// </summary>
+        /// <param name="terrain">The terrain tile to paint with.</param>
+        /// <param name="amount">The range for the number of rooms or halls to paint.</param>
+        /// <param name="includeRooms">Whether to include regular rooms in the selection.</param>
+        /// <param name="includeHalls">Whether to include halls in the selection.</param>
         public RoomTerrainStep(ITile terrain, RandRange amount, bool includeRooms, bool includeHalls) : this()
         {
             Terrain = terrain;
@@ -54,6 +81,12 @@ namespace PMDC.LevelGen
             IncludeHalls = includeHalls;
         }
 
+        /// <summary>
+        /// Applies the terrain painting step to the floor plan.
+        /// Randomly selects eligible rooms/halls and paints the specified terrain on tiles that pass the stencil test.
+        /// </summary>
+        /// <param name="map">The floor plan generation context containing the map data and room/hall plans.</param>
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             int chosenAmount = Amount.Pick(map.Rand);
@@ -105,7 +138,7 @@ namespace PMDC.LevelGen
                     openRooms.RemoveAt(randIndex);
                 }
             }
-            
+
         }
 
     }

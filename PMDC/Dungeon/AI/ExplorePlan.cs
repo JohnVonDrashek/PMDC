@@ -8,21 +8,43 @@ using Newtonsoft.Json;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// AI plan that explores the dungeon only when players are (or are not) visible.
+    /// Extends <see cref="ExplorePlan"/> with a visibility condition check.
+    /// When the condition is not met, the plan defers to the next behavior in the tactic.
+    /// </summary>
     [Serializable]
     public class ExploreIfSeenPlan : ExplorePlan
     {
+        /// <summary>
+        /// When true, explores only when players are NOT visible.
+        /// When false, explores only when players ARE visible.
+        /// </summary>
         public bool Negate;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExploreIfSeenPlan"/> class.
+        /// </summary>
+        /// <param name="negate">If true, explore when players are not visible; if false, explore when they are.</param>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
         public ExploreIfSeenPlan(bool negate, AIFlags iq) : base(iq)
         {
             Negate = negate;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         protected ExploreIfSeenPlan(ExploreIfSeenPlan other) : base(other)
         {
             Negate = other.Negate;
         }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new ExploreIfSeenPlan(this); }
 
+        /// <inheritdoc/>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             //specifically check for players
@@ -39,33 +61,77 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// AI plan that causes the character to explore the dungeon by moving toward unexplored exits.
+    /// Maintains a location history to avoid backtracking and prefers forward-facing paths.
+    /// Used for NPCs that wander or patrol the dungeon.
+    /// </summary>
     [Serializable]
     public class ExplorePlan : AIPlan
     {
+        /// <summary>
+        /// The current path being followed toward the goal destination.
+        /// </summary>
         [NonSerialized]
         protected List<Loc> goalPath;
+
+        /// <summary>
+        /// History of recently visited locations, used to avoid backtracking during exploration.
+        /// </summary>
         [NonSerialized]
         public List<Loc> LocHistory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExplorePlan"/> class with default values.
+        /// </summary>
         public ExplorePlan() : base()
         { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExplorePlan"/> class.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
         public ExplorePlan(AIFlags iq) : base(iq)
         {
             goalPath = new List<Loc>();
             LocHistory = new List<Loc>();
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExplorePlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public ExplorePlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable)
         {
             goalPath = new List<Loc>();
             LocHistory = new List<Loc>();
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         protected ExplorePlan(ExplorePlan other) : base(other) { }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new ExplorePlan(this); }
+
+        /// <inheritdoc/>
         public override void Initialize(Character controlledChar)
         {
             //create a pathfinding map?
         }
+
+        /// <summary>
+        /// Called when this plan is switched in from another plan.
+        /// Initializes the path and location history, inheriting backtrack history from AttackFoesPlan if applicable.
+        /// </summary>
+        /// <param name="currentPlan">The plan being switched from.</param>
         public override void SwitchedIn(BasePlan currentPlan)
         {
             goalPath = new List<Loc>();
@@ -75,6 +141,14 @@ namespace PMDC.Dungeon
             base.SwitchedIn(currentPlan);
         }
 
+        /// <summary>
+        /// Evaluates the current situation and determines the best exploration action.
+        /// Pathfinds toward unexplored exits while avoiding backtracking.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="preThink">Whether this is a pre-think evaluation.</param>
+        /// <param name="rand">Random number generator for decision-making.</param>
+        /// <returns>The action to take, or null to defer to the next plan.</returns>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             if (controlledChar.CantWalk)
@@ -182,6 +256,12 @@ namespace PMDC.Dungeon
             return SelectChoiceFromPath(controlledChar, goalPath);
         }
 
+        /// <summary>
+        /// Gets the list of destination locations to explore.
+        /// Override in subclasses to customize exploration targets.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <returns>A list of locations to consider as exploration destinations.</returns>
         protected virtual List<Loc> GetDestinations(Character controlledChar)
         {
             return GetAreaExits(controlledChar);

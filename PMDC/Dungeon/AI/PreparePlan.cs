@@ -9,22 +9,52 @@ using RogueEssence.Dev;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// AI plan that attacks from the current position without moving.
+    /// The character will use attacks if enemies are in range, but will not pursue them.
+    /// Useful for stationary defenders or turret-like behavior.
+    /// </summary>
     [Serializable]
     public class PreparePlan : AIPlan
     {
+        /// <summary>
+        /// The strategy used to select which attack or skill to use.
+        /// </summary>
         public AttackChoice AttackPattern;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreparePlan"/> class with default values.
+        /// </summary>
         public PreparePlan() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreparePlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="attackPattern">Strategy for selecting attacks.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public PreparePlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, AttackChoice attackPattern, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable)
         {
             AttackPattern = attackPattern;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         public PreparePlan(PreparePlan other) : base(other)
         {
             AttackPattern = other.AttackPattern;
         }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new PreparePlan(this); }
 
+        /// <inheritdoc/>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             bool playerSense = (IQ & AIFlags.PlayerSense) != AIFlags.None;
@@ -50,22 +80,52 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// AI plan that follows the leader but attacks enemies if no movement is needed.
+    /// Combines leader-following behavior with opportunistic attacks.
+    /// The character will attack enemies when already positioned near the leader.
+    /// </summary>
     [Serializable]
     public class PrepareWithLeaderPlan : FollowLeaderPlan
     {
+        /// <summary>
+        /// The strategy used to select which attack or skill to use.
+        /// </summary>
         public AttackChoice AttackPattern;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PrepareWithLeaderPlan"/> class with default values.
+        /// </summary>
         public PrepareWithLeaderPlan() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PrepareWithLeaderPlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="attackPattern">Strategy for selecting attacks.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public PrepareWithLeaderPlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, AttackChoice attackPattern, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable)
         {
             AttackPattern = attackPattern;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         public PrepareWithLeaderPlan(PrepareWithLeaderPlan other) : base(other)
         {
             AttackPattern = other.AttackPattern;
         }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new PrepareWithLeaderPlan(this); }
 
+        /// <inheritdoc/>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             GameAction baseAction = base.Think(controlledChar, preThink, rand);
@@ -101,7 +161,8 @@ namespace PMDC.Dungeon
         /// <summary>
         /// Checks if the controlled character is close to the highest ranking member in sight.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="controlledChar">The character to check proximity for.</param>
+        /// <returns>True if the character is adjacent and can walk to the highest ranking visible team member; otherwise false.</returns>
         private bool closestToHighestLeader(Character controlledChar)
         {
             foreach (Character testChar in controlledChar.MemberTeam.IterateByRank())
@@ -129,10 +190,12 @@ namespace PMDC.Dungeon
         }
 
         /// <summary>
-        /// Checks if the controlled character is transitively close to THE leader. Unsure if should use this method.
+        /// Checks if the controlled character is transitively close to the team leader.
+        /// Tests if there is a connected path of team members from the controlled character to the leader.
+        /// Note: This method may not be used in the current implementation.
         /// </summary>
-        /// <param name="controlledChar"></param>
-        /// <returns></returns>
+        /// <param name="controlledChar">The character to check path for.</param>
+        /// <returns>True if a transitive path exists to the leader; otherwise false.</returns>
         private bool transitivelyTouchesLeader(Character controlledChar)
         {
             Team team = controlledChar.MemberTeam;
@@ -168,23 +231,54 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// AI plan that uses a status move before engaging, but only once per encounter.
+    /// The character will use a status move first, then defer to other plans.
+    /// Tracks whether the buff has been used via a status effect.
+    /// </summary>
     [Serializable]
     public class PreBuffPlan : AIPlan
     {
+        /// <summary>
+        /// The status effect ID that indicates the first move has been used.
+        /// Once this status is present, the plan defers to the next behavior.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         public string FirstMoveStatus;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreBuffPlan"/> class with default values.
+        /// </summary>
         public PreBuffPlan() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreBuffPlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="firstMoveStatus">Status effect ID that tracks whether the buff has been used.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public PreBuffPlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, string firstMoveStatus, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable)
         {
             FirstMoveStatus = firstMoveStatus;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         public PreBuffPlan(PreBuffPlan other) : base(other)
         {
             FirstMoveStatus = other.FirstMoveStatus;
         }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new PreBuffPlan(this); }
 
+        /// <inheritdoc/>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             if (controlledChar.GetStatusEffect(FirstMoveStatus) != null)
@@ -213,23 +307,54 @@ namespace PMDC.Dungeon
 
 
 
+    /// <summary>
+    /// AI plan that uses the first skill slot before any other action.
+    /// The character will use skill slot 0 once, then defer to other plans.
+    /// Tracks whether the skill has been used via a status effect.
+    /// </summary>
     [Serializable]
     public class LeadSkillPlan : AIPlan
     {
+        /// <summary>
+        /// The status effect ID that indicates the first skill has been used.
+        /// Once this status is present, the plan defers to the next behavior.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         public string FirstMoveStatus;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeadSkillPlan"/> class with default values.
+        /// </summary>
         public LeadSkillPlan() { FirstMoveStatus = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeadSkillPlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="firstMoveStatus">Status effect ID that tracks whether the skill has been used.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public LeadSkillPlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, string firstMoveStatus, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable)
         {
             FirstMoveStatus = firstMoveStatus;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         public LeadSkillPlan(LeadSkillPlan other) : base(other)
         {
             FirstMoveStatus = other.FirstMoveStatus;
         }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new LeadSkillPlan(this); }
 
+        /// <inheritdoc/>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             if (controlledChar.GetStatusEffect(FirstMoveStatus) != null)

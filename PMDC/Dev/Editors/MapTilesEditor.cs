@@ -14,11 +14,46 @@ using System.Reactive.Subjects;
 
 namespace RogueEssence.Dev
 {
+    /// <summary>
+    /// Editor for 2D tile arrays that provides a text-based map editing interface.
+    /// Uses ASCII characters to represent different tile types for easy visual editing.
+    /// Supports the following ASCII representations:
+    /// - '.' for floor tiles
+    /// - 'X' for unbreakable tiles
+    /// - '#' for wall tiles
+    /// - '~' for water tiles
+    /// - '^' for lava tiles
+    /// - '_' for pit tiles
+    /// - '?' for unknown tile types
+    /// </summary>
     public class MapTilesEditor : Editor<ITile[][]>
     {
+        /// <summary>
+        /// Gets whether this editor uses subgrouping by default.
+        /// </summary>
+        /// <value>Always returns <c>true</c> to enable subgroup organization in the editor.</value>
         public override bool DefaultSubgroup => true;
+
+        /// <summary>
+        /// Gets whether this editor uses decoration by default.
+        /// </summary>
+        /// <value>Always returns <c>false</c> to disable decorative elements in the editor.</value>
         public override bool DefaultDecoration => false;
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// Loads the tile map into a text box control using ASCII representation.
+        /// Converts a 2D array of tiles into a multi-line text representation where each character
+        /// represents a tile type. The text box is configured with monospace font for proper alignment.
+        /// </summary>
+        /// <param name="control">The parent <see cref="StackPanel"/> control to add the text box to.</param>
+        /// <param name="parent">The name of the parent object that contains this member.</param>
+        /// <param name="parentType">The type of the parent object.</param>
+        /// <param name="name">The name of the member being edited.</param>
+        /// <param name="type">The type of the member being edited.</param>
+        /// <param name="attributes">Custom attributes applied to the member, if any.</param>
+        /// <param name="member">The 2D tile array to load and display in the text box. May be null.</param>
+        /// <param name="subGroupStack">The type stack for nested subgroups, used for organizational purposes.</param>
         public override void LoadWindowControls(StackPanel control, string parent, Type parentType, string name, Type type, object[] attributes, ITile[][] member, Type[] subGroupStack)
         {
             //for strings, use an edit textbox
@@ -65,6 +100,20 @@ namespace RogueEssence.Dev
         }
 
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// Saves the text box content back to a tile array, parsing ASCII characters to tile types.
+        /// Converts the multi-line text representation back into a 2D array of tiles by reading each character
+        /// and creating the appropriate tile type. Unrecognized characters default to floor tiles.
+        /// </summary>
+        /// <param name="control">The parent <see cref="StackPanel"/> control containing the text box.</param>
+        /// <param name="name">The name of the member being saved.</param>
+        /// <param name="type">The type of the member being saved.</param>
+        /// <param name="attributes">Custom attributes applied to the member, if any.</param>
+        /// <param name="subGroupStack">The type stack for nested subgroups, used for organizational purposes.</param>
+        /// <returns>A 2D array of <see cref="ITile"/> objects parsed from the text box content.
+        /// The array dimensions are [width][height], where width is the length of the first line
+        /// and height is the number of lines in the text box.</returns>
         public override ITile[][] SaveWindowControls(StackPanel control, string name, Type type, object[] attributes, Type[] subGroupStack)
         {
             int controlIndex = 0;

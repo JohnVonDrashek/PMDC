@@ -7,41 +7,75 @@ using RogueEssence.LevelGen;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// Generates a room containing a ring of water encircling treasure.
+    /// Generates a room containing a ring of water encircling treasure on a central island.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <remarks>
+    /// This room generator creates a layout with a central island surrounded by a water ring, with treasure items
+    /// placed on the island. The room includes padding around the water ring and ensures the entire structure fits
+    /// within the available space. If insufficient space exists, it falls back to default room generation.
+    /// </remarks>
+    /// <typeparam name="T">The context type, which must support post-processing, tiled generation, and item placement.</typeparam>
     [Serializable]
     public class RoomGenWaterRing<T> : PermissiveRoomGen<T> where T : IPostProcGenContext, ITiledGenContext, IPlaceableGenContext<MapItem>
     {
         /// <summary>
         /// The extra width of the room added to the area occupied by the water ring.
         /// </summary>
+        /// <remarks>
+        /// This value is randomly selected from the specified range and determines the padding to the left and right
+        /// of the water ring structure. A minimum of 2 is enforced.
+        /// </remarks>
         public RandRange PadWidth;
 
         /// <summary>
         /// The extra height of the room added to the area occupied by the water ring.
         /// </summary>
+        /// <remarks>
+        /// This value is randomly selected from the specified range and determines the padding above and below
+        /// the water ring structure. A minimum of 2 is enforced.
+        /// </remarks>
         public RandRange PadHeight;
 
         /// <summary>
-        /// The amount of items to spawn.
+        /// The number of items to spawn on the central island.
         /// </summary>
+        /// <remarks>
+        /// This value also determines the minimum size of the island, which is sized to accommodate at least this many items.
+        /// </remarks>
         public int ItemAmount;
 
         /// <summary>
-        /// Which items to spawn.
+        /// The pool of treasure items that can be randomly selected and placed on the island.
         /// </summary>
+        /// <remarks>
+        /// Each spawn entry has an associated spawn rate, which determines the relative probability of selection
+        /// when items are being placed.
+        /// </remarks>
         public SpawnList<MapItem> Treasures;
 
         /// <summary>
-        /// The terrain used for the water ring.
+        /// The terrain type used to render the water ring surrounding the island.
         /// </summary>
         public ITile WaterTerrain;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenWaterRing{T}"/> class with default values.
+        /// </summary>
+        /// <remarks>
+        /// The default constructor creates an empty treasure spawn list. All other properties should be set before drawing.
+        /// </remarks>
         public RoomGenWaterRing()
         {
             Treasures = new SpawnList<MapItem>();
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenWaterRing{T}"/> class by copying another instance.
+        /// </summary>
+        /// <remarks>
+        /// This copy constructor creates a deep copy of the provided instance, including all treasures and the water terrain.
+        /// </remarks>
+        /// <param name="other">The instance to copy.</param>
         protected RoomGenWaterRing(RoomGenWaterRing<T> other)
         {
             PadWidth = other.PadWidth;
@@ -52,8 +86,21 @@ namespace PMDC.LevelGen
                 Treasures.Add(new MapItem(other.Treasures.GetSpawn(ii)), other.Treasures.GetSpawnRate(ii));
             WaterTerrain = other.WaterTerrain.Copy();
         }
+
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() { return new RoomGenWaterRing<T>(this); }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenWaterRing{T}"/> class with the specified parameters.
+        /// </summary>
+        /// <remarks>
+        /// This constructor allows for complete initialization of the room generator with all necessary parameters.
+        /// The treasure spawn list is initialized but remains empty; treasures can be added afterward.
+        /// </remarks>
+        /// <param name="waterTerrain">The terrain tile to use for the water ring surrounding the island.</param>
+        /// <param name="padWidth">The extra width padding around the water ring structure.</param>
+        /// <param name="padHeight">The extra height padding around the water ring structure.</param>
+        /// <param name="itemAmount">The number of items to spawn on the island.</param>
         public RoomGenWaterRing(ITile waterTerrain, RandRange padWidth, RandRange padHeight, int itemAmount)
         {
             WaterTerrain = waterTerrain;
@@ -63,6 +110,12 @@ namespace PMDC.LevelGen
             Treasures = new SpawnList<MapItem>();
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// The proposed size includes the island size (calculated to fit the specified item count) plus a one-tile water ring
+        /// on all sides, plus the random padding. The island is sized to be as square as possible while accommodating the
+        /// required number of items.
+        /// </remarks>
         public override Loc ProposeSize(IRandom rand)
         {
             Loc isleSize = new Loc(1);
@@ -79,6 +132,18 @@ namespace PMDC.LevelGen
             return new Loc(ringSize.X + pad.X, ringSize.Y + pad.Y);
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// This method draws the room layout as follows:
+        /// 1. Fills the entire room with the default terrain
+        /// 2. Randomly positions a water ring within the available space
+        /// 3. Fills the interior of the ring (island) with default terrain
+        /// 4. Randomly places the specified number of items on the island
+        /// 5. Marks island tiles with Panel and Item post-processing flags
+        ///
+        /// If the room is too small to contain the required water ring with surrounding padding, it falls back
+        /// to default room generation.
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             Loc isleSize = new Loc(1);

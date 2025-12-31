@@ -12,25 +12,40 @@ using Newtonsoft.Json;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// One part of several steps used to create a sealed key room, or several thereof.
-    /// This step takes the target rooms and surrounds them with unbreakable walls, with several guards used to unlock them.
+    /// A floor generation step that creates sealed key rooms surrounded by unbreakable walls with guard monsters.
+    /// When all guard monsters are defeated, the sealed room becomes accessible.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type, must derive from <see cref="ListMapGenContext"/>.</typeparam>
     [Serializable]
     public class GuardSealStep<T> : BaseSealStep<T> where T : ListMapGenContext
     {
+        /// <summary>
+        /// Gets or sets the picker for selecting guard monster spawns that unlock the sealed room when defeated.
+        /// </summary>
         public IMultiRandPicker<MobSpawn> Guards;
 
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GuardSealStep{T}"/> class.
+        /// </summary>
         public GuardSealStep()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GuardSealStep{T}"/> class with the specified guard picker.
+        /// </summary>
+        /// <param name="guards">The picker for selecting guard monster spawns.</param>
         public GuardSealStep(IMultiRandPicker<MobSpawn> guards) : base()
         {
             Guards = guards;
         }
 
+        /// <summary>
+        /// Places unbreakable walls around sealed rooms and spawns guard monsters at key positions.
+        /// </summary>
+        /// <param name="map">The map generation context containing the tiles and spawn information.</param>
+        /// <param name="sealList">A dictionary mapping tile locations to their seal types (Blocked, Locked, or Key).</param>
+        /// <inheritdoc/>
         protected override void PlaceBorders(T map, Dictionary<Loc, SealType> sealList)
         {
             List<Loc> guardLocList = new List<Loc>();

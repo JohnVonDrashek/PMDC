@@ -21,43 +21,46 @@ namespace PMDC.Dungeon
     // Battle events that modify damage through DmgMult
 
     /// <summary>
-    /// Event that boosts/reduces the attacks of the chosen type
+    /// Event that modifies damage multiplier for attacks of the specified element type.
     /// </summary>
     [Serializable]
     public class MultiplyElementEvent : BattleEvent
     {
         /// <summary>
-        /// The type affected
+        /// The element type affected by the modifier.
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string MultElement;
 
         /// <summary>
-        /// The numerator of the modifier
+        /// The numerator of the damage modifier fraction.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the modifier
+        /// The denominator of the damage modifier fraction.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played when the modifier is applied.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
         /// <summary>
-        /// Whether to display a message if the move type matches
+        /// When true, displays a protection message when the modifier triggers.
         /// </summary>
         public bool Msg;
 
+        /// <inheritdoc/>
         public MultiplyElementEvent()
         {
             MultElement = "";
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <inheritdoc/>
         public MultiplyElementEvent(string element, int numerator, int denominator, bool msg)
         {
             MultElement = element;
@@ -66,6 +69,8 @@ namespace PMDC.Dungeon
             Msg = msg;
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <inheritdoc/>
         public MultiplyElementEvent(string element, int numerator, int denominator, bool msg, params BattleAnimEvent[] anims)
         {
             MultElement = element;
@@ -75,6 +80,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected MultiplyElementEvent(MultiplyElementEvent other)
         {
             MultElement = other.MultElement;
@@ -85,8 +92,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MultiplyElementEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Data.Element == MultElement &&
@@ -104,42 +114,51 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that boosts/reduces the attacks of non-matching types
+    /// Event that boosts/reduces the attacks of non-matching types.
     /// </summary>
     [Serializable]
     public class MultiplyNotElementEvent : BattleEvent
     {
         /// <summary>
-        /// The types not affected by the modifier
+        /// The types not affected by the modifier.
         /// </summary>
         [DataType(1, DataManager.DataType.Element, false)]
         public HashSet<string> NotMultElement;
 
         /// <summary>
-        /// The numerator of the modifier
+        /// The numerator of the modifier.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the modifier
+        /// The denominator of the modifier.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
         /// <summary>
-        /// Whether to display a message if the move type does not match
+        /// Whether to display a message if the move type does not match.
         /// </summary>
         public bool Msg;
 
+        /// <inheritdoc/>
         public MultiplyNotElementEvent()
         {
             NotMultElement = new HashSet<string>();
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new MultiplyNotElementEvent with the specified parameters.
+        /// </summary>
+        /// <param name="element">The element type that is not affected.</param>
+        /// <param name="numerator">The numerator of the damage modifier.</param>
+        /// <param name="denominator">The denominator of the damage modifier.</param>
+        /// <param name="msg">Whether to display a protection message.</param>
         public MultiplyNotElementEvent(string element, int numerator, int denominator, bool msg)
         {
             NotMultElement = new HashSet<string>();
@@ -149,6 +168,15 @@ namespace PMDC.Dungeon
             Msg = msg;
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new MultiplyNotElementEvent with animations.
+        /// </summary>
+        /// <param name="element">The element type that is not affected.</param>
+        /// <param name="numerator">The numerator of the damage modifier.</param>
+        /// <param name="denominator">The denominator of the damage modifier.</param>
+        /// <param name="msg">Whether to display a protection message.</param>
+        /// <param name="anims">The animations to play.</param>
         public MultiplyNotElementEvent(string element, int numerator, int denominator, bool msg, params BattleAnimEvent[] anims)
         {
             NotMultElement = new HashSet<string>();
@@ -159,6 +187,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected MultiplyNotElementEvent(MultiplyNotElementEvent other)
         {
             NotMultElement = new HashSet<string>();
@@ -171,8 +201,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MultiplyNotElementEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!NotMultElement.Contains(context.Data.Element) && context.Data.Element != DataManager.Instance.DefaultElement &&
@@ -206,20 +239,34 @@ namespace PMDC.Dungeon
         public int Denominator;
 
         /// <summary>
-        /// The list of battle VFXs played if the type matches
+        /// The list of battle VFXs played if the type matches.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public MultiplyStatusElementEvent()
         {
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new MultiplyStatusElementEvent with the specified modifier.
+        /// </summary>
+        /// <param name="numerator">The numerator of the damage modifier.</param>
+        /// <param name="denominator">The denominator of the damage modifier.</param>
         public MultiplyStatusElementEvent(int numerator, int denominator)
         {
             Numerator = numerator;
             Denominator = denominator;
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new MultiplyStatusElementEvent with animations.
+        /// </summary>
+        /// <param name="numerator">The numerator of the damage modifier.</param>
+        /// <param name="denominator">The denominator of the damage modifier.</param>
+        /// <param name="anims">The animations to play.</param>
         public MultiplyStatusElementEvent(int numerator, int denominator, params BattleAnimEvent[] anims)
         {
             Numerator = numerator;
@@ -227,6 +274,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected MultiplyStatusElementEvent(MultiplyStatusElementEvent other)
         {
             Numerator = other.Numerator;
@@ -235,8 +284,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MultiplyStatusElementEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Data.Element == ((StatusEffect)owner).StatusStates.GetWithDefault<ElementState>().Element)
@@ -257,21 +309,32 @@ namespace PMDC.Dungeon
     public class MultiplyFromFallenEvent : BattleEvent
     {
         /// <summary>
-        /// Denominator of the modifier
+        /// Denominator of the modifier.
         /// </summary>
         public int Denominator;
 
+        /// <inheritdoc/>
         public MultiplyFromFallenEvent() { }
+
+        /// <summary>
+        /// Creates a new MultiplyFromFallenEvent with the specified denominator.
+        /// </summary>
+        /// <param name="denominator">The base denominator of the modifier.</param>
         public MultiplyFromFallenEvent(int denominator) : this()
         {
             Denominator = denominator;
         }
+
+        /// <inheritdoc/>
         protected MultiplyFromFallenEvent(MultiplyFromFallenEvent other) : this()
         {
             Denominator = other.Denominator;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MultiplyFromFallenEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int numerator = Denominator;
@@ -317,11 +380,21 @@ namespace PMDC.Dungeon
         public BattleEvent Tier3Event;
 
         /// <summary>
-        /// Battle event that occurs if 4 or more team members has the type
+        /// Battle event that occurs if 4 or more team members has the type.
         /// </summary>
         public BattleEvent Tier4Event;
 
+        /// <inheritdoc/>
         public TeamReduceEvent() { QualifyingElement = ""; }
+
+        /// <summary>
+        /// Creates a new TeamReduceEvent with tiered events.
+        /// </summary>
+        /// <param name="element">The qualifying element type.</param>
+        /// <param name="tier1">Event for 1 team member with the type.</param>
+        /// <param name="tier2">Event for 2 team members with the type.</param>
+        /// <param name="tier3">Event for 3 team members with the type.</param>
+        /// <param name="tier4">Event for 4+ team members with the type.</param>
         public TeamReduceEvent(string element, BattleEvent tier1, BattleEvent tier2, BattleEvent tier3, BattleEvent tier4)
         {
             QualifyingElement = element;
@@ -330,6 +403,8 @@ namespace PMDC.Dungeon
             Tier3Event = tier3;
             Tier4Event = tier4;
         }
+
+        /// <inheritdoc/>
         protected TeamReduceEvent(TeamReduceEvent other)
         {
             QualifyingElement = other.QualifyingElement;
@@ -342,8 +417,11 @@ namespace PMDC.Dungeon
             if (Tier4Event != null)
                 Tier4Event = (BattleEvent)other.Tier4Event.Clone();
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TeamReduceEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.HasElement(QualifyingElement))
@@ -382,17 +460,28 @@ namespace PMDC.Dungeon
         [DataType(0, DataManager.DataType.Element, false)]
         public string PinchElement;
 
+        /// <inheritdoc/>
         public PinchEvent() { PinchElement = ""; }
+
+        /// <summary>
+        /// Creates a new PinchEvent for the specified element type.
+        /// </summary>
+        /// <param name="element">The element type to boost at low HP.</param>
         public PinchEvent(string element)
         {
             PinchElement = element;
         }
+
+        /// <inheritdoc/>
         protected PinchEvent(PinchEvent other)
         {
             PinchElement = other.PinchElement;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PinchEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Data.Element == PinchElement && context.User.HP <= context.User.MaxHP / 4)
@@ -403,12 +492,15 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that boosts the attack if the move type is the same type as the character 
+    /// Event that boosts the attack if the move type is the same type as the character.
     /// </summary>
     [Serializable]
     public class AdaptabilityEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AdaptabilityEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.HasElement(context.Data.Element))

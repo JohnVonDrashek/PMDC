@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,44 +18,55 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events that deal with a character's progression, including EXP, levels, stats
-
+    /// <summary>
+    /// Battle events that deal with character progression, including EXP, levels, and stat boosts.
+    /// </summary>
 
     /// <summary>
     /// Event that boosts the character's stat depending on the effectiveness of the specified type to the character's type.
-    /// Super effective: Defense and Special Defense
-    /// Not effective: Attack and Special Attack
-    /// Neutral: Speed and HP
-    /// Same type: Boost all stats
+    /// Super effective: Defense and Special Defense.
+    /// Not effective: Attack and Special Attack.
+    /// Neutral: Speed and HP.
+    /// Same type: Boost all stats.
     /// </summary>
     [Serializable]
     public class GummiEvent : BattleEvent
     {
-
         /// <summary>
-        /// The gummi type
+        /// The gummi type.
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string TargetElement;
 
         /// <summary>
-        /// If checked, must be base type not current type
+        /// If checked, must be base type not current type.
         /// </summary>
         public bool RequireBase;
 
+        /// <inheritdoc/>
         public GummiEvent() { TargetElement = ""; }
+
+        /// <summary>
+        /// Creates a new GummiEvent with the specified element.
+        /// </summary>
+        /// <param name="element">The element type of the gummi.</param>
         public GummiEvent(string element)
         {
             TargetElement = element;
         }
+
+        /// <inheritdoc/>
         protected GummiEvent(GummiEvent other)
         {
             TargetElement = other.TargetElement;
             RequireBase = other.RequireBase;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new GummiEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             MonsterID formData = context.Target.BaseForm;
@@ -123,6 +134,11 @@ namespace PMDC.Dungeon
             yield break;
         }
 
+        /// <summary>
+        /// Adds one point to the specified stat for the target.
+        /// </summary>
+        /// <param name="stat">The stat to boost.</param>
+        /// <param name="context">The battle context containing the target.</param>
         private void AddStat(Stat stat, BattleContext context)
         {
             int prevStat = 0;
@@ -184,48 +200,57 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Normally raises one stat. Also raises other stats if matching type.
-    /// Matching = main stat + 2, other stats + 1, 
-    /// Super-effective = main stat + 2, two other stats (top 2 of the species) + 1
-    /// Normal effect = main stat + 2
-    /// NVE = main stat + 1
-    /// Immune = nothing
+    /// Event that normally raises one stat, but also raises other stats if matching type.
+    /// Matching = main stat + 2, other stats + 1.
+    /// Super-effective = main stat + 2, two other stats (top 2 of the species) + 1.
+    /// Normal effect = main stat + 2.
+    /// NVE = main stat + 1.
+    /// Immune = nothing.
     /// </summary>
     [Serializable]
     public class VitaGummiEvent : BattleEvent
     {
-
         /// <summary>
-        /// The gummi type
+        /// The gummi type.
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string TargetElement;
 
         /// <summary>
-        /// If checked, must be base type not current type
+        /// If checked, must be base type not current type.
         /// </summary>
         public bool RequireBase;
 
         /// <summary>
-        /// The stat to boost
+        /// The stat to boost.
         /// </summary>
         public Stat BoostedStat;
 
         /// <summary>
         /// If checked, changes super-effective and matching type to the following:
-        /// Matching = All stats + 2
-        /// Super-effective = main stat + 2, other stats + 1
+        /// Matching = All stats + 2.
+        /// Super-effective = main stat + 2, other stats + 1.
         /// </summary>
         public bool FullEffect;
 
+        /// <inheritdoc/>
         public VitaGummiEvent() { TargetElement = ""; }
+
+        /// <summary>
+        /// Creates a new VitaGummiEvent with the specified parameters.
+        /// </summary>
+        /// <param name="element">The element type of the gummi.</param>
+        /// <param name="requireBase">Whether to use base type instead of current type.</param>
+        /// <param name="defaultStat">The main stat to boost.</param>
         public VitaGummiEvent(string element, bool requireBase, Stat defaultStat)
         {
             TargetElement = element;
             RequireBase = requireBase;
             BoostedStat = defaultStat;
         }
+
+        /// <inheritdoc/>
         protected VitaGummiEvent(VitaGummiEvent other)
         {
             TargetElement = other.TargetElement;
@@ -233,8 +258,11 @@ namespace PMDC.Dungeon
             BoostedStat = other.BoostedStat;
             FullEffect = other.FullEffect;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new VitaGummiEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             MonsterID formData = context.Target.BaseForm;
@@ -348,6 +376,12 @@ namespace PMDC.Dungeon
             yield break;
         }
 
+        /// <summary>
+        /// Adds the specified amount to the given stat for the target.
+        /// </summary>
+        /// <param name="stat">The stat to boost.</param>
+        /// <param name="amount">The amount to add to the stat.</param>
+        /// <param name="context">The battle context containing the target.</param>
         private void AddStat(Stat stat, int amount, BattleContext context)
         {
             int prevStat = 0;
@@ -420,19 +454,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that boosts the specified stat by the specified amount
+    /// Event that boosts the specified stat by the specified amount.
     /// </summary>
     [Serializable]
     public class VitaminEvent : BattleEvent
     {
-
         /// <summary>
-        /// The stat to boost
+        /// The stat to boost.
         /// </summary>
         public Stat BoostedStat;
 
         /// <summary>
-        /// The boost amount 
+        /// The boost amount.
         /// </summary>
         public int Change;
 
@@ -441,20 +474,32 @@ namespace PMDC.Dungeon
         /// </summary>
         public bool ForceDiff;
 
+        /// <inheritdoc/>
         public VitaminEvent() { }
+
+        /// <summary>
+        /// Creates a new VitaminEvent with the specified stat and change amount.
+        /// </summary>
+        /// <param name="stat">The stat to boost.</param>
+        /// <param name="change">The amount to boost the stat by.</param>
         public VitaminEvent(Stat stat, int change)
         {
             BoostedStat = stat;
             Change = change;
         }
+
+        /// <inheritdoc/>
         protected VitaminEvent(VitaminEvent other)
         {
             BoostedStat = other.BoostedStat;
             Change = other.Change;
             ForceDiff = other.ForceDiff;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new VitaminEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Loc boosted = Loc.Zero;
@@ -481,6 +526,12 @@ namespace PMDC.Dungeon
             yield break;
         }
 
+        /// <summary>
+        /// Boosts the specified stat for the target and returns the stat change.
+        /// </summary>
+        /// <param name="stat">The stat to boost.</param>
+        /// <param name="target">The character whose stat is being boosted.</param>
+        /// <returns>A Loc containing the stat change (X) and boost change (Y).</returns>
         private Loc boostStat(Stat stat, Character target)
         {
             int change = Change;
@@ -587,34 +638,46 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that changes the character's level by the specified amount 
+    /// Event that changes the character's level by the specified amount.
     /// </summary>
     [Serializable]
     public class LevelChangeEvent : BattleEvent
     {
         /// <summary>
-        /// The level change
-        /// </summary> 
+        /// The level change amount.
+        /// </summary>
         public int Level;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public LevelChangeEvent() { }
+
+        /// <summary>
+        /// Creates a new LevelChangeEvent with the specified parameters.
+        /// </summary>
+        /// <param name="level">The level change amount.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
         public LevelChangeEvent(int level, bool affectTarget)
         {
             Level = level;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected LevelChangeEvent(LevelChangeEvent other)
         {
             Level = other.Level;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LevelChangeEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -649,12 +712,15 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that adds EXP to the character based on the damage dealt
+    /// Event that adds EXP to the character based on the damage dealt.
     /// </summary>
     [Serializable]
     public class DamageEXPEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DamageEXPEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageDealt>(0);
@@ -681,23 +747,35 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that marks whether EXP can be gained from the target
+    /// Event that marks whether EXP can be gained from the target.
     /// </summary>
     [Serializable]
     public class ToggleEXPEvent : BattleEvent
     {
         /// <summary>
-        /// Whether to make target EXP marked or not
+        /// Whether to make target EXP marked or not.
         /// </summary>
         public bool EXPMarked;
 
+        /// <inheritdoc/>
         public ToggleEXPEvent() { }
+
+        /// <summary>
+        /// Creates a new ToggleEXPEvent with the specified marking.
+        /// </summary>
+        /// <param name="exp">Whether to mark the target for EXP.</param>
         public ToggleEXPEvent(bool exp) { EXPMarked = exp; }
+
+        /// <inheritdoc/>
         protected ToggleEXPEvent(ToggleEXPEvent other)
         {
             EXPMarked = other.EXPMarked;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ToggleEXPEvent(this); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             context.Target.EXPMarked = EXPMarked;
@@ -705,4 +783,3 @@ namespace PMDC.Dungeon
         }
     }
 }
-

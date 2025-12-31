@@ -11,53 +11,63 @@ using RogueEssence.Dev;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// Spawns a shop somewhere in the map.
+    /// Generates a shop location within a dungeon floor and populates it with items and a shopkeeper.
+    /// The shop is placed in a suitable room, furnished with themed items, secured with a map status,
+    /// and guarded by security mobs that trigger if the player attempts to steal.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type, must implement ListMapGenContext.</typeparam>
     [Serializable]
     public class ShopStep<T> : GenStep<T> where T : ListMapGenContext
     {
+        /// <summary>
+        /// Minimum width and height for a shop area in tiles.
+        /// </summary>
         const int MIN_SHOP_SIZE = 3;
 
         /// <summary>
-        /// The map status used to check for thievery.
+        /// The map status used to check for thievery and manage security in the shop.
+        /// This status applies special effects and spawns security guards if needed.
         /// </summary>
         [JsonConverter(typeof(MapStatusConverter))]
         public string SecurityStatus;
 
         /// <summary>
         /// The items that can be sold in the shop.
-        /// This is filtered by Item Themes when generating.
+        /// The full pool is filtered by the selected Item Theme during generation to create the final shop inventory.
         /// </summary>
         [MapItemAttribute(1, true)]
         public SpawnList<MapItem> Items { get; set; }
 
         /// <summary>
-        /// Every shop chooses a theme to populate its catalog with.
-        /// This variable determines the possible themes to filter the items with.
+        /// The possible themes for the shop inventory.
+        /// One theme is randomly selected to filter the available items pool and determine what items appear in this shop.
         /// </summary>
         public SpawnList<ItemTheme> ItemThemes { get; set; }
 
         /// <summary>
-        /// The mobs that will be spawned if the player is caught stealing.
+        /// The mobs that can be spawned as security guards if the player is caught stealing from the shop.
         /// </summary>
         public SpawnList<MobSpawn> Mobs { get; set; }
 
         /// <summary>
-        /// The mob that will run the shop.
+        /// The mob species and configuration for the shopkeeper character that runs the shop.
         /// </summary>
         public MobSpawn StartMob { get; set; }
 
         /// <summary>
-        /// Narrows down the rooms in the map that the shop can spawn in.  No boss rooms, etc.
+        /// Filters that determine which rooms in the map are eligible for shop placement.
+        /// Typically excludes boss rooms and other special rooms where a shop would be inappropriate.
         /// </summary>
         public List<BaseRoomFilter> Filters { get; set; }
 
         /// <summary>
-        /// The personality of the shopkeeper.
+        /// The personality index of the shopkeeper, affecting shop behavior and dialogue.
         /// </summary>
         public int Personality;
 
+        /// <summary>
+        /// Initializes a new instance of the ShopStep class with default empty collections and settings.
+        /// </summary>
         public ShopStep() : base()
         {
             SecurityStatus = "";
@@ -66,11 +76,31 @@ namespace PMDC.LevelGen
             ItemThemes = new SpawnList<ItemTheme>();
             Mobs = new SpawnList<MobSpawn>();
         }
+
+        /// <summary>
+        /// Initializes a new instance of the ShopStep class with the specified room filters.
+        /// </summary>
+        /// <param name="filters">Filters that determine which rooms are eligible for shop placement.</param>
         public ShopStep(List<BaseRoomFilter> filters) : this()
         {
             Filters = filters;
         }
 
+        /// <summary>
+        /// Applies the shop generation step to the provided map context.
+        ///
+        /// This method performs the following steps:
+        /// 1. Selects an eligible room that passes all filters and doesn't contain the entrance or exit
+        /// 2. Finds the largest contiguous empty rectangular area within the room
+        /// 3. Creates a random shop area between MIN_SHOP_SIZE and the available space
+        /// 4. Places shop floor tiles and effect tiles in the area
+        /// 5. Creates and registers a map status for shop security and item tracking
+        /// 6. Spawns the shopkeeper mob in a random shop tile
+        /// 7. Selects a random item theme and generates the shop inventory
+        /// 8. Places themed items randomly in the shop area
+        /// 9. Marks the room as a no-event room to prevent other generation steps from modifying it
+        /// </summary>
+        /// <param name="map">The map generation context to apply the shop generation to.</param>
         public override void Apply(T map)
         {
             //choose a room to cram all the items in

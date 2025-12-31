@@ -13,23 +13,36 @@ namespace PMDC.LevelGen
     /// <summary>
     /// Generates a cave-like room using cellular automata, then fills it with water except an outer border.
     /// Can also spawn items on the shore.
+    /// The room creates a water feature surrounded by an outer ring of walkable terrain, with optional treasure placement on the shore.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The context type that must support tiled generation and item placement.</typeparam>
     [Serializable]
     public class RoomGenOasis<T> : RoomGenCave<T>
         where T : ITiledGenContext, IPlaceableGenContext<MapItem>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenOasis{T}"/> class.
+        /// </summary>
         public RoomGenOasis()
         {
             Treasures = new SpawnList<MapItem>();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenOasis{T}"/> class with the specified dimensions.
+        /// </summary>
+        /// <param name="width">The width range for the room.</param>
+        /// <param name="height">The height range for the room.</param>
         public RoomGenOasis(RandRange width, RandRange height)
             : base(width, height)
         {
             Treasures = new SpawnList<MapItem>();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenOasis{T}"/> class by copying another instance.
+        /// </summary>
+        /// <param name="other">The instance to copy.</param>
         protected RoomGenOasis(RoomGenOasis<T> other) : base(other)
         {
             ItemAmount = other.ItemAmount;
@@ -54,8 +67,15 @@ namespace PMDC.LevelGen
         /// </summary>
         public ITile WaterTerrain;
 
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() => new RoomGenOasis<T>(this);
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Applies the cave structure to the map, then identifies water-suitable tiles and converts inner tiles to water.
+        /// Uses flood fill to identify the outer wall border, then places water in all remaining walkable areas.
+        /// Items are randomly placed on shore tiles (outer wall border tiles).
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             base.DrawOnMap(map);
@@ -123,6 +143,14 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Determines whether water can be placed at the specified tile coordinates.
+        /// Water can only be placed if the tile and all 8 surrounding tiles are within bounds and walkable.
+        /// This ensures water tiles are surrounded by floor, preventing isolation at room edges.
+        /// </summary>
+        /// <param name="xx">The x-coordinate of the tile to check.</param>
+        /// <param name="yy">The y-coordinate of the tile to check.</param>
+        /// <returns><c>true</c> if water can be placed at the coordinates; otherwise, <c>false</c>.</returns>
         private bool canPlaceWater(int xx, int yy)
         {
             for (int tx = -1; tx <= 1; tx++)

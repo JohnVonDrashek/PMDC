@@ -18,7 +18,9 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events that handle recoil
+    /// <summary>
+    /// Battle events that handle recoil damage to the user.
+    /// </summary>
 
     /// <summary>
     /// Event that recoil damage to the user based on how much damage was dealt
@@ -31,14 +33,28 @@ namespace PMDC.Dungeon
         /// </summary>
         public int Fraction;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DamageRecoilEvent"/> class.
+        /// </summary>
         public DamageRecoilEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DamageRecoilEvent"/> class with specified fraction.
+        /// </summary>
         public DamageRecoilEvent(int damageFraction) { Fraction = damageFraction; }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         protected DamageRecoilEvent(DamageRecoilEvent other)
         {
             Fraction = other.Fraction;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DamageRecoilEvent(this); }
 
+        /// <inheritdoc/>
         protected override int GetRecoilDamage(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damageDone = context.GetContextStateInt<TotalDamageDealt>(true, 0);
@@ -63,15 +79,29 @@ namespace PMDC.Dungeon
         /// </summary>
         public bool MaxHP;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HPRecoilEvent"/> class.
+        /// </summary>
         public HPRecoilEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HPRecoilEvent"/> class with specified parameters.
+        /// </summary>
         public HPRecoilEvent(int fraction, bool maxHP) { Fraction = fraction; MaxHP = maxHP; }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         protected HPRecoilEvent(HPRecoilEvent other)
         {
             Fraction = other.Fraction;
             MaxHP = other.MaxHP;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new HPRecoilEvent(this); }
 
+        /// <inheritdoc/>
         protected override int GetRecoilDamage(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (MaxHP)
@@ -82,13 +112,24 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Abstract base class for recoil damage events.
+    /// Deals damage to the user when damage was dealt to targets.
+    /// </summary>
     [Serializable]
     public abstract class RecoilEvent : BattleEvent
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecoilEvent"/> class.
+        /// </summary>
         public RecoilEvent() { }
 
+        /// <summary>
+        /// Calculates the recoil damage to inflict on the user.
+        /// </summary>
         protected abstract int GetRecoilDamage(GameEventOwner owner, Character ownerChar, BattleContext context);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damageDone = context.GetContextStateInt<TotalDamageDealt>(true, 0);
@@ -125,14 +166,28 @@ namespace PMDC.Dungeon
         /// </summary>
         public int HPFraction;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CrashLandEvent"/> class.
+        /// </summary>
         public CrashLandEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CrashLandEvent"/> class with specified fraction.
+        /// </summary>
         public CrashLandEvent(int damageFraction) { HPFraction = damageFraction; }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         protected CrashLandEvent(CrashLandEvent other)
         {
             HPFraction = other.HPFraction;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CrashLandEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.GetContextStateInt<AttackHitTotal>(true, 0) == 0)

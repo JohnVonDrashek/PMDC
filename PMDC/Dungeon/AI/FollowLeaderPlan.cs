@@ -7,15 +7,52 @@ using RogueEssence.Data;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// AI plan that causes the character to follow team members of higher rank.
+    /// The character will pathfind toward the closest visible team leader or ally.
+    /// Used for team members that should stay close to their leaders.
+    /// </summary>
     [Serializable]
     public class FollowLeaderPlan : AIPlan
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FollowLeaderPlan"/> class with default values.
+        /// </summary>
         public FollowLeaderPlan() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FollowLeaderPlan"/> class.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
         public FollowLeaderPlan(AIFlags iq) : base(iq) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FollowLeaderPlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public FollowLeaderPlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable) { }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         protected FollowLeaderPlan(FollowLeaderPlan other) : base(other) { }
+
+        /// <inheritdoc/>
         public override BasePlan CreateNew() { return new FollowLeaderPlan(this); }
 
+        /// <summary>
+        /// Evaluates the current situation and moves toward the closest leader.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="preThink">Whether this is a pre-think evaluation.</param>
+        /// <param name="rand">Random number generator for decision-making.</param>
+        /// <returns>The action to take, or null if no leader is visible.</returns>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             if (controlledChar.CantWalk)
@@ -104,6 +141,14 @@ namespace PMDC.Dungeon
             return null;
         }
 
+        /// <summary>
+        /// Attempts to move in the specified direction toward a target character.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="targetChar">The target character to move toward.</param>
+        /// <param name="testDir">The direction to attempt movement in.</param>
+        /// <param name="respectPeers">Whether to block movement if the destination contains peer characters.</param>
+        /// <returns>A movement action if the direction is valid and can be executed, or null if blocked.</returns>
         private GameAction tryDir(Character controlledChar, Character targetChar, Dir8 testDir, bool respectPeers)
         {
             Loc endLoc = controlledChar.CharLoc + testDir.GetLoc();

@@ -10,22 +10,39 @@ using PMDC.Dungeon;
 
 namespace PMDC.Data
 {
+    /// <summary>
+    /// Indexed data class that maps items to monsters based on rarity and family membership.
+    /// Used for determining which items are associated with specific monster species
+    /// at different rarity tiers.
+    /// </summary>
     [Serializable]
     public class RarityData : BaseData
     {
+        /// <summary>
+        /// The filename used when saving/loading this data index.
+        /// </summary>
         public override string FileName => "Rarity";
+
+        /// <summary>
+        /// The data type that triggers re-indexing when modified (Item data).
+        /// </summary>
         public override DataManager.DataType TriggerType => DataManager.DataType.Item;
 
         /// <summary>
-        /// Maps monster, rarity to list of applicable items 
+        /// Dictionary mapping monster species ID to a dictionary of rarity tier to item IDs.
+        /// Provides lookup of items associated with each monster at each rarity level.
         /// </summary>
         public Dictionary<string, Dictionary<int, List<string>>> RarityMap;
 
+        /// <summary>
+        /// Initializes a new instance of the RarityData class with an empty rarity map.
+        /// </summary>
         public RarityData()
         {
             RarityMap = new Dictionary<string, Dictionary<int, List<string>>>();
         }
 
+        /// <inheritdoc/>
         public override void ContentChanged(string idx)
         {
             //remove the index from its previous locations
@@ -46,6 +63,7 @@ namespace PMDC.Data
             }
         }
 
+        /// <inheritdoc/>
         public override void ReIndex()
         {
             RarityMap.Clear();
@@ -60,6 +78,12 @@ namespace PMDC.Data
             }
         }
 
+        /// <summary>
+        /// Adds an item to the rarity map based on its family state and rarity value.
+        /// Items with a FamilyState are added to each monster in the family.
+        /// </summary>
+        /// <param name="num">The item ID to add to the rarity map.</param>
+        /// <param name="data">The item data containing family and rarity information.</param>
         private void computeSummary(string num, ItemData data)
         {
             FamilyState family;

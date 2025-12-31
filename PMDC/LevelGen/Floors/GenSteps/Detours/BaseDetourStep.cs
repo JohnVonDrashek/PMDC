@@ -8,34 +8,42 @@ using System.Collections.Generic;
 
 namespace PMDC.LevelGen
 {
+    /// <summary>
+    /// Abstract base class for creating hidden detour rooms accessible via locked doors.
+    /// Detour rooms are tunneled from the main map and sealed with a door tile.
+    /// </summary>
+    /// <typeparam name="T">The map generation context type.</typeparam>
     [Serializable]
     public abstract class BaseDetourStep<T> : GenStep<T> where T : BaseMapGenContext
     {
         /// <summary>
-        /// Treasures found in the detour room.
+        /// Gets or sets the items (treasures) that can spawn in the detour room.
         /// </summary>
         public BulkSpawner<T, MapItem> Treasures;
 
         /// <summary>
-        /// Tiles (such as exits or traps) found in the detour room.
+        /// Gets or sets the tile effects (such as exits or traps) that can spawn in the detour room.
         /// </summary>
         public BulkSpawner<T, EffectTile> TileTreasures;
-        
+
         /// <summary>
-        /// Enemies found in the detour room.
+        /// Gets or sets the enemy spawners that can place guards in the detour room.
         /// </summary>
         public BulkSpawner<T, MobSpawn> GuardTypes;
 
         /// <summary>
-        /// Length of the hall connecting the main path to the detour room.
+        /// Gets or sets the random range for the length of the hall connecting the main path to the detour room.
         /// </summary>
         public RandRange HallLength;
 
         /// <summary>
-        /// The possible types of room shapes.
+        /// Gets or sets the possible room shape generators for the detour room.
         /// </summary>
         public SpawnList<RoomGen<T>> GenericRooms;
 
+        /// <summary>
+        /// Initializes a new instance with default empty spawners.
+        /// </summary>
         public BaseDetourStep()
         {
             Treasures = new BulkSpawner<T, MapItem>();
@@ -44,6 +52,16 @@ namespace PMDC.LevelGen
             GenericRooms = new SpawnList<RoomGen<T>>();
         }
 
+        /// <summary>
+        /// Attempts to place a detour room by tunneling from an available wall location.
+        /// Creates a tunnel from the main map, generates a room at the end of the tunnel,
+        /// surrounds it with unbreakable terrain, and seals the entrance with a locked door.
+        /// </summary>
+        /// <param name="map">The map generation context containing terrain and placement information.</param>
+        /// <param name="rays">Available wall locations to tunnel from. Rays are removed as they are attempted.</param>
+        /// <param name="sealingTile">The door tile used to seal the entrance to the detour room.</param>
+        /// <param name="freeTiles">Output list of free tiles in the created room where entities can be placed.</param>
+        /// <returns>The ray that was successfully used for placement, or null if placement failed after all attempts.</returns>
         protected LocRay4? PlaceRoom(T map, List<LocRay4> rays, EffectTile sealingTile, List<Loc> freeTiles)
         {
             Grid.LocTest checkBlockForPlace = (Loc testLoc) =>
@@ -160,7 +178,12 @@ namespace PMDC.LevelGen
             return null;
         }
 
-
+        /// <summary>
+        /// Places treasures, tile effects, and guards in the detour room using the configured spawners.
+        /// Randomly selects spawn locations from the available free tiles for each entity type.
+        /// </summary>
+        /// <param name="map">The map generation context containing team and placement information.</param>
+        /// <param name="freeTiles">Available tiles for entity placement. Tiles are removed as entities are placed.</param>
         protected void PlaceEntities(T map, List<Loc> freeTiles)
         {
             List<EffectTile> tileTreasures = TileTreasures.GetSpawns(map);
@@ -198,6 +221,13 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Determines whether a rectangular region can be placed by checking all tiles against a condition.
+        /// </summary>
+        /// <param name="map">The map generation context (used for bounds checking).</param>
+        /// <param name="rect">The rectangular region to test.</param>
+        /// <param name="checkBlock">Predicate function to test each tile location. Should return true if the tile can be placed.</param>
+        /// <returns>True if all tiles in the rectangle satisfy the condition; otherwise false.</returns>
         private bool CanPlaceRect(T map, Rect rect, Grid.LocTest checkBlock)
         {
             for (int ii = rect.Left; ii < rect.Right; ii++)

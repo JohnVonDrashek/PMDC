@@ -10,20 +10,73 @@ using PMDC.Dungeon;
 
 namespace MapGenTest
 {
+    /// <summary>
+    /// Debug visualization and step-through functionality for procedural map generation.
+    /// Hooks into the RogueElements generation pipeline to provide interactive debugging
+    /// with visual representations of grid layouts, room plans, and tile maps.
+    /// </summary>
     public static class ExampleDebug
     {
+        /// <summary>
+        /// Key to step into nested generation steps.
+        /// </summary>
         const ConsoleKey STEP_IN_KEY = ConsoleKey.F5;
+
+        /// <summary>
+        /// Key to step out of the current generation level.
+        /// </summary>
         const ConsoleKey STEP_OUT_KEY = ConsoleKey.F6;
+
+        /// <summary>
+        /// Controls print depth. -1 disables printing, 0+ enables printing up to that depth.
+        /// </summary>
         public static int Printing;
+
+        /// <summary>
+        /// When true, automatically steps into the next generation step.
+        /// </summary>
         public static bool SteppingIn;
+
+        /// <summary>
+        /// Stack of generation step names for breadcrumb navigation.
+        /// </summary>
         static List<string> stepStack;
+
+        /// <summary>
+        /// Debug state stack for grid-based room layouts.
+        /// </summary>
         static List<DebugState> gridDebugString;
+
+        /// <summary>
+        /// Debug state stack for list-based room layouts.
+        /// </summary>
         static List<DebugState> listDebugString;
+
+        /// <summary>
+        /// Debug state stack for tile-based map visualization.
+        /// </summary>
         static List<DebugState> tileDebugString;
+
+        /// <summary>
+        /// Current nesting depth in the generation pipeline.
+        /// </summary>
         static int currentDepth;
+
+        /// <summary>
+        /// The current map context being debugged.
+        /// </summary>
         static IGenContext curMap;
+
+        /// <summary>
+        /// Stores any exception that occurred during generation for later reporting.
+        /// </summary>
         public static Exception Error;
 
+        /// <summary>
+        /// Initializes the debug state for a new map generation session.
+        /// Called at the start of each map generation to reset state stacks.
+        /// </summary>
+        /// <param name="newMap">The generation context to debug.</param>
         public static void Init(IGenContext newMap)
         {
             curMap = newMap;
@@ -40,6 +93,11 @@ namespace MapGenTest
             Error = null;
         }
 
+        /// <summary>
+        /// Called when entering a nested generation step.
+        /// Pushes a new debug state onto all stacks and handles step-in breakpoints.
+        /// </summary>
+        /// <param name="msg">The name/description of the step being entered.</param>
         public static void StepIn(string msg)
         {
             currentDepth++;
@@ -68,6 +126,10 @@ namespace MapGenTest
 
         }
 
+        /// <summary>
+        /// Called when exiting a nested generation step.
+        /// Pops debug state from all stacks and prints the exit state if within print depth.
+        /// </summary>
         public static void StepOut()
         {
             currentDepth--;
@@ -86,11 +148,21 @@ namespace MapGenTest
             printStep(createStackString() + "<" + stepOutName + "<");
         }
 
+        /// <summary>
+        /// Called during a generation step to report progress.
+        /// Prints the current state if within the configured print depth.
+        /// </summary>
+        /// <param name="msg">The step progress message.</param>
         public static void OnStep(string msg)
         {
             printStep(createStackString() + ">" + msg);
         }
 
+        /// <summary>
+        /// Prints the current generation state using all available visualization modes.
+        /// Handles user input for stepping, continuing, or escaping.
+        /// </summary>
+        /// <param name="msg">The message to display with the visualization.</param>
         public static void printStep(string msg)
         {
             //SteppingIn = false;
@@ -136,6 +208,17 @@ namespace MapGenTest
         }
 
 
+        /// <summary>
+        /// Prints a tile-based visualization of the generated map.
+        /// Shows terrain, items, enemies, stairs, and traps using ASCII characters.
+        /// Supports interactive cursor navigation to inspect individual tiles.
+        /// </summary>
+        /// <param name="map">The generation context containing the map.</param>
+        /// <param name="msg">The header message to display.</param>
+        /// <param name="printDebug">Whether to output to debug console.</param>
+        /// <param name="printViewer">Whether to display interactive viewer.</param>
+        /// <param name="forcePrint">Whether to print even if map hasn't changed.</param>
+        /// <returns>The key pressed to exit the viewer.</returns>
         public static ConsoleKey PrintTiles(IGenContext map, string msg, bool printDebug, bool printViewer, bool forcePrint)
         {
             BaseMapGenContext context = map as BaseMapGenContext;
@@ -348,6 +431,16 @@ namespace MapGenTest
                 return ConsoleKey.Enter;
         }
 
+        /// <summary>
+        /// Prints a visualization of the floor plan showing rooms and halls as overlapping rectangles.
+        /// Rooms are labeled A-Z, halls are labeled a-z, overlaps shown with special characters.
+        /// Supports interactive cursor navigation to inspect room/hall details.
+        /// </summary>
+        /// <param name="map">The generation context containing the floor plan.</param>
+        /// <param name="msg">The header message to display.</param>
+        /// <param name="printDebug">Whether to output to debug console.</param>
+        /// <param name="printViewer">Whether to display interactive viewer.</param>
+        /// <returns>The key pressed to exit the viewer.</returns>
         public static ConsoleKey PrintListRoomHalls(IGenContext map, string msg, bool printDebug, bool printViewer)
         {
             IFloorPlanGenContext context = map as IFloorPlanGenContext;
@@ -519,6 +612,16 @@ namespace MapGenTest
                 return ConsoleKey.Enter;
         }
 
+        /// <summary>
+        /// Prints a grid-based visualization showing room placement and hall connections.
+        /// Rooms are labeled A-Z at grid positions, halls shown as # connecting rooms.
+        /// Supports interactive cursor navigation to inspect room/hall details.
+        /// </summary>
+        /// <param name="map">The generation context containing the grid plan.</param>
+        /// <param name="msg">The header message to display.</param>
+        /// <param name="printDebug">Whether to output to debug console.</param>
+        /// <param name="printViewer">Whether to display interactive viewer.</param>
+        /// <returns>The key pressed to exit the viewer.</returns>
         public static ConsoleKey PrintGridRoomHalls(IGenContext map, string msg, bool printDebug, bool printViewer)
         {
             IRoomGridGenContext context = map as IRoomGridGenContext;
@@ -672,12 +775,21 @@ namespace MapGenTest
         }
 
 
+        /// <summary>
+        /// Clears a console line by overwriting it with spaces.
+        /// </summary>
+        /// <param name="lineNum">The line number to clear.</param>
         private static void clearLine(int lineNum)
         {
             Console.SetCursorPosition(0, lineNum);
             Console.Write(new string(' ', Console.WindowWidth - Console.CursorLeft));
         }
 
+        /// <summary>
+        /// Writes a message to a console line, clearing any remaining content.
+        /// </summary>
+        /// <param name="lineNum">The line number to write to.</param>
+        /// <param name="msg">The message to write.</param>
         private static void rewriteLine(int lineNum, string msg)
         {
             Console.SetCursorPosition(0, lineNum);
@@ -685,6 +797,10 @@ namespace MapGenTest
             Console.Write(new string(' ', Console.WindowWidth - Console.CursorLeft));
         }
 
+        /// <summary>
+        /// Creates a breadcrumb string from the current step stack.
+        /// </summary>
+        /// <returns>A string like "Step1>Step2>Step3" showing the navigation path.</returns>
         private static string createStackString()
         {
             StringBuilder str = new StringBuilder();
@@ -697,6 +813,11 @@ namespace MapGenTest
             return str.ToString();
         }
 
+        /// <summary>
+        /// Called when an error occurs during generation.
+        /// Stores the exception for later reporting after generation completes.
+        /// </summary>
+        /// <param name="ex">The exception that occurred.</param>
         public static void OnError(Exception ex)
         {
             Error = ex;

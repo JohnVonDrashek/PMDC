@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -21,33 +21,43 @@ namespace PMDC.Dungeon
     // Battle events that trigger a counter effect
 
     /// <summary>
-    /// Event that reflects all damaging moves to nearby foes
+    /// Event that reflects all damaging moves to nearby foes.
+    /// Deals a fraction of the damage received to enemies within range.
     /// </summary>
     [Serializable]
     public class ReflectAllEvent : BattleEvent
     {
 
         /// <summary>
-        /// The numerator of the damage reflected
+        /// The numerator of the damage reflected.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the damage reflected
+        /// The denominator of the damage reflected.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// Enemies within the radius will be dealt the reflected damage
+        /// Enemies within this radius will be dealt the reflected damage.
         /// </summary>
         public int Range;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public ReflectAllEvent() { Anims = new List<BattleAnimEvent>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReflectAllEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="numerator">The damage reflection numerator.</param>
+        /// <param name="denominator">The damage reflection denominator.</param>
+        /// <param name="range">The radius within which foes take damage.</param>
+        /// <param name="anims">The visual effects to play.</param>
         public ReflectAllEvent(int numerator, int denominator, int range, params BattleAnimEvent[] anims)
         {
             Numerator = numerator;
@@ -56,6 +66,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected ReflectAllEvent(ReflectAllEvent other)
         {
             Numerator = other.Numerator;
@@ -65,8 +77,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ReflectAllEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BattleData.SkillCategory category = ((StatusEffect)owner).StatusStates.GetWithDefault<CategoryState>().Category;
@@ -102,43 +117,57 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that reflects damage back to the user if the move type matches the specified type
+    /// Event that reflects damage back to the user if the move type matches the specified type.
+    /// Deals a fraction of the damage received back to the attacker.
     /// </summary>
     [Serializable]
     public class CounterTypeEvent : BattleEvent
     {
         /// <summary>
-        /// The numerator of the damage reflected
+        /// The numerator of the damage reflected.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the damage reflected
+        /// The denominator of the damage reflected.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// The type reflected
+        /// The element type that triggers the reflection.
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string CounterElement;
 
+        /// <inheritdoc/>
         public CounterTypeEvent() { CounterElement = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CounterTypeEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="element">The element type to counter.</param>
+        /// <param name="numerator">The damage reflection numerator.</param>
+        /// <param name="denominator">The damage reflection denominator.</param>
         public CounterTypeEvent(string element, int numerator, int denominator)
         {
             CounterElement = element;
             Numerator = numerator;
             Denominator = denominator;
         }
+
+        /// <inheritdoc/>
         protected CounterTypeEvent(CounterTypeEvent other)
         {
             Numerator = other.Numerator;
             Denominator = other.Denominator;
             CounterElement = other.CounterElement;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CounterTypeEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageDealt>(0);
@@ -162,32 +191,42 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that reflects damage back to the user if the action's skill category matches the specified skill category
+    /// Event that reflects damage back to the user if the action's skill category matches the specified skill category.
+    /// Counters physical or magical attacks.
     /// </summary>
     [Serializable]
     public class CounterCategoryEvent : BattleEvent
     {
         /// <summary>
-        /// The numerator of the damage reflected
+        /// The numerator of the damage reflected.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the damage reflected
+        /// The denominator of the damage reflected.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// The skill cateogory affected
+        /// The skill category affected (Physical, Magical, or None for all).
         /// </summary>
         public BattleData.SkillCategory Category;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public CounterCategoryEvent() { Anims = new List<BattleAnimEvent>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CounterCategoryEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="category">The skill category to counter.</param>
+        /// <param name="numerator">The damage reflection numerator.</param>
+        /// <param name="denominator">The damage reflection denominator.</param>
+        /// <param name="anims">The visual effects to play.</param>
         public CounterCategoryEvent(BattleData.SkillCategory category, int numerator, int denominator, params BattleAnimEvent[] anims)
         {
             Category = category;
@@ -196,6 +235,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected CounterCategoryEvent(CounterCategoryEvent other)
         {
             Numerator = other.Numerator;
@@ -205,8 +246,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CounterCategoryEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType != BattleActionType.Skill)
@@ -244,26 +288,35 @@ namespace PMDC.Dungeon
 
     /// <summary>
     /// Event that reflects damage back to the user if the battle action was a regular attack or thrown item.
+    /// Counters non-skill actions.
     /// </summary>
     [Serializable]
     public class CounterNonSkillEvent : BattleEvent
     {
         /// <summary>
-        /// The numerator of the damage reflected
+        /// The numerator of the damage reflected.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the damage reflected
+        /// The denominator of the damage reflected.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public CounterNonSkillEvent() { Anims = new List<BattleAnimEvent>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CounterNonSkillEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="numerator">The damage reflection numerator.</param>
+        /// <param name="denominator">The damage reflection denominator.</param>
+        /// <param name="anims">The visual effects to play.</param>
         public CounterNonSkillEvent(int numerator, int denominator, params BattleAnimEvent[] anims)
         {
             Numerator = numerator;
@@ -271,6 +324,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected CounterNonSkillEvent(CounterNonSkillEvent other)
         {
             Numerator = other.Numerator;
@@ -279,8 +334,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CounterNonSkillEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageDealt>(0);
@@ -308,15 +366,19 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that deals damage to the character if the enemy that used the status also takes damage
-    /// This event can only be used in statuses  
-    /// </summary> 
+    /// Event that deals damage to the character if the enemy that used the status also takes damage.
+    /// This event can only be used in statuses. Used for destiny bond-style effects.
+    /// </summary>
     [Serializable]
     public class DestinyBondEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public DestinyBondEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DestinyBondEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageDealt>(0);
@@ -338,27 +400,36 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that reflects the HP healed back to the user
+    /// Event that reflects the HP healed back to the user.
+    /// When the target is healed by an attack, the attacker also heals.
     /// </summary>
     [Serializable]
     public class CounterHealEvent : BattleEvent
     {
         /// <summary>
-        /// The numerator of the HP reflected
+        /// The numerator of the HP reflected.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the HP reflected
+        /// The denominator of the HP reflected.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public CounterHealEvent() { Anims = new List<BattleAnimEvent>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CounterHealEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="numerator">The heal reflection numerator.</param>
+        /// <param name="denominator">The heal reflection denominator.</param>
+        /// <param name="anims">The visual effects to play.</param>
         public CounterHealEvent(int numerator, int denominator, params BattleAnimEvent[] anims)
         {
             Numerator = numerator;
@@ -366,6 +437,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected CounterHealEvent(CounterHealEvent other)
         {
             Numerator = other.Numerator;
@@ -374,8 +447,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CounterHealEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageHealedTarget>(0);
@@ -395,4 +471,3 @@ namespace PMDC.Dungeon
     }
 
 }
-

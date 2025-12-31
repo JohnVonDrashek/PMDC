@@ -10,21 +10,37 @@ using RogueEssence.Data;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// A monster house that occurs in hallways.
-    /// The room will gradually crumble away to reveal all monsters and items.
-    /// This step chooses an existing room (hallways are rooms) to put the house in.  The room must have a one-tile chokepoint to be selected.
+    /// A monster house that occurs in hallways, hidden inside breakable walls.
+    /// The room will gradually crumble away in phases to reveal all monsters and items.
+    /// This step chooses an existing hallway with a one-tile chokepoint to place the ambush.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type.</typeparam>
     [Serializable]
     public class MonsterHallStep<T> : MonsterHouseBaseStep<T> where T : ListMapGenContext
     {
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public MonsterHallStep() : base() { Filters = new List<BaseRoomFilter>(); }
+
+        /// <summary>
+        /// Initializes a new instance with the specified size and room filters.
+        /// </summary>
+        /// <param name="size">The final size of the revealed room after crumbling.</param>
+        /// <param name="filters">Filters to determine eligible hallways for placement.</param>
         public MonsterHallStep(Loc size, List<BaseRoomFilter> filters) : base() { Size = size; Filters = filters; }
+
+        /// <summary>
+        /// Copy constructor for cloning.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         public MonsterHallStep(MonsterHallStep<T> other) : base(other)
         {
             Filters = new List<BaseRoomFilter>();
             Filters.AddRange(other.Filters);
         }
+
+        /// <inheritdoc/>
         public override MonsterHouseBaseStep<T> CreateNew() { return new MonsterHallStep<T>(this); }
 
 
@@ -38,6 +54,13 @@ namespace PMDC.LevelGen
         /// </summary>
         public Loc Size { get; set; }
 
+        /// <summary>
+        /// Clamps the input rectangle to fit within the specified bounds with a one-tile margin.
+        /// Ensures the monster hall area stays within the map boundaries while maintaining at least one tile of separation.
+        /// </summary>
+        /// <param name="input">The rectangle to clamp.</param>
+        /// <param name="bounds">The bounds to clamp the rectangle within.</param>
+        /// <returns>The clamped rectangle adjusted to fit within the bounds.</returns>
         private Rect clampToBounds(Rect input, Rect bounds)
         {
             Rect output = input;
@@ -56,6 +79,15 @@ namespace PMDC.LevelGen
             return output;
         }
 
+        /// <summary>
+        /// Attempts to add a potential monster hall location to the list of possible rooms.
+        /// Validates that the origin point is a suitable chokepoint, not blocked, and can accommodate the monster hall.
+        /// Also checks against monster house configuration restrictions and unbreakable terrain.
+        /// </summary>
+        /// <param name="map">The map generation context.</param>
+        /// <param name="possibleRooms">The list to add validated room candidates to.</param>
+        /// <param name="cand">The candidate room being evaluated.</param>
+        /// <param name="originPoint">The center point to evaluate for the monster hall.</param>
         private void TryAddPossibleRoom(T map, List<(Loc, List<Rect>, int[])> possibleRooms, IRoomGen cand, Loc originPoint)
         {
             //verify it is not blocked
@@ -190,7 +222,7 @@ namespace PMDC.LevelGen
             possibleRooms.Add((originPoint, phases, blockedTiles));
         }
 
-
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             if (!ItemThemes.CanPick)

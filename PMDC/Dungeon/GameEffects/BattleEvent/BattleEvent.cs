@@ -21,30 +21,33 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that bounces status conditions move back to the user
+    /// Event that bounces status condition moves back to the user.
     /// </summary>
     [Serializable]
     public class BounceStatusEvent : BattleEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log
+        /// The message displayed in the dungeon log.
         /// </summary>
         public StringKey Msg;
 
         /// <summary>
-        /// Only status effects, not all status moves
+        /// When true, only bounces moves that inflict status effects, not all status category moves.
         /// </summary>
         public bool StatusOnly;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played when the bounce occurs.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public BounceStatusEvent()
         {
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <inheritdoc/>
         public BounceStatusEvent(bool statusOnly, StringKey msg, params BattleAnimEvent[] anims)
         {
             StatusOnly = statusOnly;
@@ -52,6 +55,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected BounceStatusEvent(BounceStatusEvent other)
         {
             StatusOnly = other.StatusOnly;
@@ -61,8 +66,10 @@ namespace PMDC.Dungeon
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BounceStatusEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType == BattleActionType.Skill && context.Data.Category == BattleData.SkillCategory.Status && DungeonScene.Instance.GetMatchup(context.User, context.Target) != Alignment.Self)
@@ -102,31 +109,36 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that allows the user to move again
+    /// Event that allows the user to move again by canceling turn consumption.
     /// </summary>
     [Serializable]
     public class PreserveTurnEvent : BattleEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log  
+        /// The message displayed in the dungeon log.
         /// </summary>
         public StringKey Msg;
-        
+
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played when the turn is preserved.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public PreserveTurnEvent()
         {
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <inheritdoc/>
         public PreserveTurnEvent(StringKey msg, params BattleAnimEvent[] anims)
         {
             Msg = msg;
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected PreserveTurnEvent(PreserveTurnEvent other)
         {
             Msg = other.Msg;
@@ -135,8 +147,10 @@ namespace PMDC.Dungeon
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PreserveTurnEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             DungeonScene.Instance.LogMsg(Text.FormatGrammar(Msg.ToLocal(), ownerChar.GetDisplayName(false), owner.GetDisplayName()));
@@ -153,14 +167,16 @@ namespace PMDC.Dungeon
 
     
     /// <summary>
-    /// Event that sets the user direction to face the enemy
-    /// This event can only be used in statuses 
-    /// </summary> 
+    /// Event that sets the user's direction to face the enemy stored in the status.
+    /// This event can only be used in statuses.
+    /// </summary>
     [Serializable]
     public class ForceFaceTargetEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ForceFaceTargetEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             StatusEffect status = ((StatusEffect)owner);
@@ -175,31 +191,41 @@ namespace PMDC.Dungeon
     
 
     /// <summary>
-    /// Event that adds the specified context state 
-    /// </summary> 
+    /// Event that adds the specified context state to the battle context.
+    /// </summary>
     [Serializable]
     public class AddContextStateEvent : BattleEvent
     {
         /// <summary>
-        /// The context state to add
-        /// </summary> 
+        /// The context state to add.
+        /// </summary>
         public ContextState AddedState;
-        
+
         /// <summary>
-        /// Whether to add the context state globally
-        /// </summary> 
+        /// When true, adds to global context states; otherwise adds to local context states.
+        /// </summary>
         public bool Global;
 
+        /// <inheritdoc/>
         public AddContextStateEvent() { }
+
+        /// <inheritdoc/>
         public AddContextStateEvent(ContextState state) : this(state, false) { }
+
+        /// <inheritdoc/>
         public AddContextStateEvent(ContextState state, bool global) { AddedState = state; Global = global; }
+
+        /// <inheritdoc/>
         protected AddContextStateEvent(AddContextStateEvent other)
         {
             AddedState = other.AddedState.Clone<ContextState>();
             Global = other.Global;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AddContextStateEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (Global)
@@ -215,17 +241,23 @@ namespace PMDC.Dungeon
 
     /// <summary>
     /// Event that reverses the effect that speed has on hit and dodge rate.
-    /// </summary> 
+    /// </summary>
     [Serializable]
     public class SpeedReverseHitEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public SpeedReverseHitEvent() { }
+
+        /// <inheritdoc/>
         protected SpeedReverseHitEvent(SpeedReverseHitEvent other)
         {
 
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SpeedReverseHitEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int userSpeed = context.GetContextStateInt<UserHitStat>(1);
@@ -239,14 +271,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that uses the target's attack stat to calculate the damage
-    /// </summary> 
+    /// Event that uses the target's attack stat to calculate the damage instead of the user's.
+    /// </summary>
     [Serializable]
     public class FoulPlayEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public FoulPlayEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FoulPlayEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Data.Category == BattleData.SkillCategory.Physical)
@@ -260,27 +296,35 @@ namespace PMDC.Dungeon
     }
     
     /// <summary>
-    /// Event that ignores any stat boosts the character has
-    /// </summary> 
+    /// Event that ignores any stat boosts the character has.
+    /// </summary>
     [Serializable]
     public class IgnoreStatsEvent : BattleEvent
-    {   
+    {
         /// <summary>
-        /// Whether to ignore the target or user stat boosts
-        /// </summary> 
+        /// When true, ignores target's stat boosts; otherwise ignores user's stat boosts.
+        /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public IgnoreStatsEvent() { }
+
+        /// <inheritdoc/>
         public IgnoreStatsEvent(bool affectTarget)
         {
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected IgnoreStatsEvent(IgnoreStatsEvent other)
         {
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new IgnoreStatsEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (AffectTarget)
@@ -304,13 +348,15 @@ namespace PMDC.Dungeon
     }
     
     /// <summary>
-    /// Event that ignores the user's accuracy descrease and target's evasive boosts
-    /// </summary> 
+    /// Event that ignores the user's accuracy decrease and target's evasion boosts.
+    /// </summary>
     [Serializable]
     public class IgnoreHaxEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new IgnoreHaxEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             context.ContextStates.Set(new TargetEvasionBoost(Math.Min(0, context.GetContextStateInt<TargetEvasionBoost>(0))));
@@ -321,13 +367,15 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that sets the character and tile sight to be clear
+    /// Event that sets the character and tile sight to be clear on the current map.
     /// </summary>
     [Serializable]
     public class LuminousEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LuminousEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             ZoneManager.Instance.CurrentMap.CharSight = Map.SightRange.Clear;
@@ -338,46 +386,61 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that restores or reduces the hunger of the character by the specified amount 
+    /// Event that restores or reduces the hunger of the character by the specified amount.
     /// </summary>
     [Serializable]
     public class RestoreBellyEvent : BattleEvent
     {
+        /// <summary>
+        /// Minimum allowed max fullness value.
+        /// </summary>
         public const int MIN_MAX_FULLNESS = 50;
+
+        /// <summary>
+        /// Maximum allowed max fullness value.
+        /// </summary>
         public const int MAX_MAX_FULLNESS = 150;
 
-        public List<BattleAnimEvent> BoostAnims;
-        
         /// <summary>
-        /// The amount of hunger to restore or reduce
+        /// The list of battle VFXs played when max belly is modified.
+        /// </summary>
+        public List<BattleAnimEvent> BoostAnims;
+
+        /// <summary>
+        /// The amount of hunger to restore (positive) or reduce (negative).
         /// </summary>
         public int Heal;
-        
+
         /// <summary>
-        /// Whether to display the messages relating to hunger
+        /// Whether to display hunger-related messages in the dungeon log.
         /// </summary>
         public bool Msg;
-        
+
         /// <summary>
-        /// The amount to increase or decrease the max hunger by
+        /// The amount to increase or decrease max hunger capacity.
         /// </summary>
         public int AddMaxBelly;
-        
+
         /// <summary>
-        /// Whether full hunger is needed to add the max hunger amount
+        /// When true, max belly modification only applies if belly is already full.
         /// </summary>
         public bool NeedFullBelly;
 
+        /// <inheritdoc/>
         public RestoreBellyEvent()
         {
             BoostAnims = new List<BattleAnimEvent>();
         }
+
+        /// <inheritdoc/>
         public RestoreBellyEvent(int heal, bool msg)
         {
             Heal = heal;
             Msg = msg;
             BoostAnims = new List<BattleAnimEvent>();
         }
+
+        /// <inheritdoc/>
         public RestoreBellyEvent(int heal, bool msg, int bellyPlus, bool needFull, params BattleAnimEvent[] boostAnims)
         {
             Heal = heal;
@@ -387,6 +450,8 @@ namespace PMDC.Dungeon
             BoostAnims = new List<BattleAnimEvent>();
             BoostAnims.AddRange(boostAnims);
         }
+
+        /// <inheritdoc/>
         protected RestoreBellyEvent(RestoreBellyEvent other)
         {
             Heal = other.Heal;
@@ -397,9 +462,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.BoostAnims)
                 BoostAnims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RestoreBellyEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             bool fullBelly = (context.Target.Fullness == context.Target.MaxFullness);
@@ -465,31 +532,36 @@ namespace PMDC.Dungeon
 
     
     /// <summary>
-    /// Event that makes the target a neutral faction  
+    /// Event that converts the target to a neutral faction (friendly NPC).
     /// </summary>
     [Serializable]
     public class MakeNeutralEvent : BattleEvent
     {
-        
         /// <summary>
-        /// Tha lua battle script that runs when interacting with the neutral in dungeons 
+        /// The Lua battle script that runs when interacting with the neutral character in dungeons.
         /// </summary>
         public BattleScriptEvent ActionScript;
 
+        /// <inheritdoc/>
         public MakeNeutralEvent()
         { }
+
+        /// <inheritdoc/>
         public MakeNeutralEvent(BattleScriptEvent scriptEvent)
         {
             ActionScript = scriptEvent;
         }
 
+        /// <inheritdoc/>
         public MakeNeutralEvent(MakeNeutralEvent other)
         {
             ActionScript = (BattleScriptEvent)other.ActionScript.Clone();
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MakeNeutralEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             DungeonScene.Instance.RemoveChar(context.Target);
@@ -516,14 +588,18 @@ namespace PMDC.Dungeon
     }
     
     /// <summary>
-    /// Event that exits out of the dungeon
+    /// Event that causes the player's team to exit the dungeon with an escaped result.
     /// </summary>
     [Serializable]
     public class ExitDungeonEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public ExitDungeonEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ExitDungeonEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.MemberTeam == DungeonScene.Instance.ActiveTeam)

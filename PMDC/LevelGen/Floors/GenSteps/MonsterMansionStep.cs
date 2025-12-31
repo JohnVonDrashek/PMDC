@@ -10,17 +10,41 @@ using RogueEssence.Data;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// A monster house that consists of the entire floor.
-    /// When it activates, you can see all enemies on the map, and all enemies can see you.
+    /// A monster house that consists of the entire floor, creating a mansion-style ambush.
+    /// When it activates, all enemies become visible on the map and can see the player.
+    /// This step treats the whole map as the monster house bounds.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type.</typeparam>
     [Serializable]
     public class MonsterMansionStep<T> : MonsterHouseBaseStep<T> where T : ListMapGenContext
     {
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public MonsterMansionStep() : base() { }
+
+        /// <summary>
+        /// Copy constructor for cloning.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         public MonsterMansionStep(MonsterMansionStep<T> other) : base(other) { }
+
+        /// <summary>
+        /// Creates a new instance of this step by cloning the current instance.
+        /// </summary>
+        /// <returns>A new <see cref="MonsterMansionStep{T}"/> instance that is a copy of this instance.</returns>
         public override MonsterHouseBaseStep<T> CreateNew() { return new MonsterMansionStep<T>(this); }
 
+        /// <summary>
+        /// Applies the monster mansion step to the given map context.
+        /// Converts the entire floor into a monster mansion by:
+        /// 1. Identifying available item and mob spawn locations
+        /// 2. Selecting random item and mob themes
+        /// 3. Distributing themed items across the floor
+        /// 4. Creating a monitor event that covers the entire map bounds
+        /// 5. Spawning themed monsters and applying monster mansion status effects
+        /// </summary>
+        /// <param name="map">The map generation context to apply the step to.</param>
         public override void Apply(T map)
         {
             if (!ItemThemes.CanPick)

@@ -15,99 +15,115 @@ using System.Runtime.Serialization;
 namespace PMDC.Data
 {
 
+    /// <summary>
+    /// Stores form-specific data for a monster species.
+    /// Extends the base monster form with additional stats, gender weights, learnable skills,
+    /// and methods for stat calculations, rolling attributes, and skill validation.
+    /// </summary>
     [Serializable]
     public class MonsterFormData : BaseMonsterForm
     {
+        /// <summary>
+        /// Maximum value for stat boost bonuses. Used in stat calculations to scale bonus stats.
+        /// </summary>
         public const int MAX_STAT_BOOST = 256;
 
+
         /// <summary>
-        /// What generation it was introduced in
+        /// The generation (game version) in which this form was first introduced.
         /// </summary>
         public int Generation;
 
         /// <summary>
-        /// How often it appears as genderless (weight)
+        /// Weight value for spawning this monster as genderless.
+        /// Higher values increase the probability of genderless spawns.
         /// </summary>
         public int GenderlessWeight;
 
         /// <summary>
-        /// How often it appears as male (weight)
+        /// Weight value for spawning this monster as male.
+        /// Higher values increase the probability of male spawns.
         /// </summary>
         public int MaleWeight;
 
         /// <summary>
-        /// How often it appears as female (weight)
+        /// Weight value for spawning this monster as female.
+        /// Higher values increase the probability of female spawns.
         /// </summary>
         public int FemaleWeight;
 
         /// <summary>
-        /// Base HP stat
+        /// Base HP stat before level scaling. Determines hit points at any level.
         /// </summary>
         public int BaseHP;
 
         /// <summary>
-        /// Base attack stat
+        /// Base Attack stat before level scaling. Affects physical move damage.
         /// </summary>
         public int BaseAtk;
 
         /// <summary>
-        /// Base defense stat
+        /// Base Defense stat before level scaling. Reduces physical damage taken.
         /// </summary>
         [SharedRow]
         public int BaseDef;
 
         /// <summary>
-        /// Base special attack stat
+        /// Base Special Attack stat before level scaling. Affects special move damage.
         /// </summary>
         public int BaseMAtk;
 
         /// <summary>
-        /// Base special defense stat
+        /// Base Special Defense stat before level scaling. Reduces special damage taken.
         /// </summary>
         [SharedRow]
         public int BaseMDef;
 
         /// <summary>
-        /// Base speed stat
+        /// Base Speed stat before level scaling. Affects turn order and evasion.
         /// </summary>
         public int BaseSpeed;
 
         /// <summary>
-        /// Base EXP yield
+        /// Experience points awarded when this monster is defeated.
         /// </summary>
         public int ExpYield;
 
         /// <summary>
-        /// species/form height
+        /// Physical height of this monster form in meters.
         /// </summary>
         public double Height;
 
         /// <summary>
-        /// species/form weight
+        /// Physical weight of this monster form in kilograms.
         /// </summary>
         [SharedRow]
         public double Weight;
 
         /// <summary>
-        /// Possible personalities (advanced)
+        /// List of personality type indices this monster form can have.
+        /// Used for determining behavior traits based on discriminator value.
         /// </summary>
         public List<byte> Personalities;
 
         /// <summary>
-        /// Moves learned by TM
+        /// Skills that can be learned via TM (Technical Machine) items.
         /// </summary>
         public List<LearnableSkill> TeachSkills;
 
         /// <summary>
-        /// Egg moves
+        /// Skills inherited through breeding (egg moves).
         /// </summary>
         public List<LearnableSkill> SharedSkills;
 
         /// <summary>
-        /// Tutor moves
+        /// Skills learned through special tutors or events.
         /// </summary>
         public List<LearnableSkill> SecretSkills;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MonsterFormData"/> class with empty skill and personality lists.
+        /// </summary>
         public MonsterFormData()
         {
             Personalities = new List<byte>();
@@ -117,6 +133,11 @@ namespace PMDC.Data
             SecretSkills = new List<LearnableSkill>();
         }
 
+        /// <summary>
+        /// Gets the base stat value for the specified stat type.
+        /// </summary>
+        /// <param name="stat">The stat category to retrieve.</param>
+        /// <returns>The base stat value, or 0 if the stat type is not recognized.</returns>
         public int GetBaseStat(Stat stat)
         {
             switch (stat)
@@ -138,13 +159,7 @@ namespace PMDC.Data
             }
         }
 
-        /// <summary>
-        /// Calculates stat based on level, stat type, and bonus
-        /// </summary>
-        /// <param name="level"></param>
-        /// <param name="stat"></param>
-        /// <param name="bonus"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override int GetStat(int level, Stat stat, int bonus)
         {
             int curStat = getMinStat(level, stat);
@@ -155,11 +170,7 @@ namespace PMDC.Data
             return Math.Max(1, curStat + bonus * statDiff / MonsterFormData.MAX_STAT_BOOST);
         }
 
-        /// <summary>
-        /// Rolls a random skin (shinyness) this monster can spawn with
-        /// </summary>
-        /// <param name="rand"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override string RollSkin(IRandom rand)
         {
             SkinTableState table = DataManager.Instance.UniversalEvent.UniversalStates.GetWithDefault<SkinTableState>();
@@ -170,21 +181,13 @@ namespace PMDC.Data
             return DataManager.Instance.DefaultSkin;
         }
 
-        /// <summary>
-        /// Gets a personality type given an integer (advanced)
-        /// </summary>
-        /// <param name="discriminator"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override int GetPersonalityType(int discriminator)
         {
             return Personalities[discriminator / 256 % Personalities.Count];
         }
 
-        /// <summary>
-        /// Rolls a possible gender this monster can spawn as
-        /// </summary>
-        /// <param name="rand"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override Gender RollGender(IRandom rand)
         {
             int totalWeight = FemaleWeight + MaleWeight + GenderlessWeight;
@@ -198,12 +201,7 @@ namespace PMDC.Data
             return Gender.Genderless;
         }
 
-        /// <summary>
-        /// Rolls a random ability this monster can spawn as.  No hidden abilities.
-        /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="bounds"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override string RollIntrinsic(IRandom rand, int bounds)
         {
             List<string> abilities = new List<string>();
@@ -217,10 +215,7 @@ namespace PMDC.Data
         }
 
 
-        /// <summary>
-        /// Gets the possible genders that can be rolled
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override List<Gender> GetPossibleGenders()
         {
             List<Gender> genders = new List<Gender>();
@@ -234,10 +229,7 @@ namespace PMDC.Data
             return genders;
         }
 
-        /// <summary>
-        /// Gets the possible skins that can be rolled
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override List<string> GetPossibleSkins()
         {
             List<string> colors = new List<string>();
@@ -249,10 +241,7 @@ namespace PMDC.Data
             return colors;
         }
 
-        /// <summary>
-        /// Gets the possible intrinsic slots that can be rolled
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override List<int> GetPossibleIntrinsicSlots()
         {
             List<int> abilities = new List<int>();
@@ -267,6 +256,11 @@ namespace PMDC.Data
             return abilities;
         }
         
+        /// <summary>
+        /// Gets all skills this monster form can potentially learn.
+        /// Includes level-up skills, TM skills, egg moves, and tutor moves.
+        /// </summary>
+        /// <returns>Distinct list of all learnable skill IDs.</returns>
         // TODO: Consider moves from prior evolutions
         public List<string> GetPossibleSkills()
         {
@@ -279,6 +273,12 @@ namespace PMDC.Data
         }
 
 
+        /// <summary>
+        /// Calculates the minimum stat value at a given level (no bonus applied).
+        /// </summary>
+        /// <param name="level">The level to calculate the stat for.</param>
+        /// <param name="stat">The stat category to calculate.</param>
+        /// <returns>The minimum stat value at the specified level.</returns>
         private int getMinStat(int level, Stat stat)
         {
             switch (stat)
@@ -300,11 +300,7 @@ namespace PMDC.Data
             }
         }
 
-        /// <summary>
-        /// Gets its max stat for a given stat type
-        /// </summary>
-        /// <param name="stat"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override int GetMaxStat(Stat stat, int level)
         {
             switch (stat)
@@ -326,6 +322,7 @@ namespace PMDC.Data
             }
         }
 
+        /// <inheritdoc/>
         public override int ReverseGetStat(Stat stat, int val, int level)
         {
             if (stat == Stat.HP)
@@ -334,15 +331,30 @@ namespace PMDC.Data
                 return (val - 5) * DataManager.Instance.Start.MaxLevel / level - 30;
         }
 
+        /// <inheritdoc/>
         public override int GetMaxStatBonus(Stat stat)
         {
             return MAX_STAT_BOOST;
         }
 
+        /// <summary>
+        /// Standard stat calculation formula for non-HP stats.
+        /// </summary>
+        /// <param name="baseStat">The base stat value.</param>
+        /// <param name="level">The current level.</param>
+        /// <returns>The calculated stat value.</returns>
         private int genericStatCalc(int baseStat, int level)
         {
             return (baseStat + 30) * level / DataManager.Instance.Start.MaxLevel + 5;
         }
+
+        /// <summary>
+        /// HP-specific stat calculation formula with higher base offset.
+        /// Handles special case where base HP is 1 (Shedinja-style monsters).
+        /// </summary>
+        /// <param name="baseStat">The base HP stat value.</param>
+        /// <param name="level">The current level.</param>
+        /// <returns>The calculated HP value.</returns>
         private int hpStatCalc(int baseStat, int level)
         {
             if (baseStat > 1)
@@ -351,6 +363,12 @@ namespace PMDC.Data
                 return (level / 10 + 1);
         }
 
+        /// <summary>
+        /// Scales a base stat relative to the total base stat distribution.
+        /// Used for calculating maximum stats with balanced stat totals.
+        /// </summary>
+        /// <param name="baseStat">The base stat value to scale.</param>
+        /// <returns>The scaled stat value based on total distribution.</returns>
         private int scaleStatTotal(int baseStat)
         {
             if (baseStat > 1)
@@ -363,11 +381,24 @@ namespace PMDC.Data
             return 1;
         }
 
+        /// <summary>
+        /// Calculates the maximum value for a non-HP stat at a given level.
+        /// </summary>
+        /// <param name="baseStat">The base stat value.</param>
+        /// <param name="level">The current level.</param>
+        /// <returns>The maximum stat value.</returns>
         private int genericStatMax(int baseStat, int level)
         {
             return genericStatCalc(scaleStatTotal(baseStat), level);
         }
 
+        /// <summary>
+        /// Calculates the maximum HP value at a given level.
+        /// Handles special case for monsters with 1 base HP.
+        /// </summary>
+        /// <param name="baseStat">The base HP stat value.</param>
+        /// <param name="level">The current level.</param>
+        /// <returns>The maximum HP value.</returns>
         private int hpStatMax(int baseStat, int level)
         {
             if (baseStat > 1)
@@ -376,11 +407,7 @@ namespace PMDC.Data
                 return (level / 5 + 1);
         }
 
-        /// <summary>
-        /// Checks if it can learn the skill
-        /// </summary>
-        /// <param name="skill"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override bool CanLearnSkill(string skill)
         {
             if (LevelSkills.FindIndex(a => a.Skill == skill) > -1)

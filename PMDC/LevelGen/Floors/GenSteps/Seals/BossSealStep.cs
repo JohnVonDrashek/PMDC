@@ -13,31 +13,40 @@ namespace PMDC.LevelGen
 {
     /// <summary>
     /// One part of several steps used to create a boss room.
-    /// This step takes an already-placed boss room, with an already-placed summoning tile and fills it with data on which tiles to lock down before summoning the boss.
+    /// This step takes an already-placed boss room with an already-placed summoning tile
+    /// and fills it with data on which tiles to lock down before summoning the boss.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type that extends ListMapGenContext.</typeparam>
     [Serializable]
     public class BossSealStep<T> : BaseSealStep<T> where T : ListMapGenContext
     {
         /// <summary>
-        /// The tile used to seal the room.
+        /// The tile type used to seal the room borders.
         /// </summary>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
         public string SealedTile;
 
         /// <summary>
-        /// The tile used to summon the battle.
+        /// The tile type used to summon the boss battle.
         /// </summary>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
         public string BossTile;
 
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public BossSealStep()
         {
             BossFilters = new List<BaseRoomFilter>();
         }
 
+        /// <summary>
+        /// Initializes a new instance with the specified seal and boss tiles.
+        /// </summary>
+        /// <param name="sealedTile">The tile ID used to seal the room borders.</param>
+        /// <param name="bossTile">The tile ID used to trigger the boss fight.</param>
         public BossSealStep(string sealedTile, string bossTile) : base()
         {
             SealedTile = sealedTile;
@@ -46,10 +55,21 @@ namespace PMDC.LevelGen
         }
 
         /// <summary>
-        /// Singles out the boss room intended for this process.
+        /// Gets or sets the filters used to identify the boss room for this sealing process.
         /// </summary>
         public List<BaseRoomFilter> BossFilters { get; set; }
 
+        /// <summary>
+        /// Places seal tiles around the boss room and sets up the boss effect event state.
+        /// Finds the boss room using the configured filters, then seals the boundaries
+        /// and locks certain tiles. The boss tile is linked to an OpenVaultEvent that
+        /// unlocks the sealed tiles when triggered.
+        /// </summary>
+        /// <param name="map">The map generation context to modify.</param>
+        /// <param name="sealList">A dictionary mapping locations to their seal types.
+        /// Blocked seals are replaced with unbreakable terrain.
+        /// Other seal types are locked with sealed tiles and tracked for the vault event.</param>
+        /// <inheritdoc/>
         protected override void PlaceBorders(T map, Dictionary<Loc, SealType> sealList)
         {
             Rect? bossRect = null;

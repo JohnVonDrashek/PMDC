@@ -13,45 +13,68 @@ namespace PMDC.LevelGen
     /// <summary>
     /// Generates monster houses randomly across the whole dungeon segment.
     /// </summary>
+    /// <remarks>
+    /// This zone step spreads monster house floors throughout a dungeon segment, with each floor receiving
+    /// a randomly selected monster house configuration populated with themed items and mobs.
+    /// </remarks>
     [Serializable]
     public class SpreadHouseZoneStep : SpreadZoneStep
     {
         /// <summary>
-        /// At what point in the map gen process to run the step in.
+        /// Gets or sets the priority at which to execute this zone step in the map generation process.
         /// </summary>
         public Priority Priority;
 
         /// <summary>
-        /// The specially designed pool of items to spawn for the monster house. These + the items normally found on the monsterhouse floor are fed into ItemThemes to decide what items to spawn.
+        /// Gets or sets the specially designed pool of items to spawn for the monster house.
         /// </summary>
+        /// <remarks>
+        /// These items are combined with the items normally found on the monster house floor and fed into
+        /// ItemThemes to determine what items actually spawn in the generated house.
+        /// </remarks>
         [RangeBorder(0, true, true)]
         public SpawnRangeList<MapItem> Items;
 
         /// <summary>
-        /// Themeing for items to spawn in th monsterhouse. Can use specific items from Items, or the item pool of the floor itself.
+        /// Gets or sets the item theme configurations for spawning items in the monster house.
         /// </summary>
+        /// <remarks>
+        /// Themes can use specific items from the Items list or the item pool of the floor itself.
+        /// </remarks>
         [RangeBorder(0, true, true)]
         public SpawnRangeList<ItemTheme> ItemThemes;
 
         /// <summary>
-        /// The specially designed pool of mobs to spawn for the monster house. These + the mobs normally found on the monsterhouse floor are fed into MobThemes to decide what items to spawn.
+        /// Gets or sets the specially designed pool of mobs to spawn for the monster house.
         /// </summary>
+        /// <remarks>
+        /// These mobs are combined with the mobs normally found on the monster house floor and fed into
+        /// MobThemes to determine what mobs actually spawn in the generated house.
+        /// </remarks>
         [RangeBorder(0, true, true)]
         public SpawnRangeList<MobSpawn> Mobs;
 
         /// <summary>
-        /// Themeing for mobs to spawn in th monsterhouse. Can use specific mobs from Mobs, or the spawn pool of the floor itself.
+        /// Gets or sets the mob theme configurations for spawning mobs in the monster house.
         /// </summary>
+        /// <remarks>
+        /// Themes can use specific mobs from the Mobs list or the spawn pool of the floor itself.
+        /// </remarks>
         [RangeBorder(0, true, true)]
         public SpawnRangeList<MobTheme> MobThemes;
 
         /// <summary>
-        /// The type of monster house to initialize as a base before populating with items and mobs.
+        /// Gets or sets the spawn list of monster house base step implementations.
         /// </summary>
+        /// <remarks>
+        /// A randomly selected step from this list is used to initialize the base monster house structure
+        /// before populating it with items and mobs.
+        /// </remarks>
         public SpawnList<IMonsterHouseBaseStep> HouseStepSpawns;
 
-        //spreads an item through the floors
-        //ensures that the space in floors between occurrences is kept tame
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public SpreadHouseZoneStep()
         {
             Items = new SpawnRangeList<MapItem>();
@@ -60,6 +83,12 @@ namespace PMDC.LevelGen
             MobThemes = new SpawnRangeList<MobTheme>();
             HouseStepSpawns = new SpawnList<IMonsterHouseBaseStep>();
         }
+
+        /// <summary>
+        /// Initializes a new instance with the specified priority and spread plan.
+        /// </summary>
+        /// <param name="priority">The priority level determining when this step executes in the map generation process.</param>
+        /// <param name="plan">The spread plan that controls how monster houses are distributed across the dungeon segment.</param>
         public SpreadHouseZoneStep(Priority priority, SpreadPlanBase plan) : base(plan)
         {
             Items = new SpawnRangeList<MapItem>();
@@ -71,6 +100,11 @@ namespace PMDC.LevelGen
             Priority = priority;
         }
 
+        /// <summary>
+        /// Initializes a new instance by copying another instance with a new random seed.
+        /// </summary>
+        /// <param name="other">The source instance to copy from.</param>
+        /// <param name="seed">The random seed to use for this instance's random number generator.</param>
         protected SpreadHouseZoneStep(SpreadHouseZoneStep other, ulong seed) : base(other, seed)
         {
             Items = other.Items.CopyState();
@@ -82,8 +116,15 @@ namespace PMDC.LevelGen
             Priority = other.Priority;
         }
 
+        /// <inheritdoc/>
+        /// <returns>A new instance of SpreadHouseZoneStep with the specified seed.</returns>
         public override ZoneStep Instantiate(ulong seed) { return new SpreadHouseZoneStep(this, seed); }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Creates a monster house for the current floor by selecting a base house step, populating it with themed
+        /// items and mobs from the configured spawn lists, and enqueueing it for execution at the specified priority.
+        /// </remarks>
         protected override bool ApplyToFloor(ZoneGenContext zoneContext, IGenContext context, StablePriorityQueue<Priority, IGenStep> queue, int dropIdx)
         {
             int id = zoneContext.CurrentID;

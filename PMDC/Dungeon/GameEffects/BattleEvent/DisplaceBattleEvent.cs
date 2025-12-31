@@ -18,44 +18,51 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events that change the target's position on the map
-
     /// <summary>
-    /// Event that makes the user hop by the specified distance
+    /// Event that makes the user hop by the specified distance.
     /// </summary>
     [Serializable]
     public class HopEvent : BattleEvent
     {
         /// <summary>
-        /// The total distance to hop
+        /// The total distance to hop.
         /// </summary>
         public int Distance;
 
         /// <summary>
-        /// Whether to hop forwards or backwards
+        /// Whether to hop forwards or backwards.
         /// </summary>
         public bool Reverse;
 
         /// <summary>
-        /// Whether to affect the user or target
+        /// Whether to affect the user or target.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public HopEvent() { }
+
+        /// <summary>
+        /// Creates a new HopEvent with the specified distance and direction.
+        /// </summary>
         public HopEvent(int distance, bool reverse)
         {
             Distance = distance;
             Reverse = reverse;
         }
+
+        /// <inheritdoc/>
         protected HopEvent(HopEvent other)
         {
             Distance = other.Distance;
             Reverse = other.Reverse;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new HopEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -74,27 +81,37 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that transport the user and nearby allies to the tile directly in front of another character or wall
+    /// Event that transports the user and nearby allies to the tile directly in front of another character or wall
     /// </summary>
     [Serializable]
     public class PounceEvent : BattleEvent
     {
         /// <summary>
-        /// The radius that allies must be within in order to pounce
+        /// The radius that allies must be within in order to pounce.
         /// </summary>
         public int AllyRadius;
-        public PounceEvent()
-        { }
+
+        /// <inheritdoc/>
+        public PounceEvent() { }
+
+        /// <summary>
+        /// Creates a new PounceEvent with the specified ally radius.
+        /// </summary>
         public PounceEvent(int allyRadius)
         {
             AllyRadius = allyRadius;
         }
+
+        /// <inheritdoc/>
         public PounceEvent(PounceEvent other)
         {
             AllyRadius = other.AllyRadius;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PounceEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = context.User;
@@ -127,13 +144,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that makes the target warp in front of the user
+    /// Event that makes the target warp in front of the user.
     /// </summary>
     [Serializable]
     public class LureEvent : BattleEvent
     {
+        /// <inheritdoc/>
+        public LureEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LureEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = context.Target;
@@ -155,18 +177,28 @@ namespace PMDC.Dungeon
     public class KnockBackEvent : BattleEvent
     {
         /// <summary>
-        /// The distance to knock back
+        /// The distance to knock back.
         /// </summary>
         public int Distance;
 
+        /// <inheritdoc/>
         public KnockBackEvent() { }
+
+        /// <summary>
+        /// Creates a new KnockBackEvent with the specified distance.
+        /// </summary>
         public KnockBackEvent(int distance) { Distance = distance; }
+
+        /// <inheritdoc/>
         protected KnockBackEvent(KnockBackEvent other)
         {
             Distance = other.Distance;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new KnockBackEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.Dead)
@@ -186,30 +218,40 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that throws the target backwards by the specified distance 
+    /// Event that throws the target backwards by the specified distance
     /// </summary>
     [Serializable]
     public class ThrowBackEvent : BattleEvent
     {
         /// <summary>
-        /// The distance to throw the target back
+        /// The distance to throw the target back.
         /// </summary>
         public int Distance;
 
         /// <summary>
-        /// The event calculating how much damage the target will take
+        /// The event calculating how much damage the target will take on collision.
         /// </summary>
         public CalculatedDamageEvent HitEvent;
 
+        /// <inheritdoc/>
         public ThrowBackEvent() { }
+
+        /// <summary>
+        /// Creates a new ThrowBackEvent with the specified distance and hit event.
+        /// </summary>
         public ThrowBackEvent(int distance, CalculatedDamageEvent hitEvent) { Distance = distance; HitEvent = hitEvent; }
+
+        /// <inheritdoc/>
         protected ThrowBackEvent(ThrowBackEvent other)
         {
             Distance = other.Distance;
             HitEvent = (CalculatedDamageEvent)other.HitEvent.Clone();
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ThrowBackEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.Dead)
@@ -230,17 +272,30 @@ namespace PMDC.Dungeon
             }
         }
 
+        /// <summary>
+        /// Context for handling throw collision events.
+        /// </summary>
         private class ThrowTargetContext
         {
             /// <summary>
-            /// The total damage the target will take
+            /// The total damage the target will take on collision.
             /// </summary>
             public int Damage;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ThrowTargetContext"/> class.
+            /// </summary>
+            /// <param name="damage">The damage to deal on collision.</param>
             public ThrowTargetContext(int damage)
             {
                 Damage = damage;
             }
 
+            /// <summary>
+            /// Handles the collision hit event between the thrown target and another character.
+            /// </summary>
+            /// <param name="targetChar">The character that was thrown.</param>
+            /// <param name="attacker">The character that was hit by the thrown target.</param>
             public IEnumerator<YieldInstruction> Hit(Character targetChar, Character attacker)
             {
                 GameManager.Instance.BattleSE("DUN_Hit_Neutral");
@@ -264,20 +319,29 @@ namespace PMDC.Dungeon
     [Serializable]
     public class LaunchAllEvent : BattleEvent
     {
-
         /// <summary>
-        /// The distance to knock back
+        /// The distance to knock back.
         /// </summary>
         public int Distance;
 
+        /// <inheritdoc/>
         public LaunchAllEvent() { }
+
+        /// <summary>
+        /// Creates a new LaunchAllEvent with the specified distance.
+        /// </summary>
         public LaunchAllEvent(int distance) { Distance = distance; }
+
+        /// <inheritdoc/>
         protected LaunchAllEvent(LaunchAllEvent other)
         {
             Distance = other.Distance;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LaunchAllEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Dir8 moveDir = context.User.CharDir;
@@ -315,28 +379,38 @@ namespace PMDC.Dungeon
     public class RandomGroupWarpEvent : BattleEvent
     {
         /// <summary>
-        /// The max warp distance 
+        /// The max warp distance.
         /// </summary>
         public int Distance;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public RandomGroupWarpEvent() { }
+
+        /// <summary>
+        /// Creates a new RandomGroupWarpEvent with the specified parameters.
+        /// </summary>
         public RandomGroupWarpEvent(int distance, bool affectTarget)
         {
             Distance = distance;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected RandomGroupWarpEvent(RandomGroupWarpEvent other)
         {
             Distance = other.Distance;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RandomGroupWarpEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -370,42 +444,55 @@ namespace PMDC.Dungeon
     [Serializable]
     public class RandomWarpEvent : BattleEvent
     {
-
         /// <summary>
-        /// The max warp distance 
+        /// The max warp distance.
         /// </summary>
         public int Distance;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log.
         /// </summary>
         [StringKey(0, true)]
         public StringKey TriggerMsg;
 
+        /// <inheritdoc/>
         public RandomWarpEvent() { }
+
+        /// <summary>
+        /// Creates a new RandomWarpEvent with the specified parameters.
+        /// </summary>
         public RandomWarpEvent(int distance, bool affectTarget)
         {
             Distance = distance;
             AffectTarget = affectTarget;
         }
+
+        /// <summary>
+        /// Creates a new RandomWarpEvent with the specified parameters and trigger message.
+        /// </summary>
         public RandomWarpEvent(int distance, bool affectTarget, StringKey triggerMsg)
         {
             Distance = distance;
             AffectTarget = affectTarget;
             TriggerMsg = triggerMsg;
         }
+
+        /// <inheritdoc/>
         protected RandomWarpEvent(RandomWarpEvent other)
         {
             Distance = other.Distance;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RandomWarpEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -428,40 +515,51 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that warps the character nearby the stairs
+    /// Event that warps the character nearby the stairs.
     /// </summary>
     [Serializable]
     public class WarpToEndEvent : BattleEvent
     {
         /// <summary>
-        /// The max warp distance to check for the end point
+        /// The max warp distance to check for the end point.
         /// </summary>
         public int Distance;
 
         /// <summary>
-        /// The max distance away the character will be from the end point
+        /// The max distance away the character will be from the end point.
         /// </summary>
         public int DiffRange;
 
-
+        /// <summary>
+        /// Whether to affect the target or user.
+        /// </summary>
         public bool AffectTarget;
 
-
+        /// <inheritdoc/>
         public WarpToEndEvent() { }
+
+        /// <summary>
+        /// Creates a new WarpToEndEvent with the specified parameters.
+        /// </summary>
         public WarpToEndEvent(int distance, int diff, bool affectTarget)
         {
             Distance = distance;
             DiffRange = diff;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected WarpToEndEvent(WarpToEndEvent other)
         {
             Distance = other.Distance;
             DiffRange = other.DiffRange;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WarpToEndEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -474,7 +572,10 @@ namespace PMDC.Dungeon
                 yield return CoroutineManager.Instance.StartCoroutine(WarpToEnd(target, Distance, DiffRange));
         }
 
-
+        /// <summary>
+        /// Finds all exit tiles (stairs) on the current map.
+        /// </summary>
+        /// <returns>A list of locations containing exit tiles.</returns>
         public static List<Loc> FindExits()
         {
             List<Loc> exits = new List<Loc>();
@@ -491,6 +592,13 @@ namespace PMDC.Dungeon
             return exits;
         }
 
+        /// <summary>
+        /// Warps a character near the closest exit within the specified radius.
+        /// </summary>
+        /// <param name="character">The character to warp.</param>
+        /// <param name="radius">The search radius for finding exits.</param>
+        /// <param name="diffRange">The acceptable distance from the exit to warp to.</param>
+        /// <param name="msg">Whether to display a message if no exit is found.</param>
         public static IEnumerator<YieldInstruction> WarpToEnd(Character character, int radius, int diffRange, bool msg = true)
         {
             List<Character> characters = new List<Character>();
@@ -534,29 +642,39 @@ namespace PMDC.Dungeon
     public class WarpHereEvent : BattleEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log.
         /// </summary>
         [StringKey(0, true)]
         public StringKey Msg;
 
         /// <summary>
-        /// Whether to warp the target nearby the user
+        /// Whether to warp the target nearby the user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public WarpHereEvent() { }
+
+        /// <summary>
+        /// Creates a new WarpHereEvent with the specified parameters.
+        /// </summary>
         public WarpHereEvent(StringKey msg, bool affectTarget)
         {
             Msg = msg;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected WarpHereEvent(WarpHereEvent other)
         {
             Msg = other.Msg;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WarpHereEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -579,14 +697,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that warps the character to one of its nearby allies
+    /// Event that warps the character to one of its nearby allies.
     /// </summary>
     [Serializable]
     public class WarpToAllyEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public WarpToAllyEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WarpToAllyEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<AnchorState>())
@@ -619,38 +741,42 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that warps allies to the user that are within the specified distance 
+    /// Event that warps allies to the user that are within the specified distance
     /// </summary>
     [Serializable]
     public class WarpAlliesInEvent : BattleEvent
     {
-
         /// <summary>
-        /// The max distance that allies can be summoned from
+        /// The max distance that allies can be summoned from.
         /// </summary>
         public int Distance;
 
         /// <summary>
-        /// The max amount of allies to summon
+        /// The max amount of allies to summon.
         /// </summary>
         public int Amount;
 
         /// <summary>
-        /// Whether to warp the furthest allies
+        /// Whether to warp the furthest allies first.
         /// </summary>
         public bool FarthestFirst;
 
         /// <summary>
-        /// Whether to print a fail message if no allies are warped
+        /// Whether to print a fail message if no allies are warped.
         /// </summary>
         public bool SilentFail;
 
         /// <summary>
-        /// The message displayed in the dungeon log if an ally was warped
+        /// The message displayed in the dungeon log if an ally was warped.
         /// </summary>
         public StringKey Msg;
 
+        /// <inheritdoc/>
         public WarpAlliesInEvent() { }
+
+        /// <summary>
+        /// Creates a new WarpAlliesInEvent with the specified parameters.
+        /// </summary>
         public WarpAlliesInEvent(int distance, int allies, bool farthestFirst, StringKey msg, bool silentFail)
         {
             Distance = distance;
@@ -659,6 +785,8 @@ namespace PMDC.Dungeon
             Msg = msg;
             SilentFail = silentFail;
         }
+
+        /// <inheritdoc/>
         protected WarpAlliesInEvent(WarpAlliesInEvent other)
         {
             Distance = other.Distance;
@@ -667,8 +795,11 @@ namespace PMDC.Dungeon
             Msg = other.Msg;
             SilentFail = other.SilentFail;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WarpAlliesInEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             StablePriorityQueue<int, Character> targets = new StablePriorityQueue<int, Character>();
@@ -697,27 +828,36 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that warps enemies to the user that are within the specified distance 
+    /// Event that warps enemies to the user that are within the specified distance
     /// </summary>
     [Serializable]
     public class WarpFoesToTileEvent : BattleEvent
     {
-
         /// <summary>
-        /// The max amount of allies to summon
+        /// The max amount of enemies to summon.
         /// </summary>
         public int Amount;
 
         /// <summary>
-        /// The max distance that enemies can be summoned from
+        /// The max distance that enemies can be summoned from.
         /// </summary>
         public int Distance;
 
+        /// <inheritdoc/>
         public WarpFoesToTileEvent() { }
+
+        /// <summary>
+        /// Creates a new WarpFoesToTileEvent with the specified parameters.
+        /// </summary>
         public WarpFoesToTileEvent(int distance, int foes) { Distance = distance; Amount = foes; }
+
+        /// <inheritdoc/>
         protected WarpFoesToTileEvent(WarpFoesToTileEvent other) { Distance = other.Distance; Amount = other.Amount; }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WarpFoesToTileEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             StablePriorityQueue<int, Character> targets = new StablePriorityQueue<int, Character>();
@@ -746,14 +886,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to swap places with the target
+    /// Event that causes the user to swap places with the target.
     /// </summary>
     [Serializable]
     public class SwitcherEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public SwitcherEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SwitcherEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<AnchorState>())

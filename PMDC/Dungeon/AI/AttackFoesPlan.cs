@@ -7,32 +7,85 @@ using RogueEssence.Data;
 
 namespace PMDC.Dungeon
 {
-
+    /// <summary>
+    /// AI plan that causes the character to seek out and attack hostile targets.
+    /// Evaluates available skills, considers positioning strategy, and pathfinds toward enemies.
+    /// This is the primary aggressive AI behavior used by most hostile dungeon characters.
+    /// </summary>
     [Serializable]
     public class AttackFoesPlan : AIPlan
     {
+        /// <summary>
+        /// The strategy used to select which attack or skill to use against enemies.
+        /// </summary>
         public AttackChoice AttackPattern;
+
+        /// <summary>
+        /// The positioning strategy to use when approaching or fighting enemies.
+        /// </summary>
         public PositionChoice PositionPattern;
-        //continue to the last place the enemy was found (if no other enemies can be found) before losing aggro
+        /// <summary>
+        /// The last known location of a target. Tracks the position where an enemy was last seen.
+        /// Allows the character to pursue to the last location if the target is no longer visible,
+        /// before eventually losing aggro.
+        /// </summary>
         [NonSerialized]
         private Loc? targetLoc;
+
+        /// <summary>
+        /// History of locations visited during pursuit. Used to maintain pursuit pathfinding
+        /// and avoid getting stuck in repetitive movement patterns.
+        /// Limited to the last 10 locations to prevent unbounded memory growth.
+        /// </summary>
         [NonSerialized]
         public List<Loc> LocHistory;
+
+        /// <summary>
+        /// The last character that was directly observed by this AI.
+        /// Cached to enable intelligent pursuit behavior after target goes out of sight.
+        /// </summary>
         [NonSerialized]
         private Character lastSeenChar;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AttackFoesPlan"/> class with default values.
+        /// </summary>
         public AttackFoesPlan() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AttackFoesPlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="attackPattern">Strategy for selecting attacks.</param>
+        /// <param name="positionPattern">Strategy for positioning relative to targets.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public AttackFoesPlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange, AttackChoice attackPattern, PositionChoice positionPattern, TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable) : base(iq, attackRange, statusRange, selfStatusRange, restrictedMobilityTypes, restrictMobilityPassable)
         {
             AttackPattern = attackPattern;
             PositionPattern = positionPattern;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         protected AttackFoesPlan(AttackFoesPlan other) : base(other)
         {
             AttackPattern = other.AttackPattern;
             PositionPattern = other.PositionPattern;
         }
-        public override BasePlan CreateNew() { return new AttackFoesPlan(this); }
+
+        /// <inheritdoc/>
+        public override BasePlan CreateNew()
+        {
+            return new AttackFoesPlan(this);
+        }
+
+        /// <inheritdoc/>
         public override void SwitchedIn(BasePlan currentPlan)
         {
             lastSeenChar = null;
@@ -41,6 +94,14 @@ namespace PMDC.Dungeon
             base.SwitchedIn(currentPlan);
         }
 
+        /// <summary>
+        /// Evaluates the current situation and determines the best action to take.
+        /// Searches for enemies, calculates optimal positioning, and selects attacks.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="preThink">Whether this is a pre-think evaluation (before the character's actual turn).</param>
+        /// <param name="rand">Random number generator for decision-making.</param>
+        /// <returns>The action to take, or null to defer to the next plan in the tactic.</returns>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             if (controlledChar.CantWalk)
@@ -277,11 +338,17 @@ namespace PMDC.Dungeon
         }
 
         /// <summary>
-        /// 1 = better, -1 worse, 0 = equal 
+        /// Compares two positioning options to determine which is more favorable.
+        /// The comparison value depends on the current positioning strategy.
+        /// For Avoid positioning, higher weight (longer distance) is better.
+        /// For Close positioning, lower weight (shorter distance) is better.
         /// </summary>
-        /// <param name="newVal"></param>
-        /// <param name="curBest"></param>
-        /// <returns></returns>
+        /// <param name="positioning">The positioning strategy to use for comparison.</param>
+        /// <param name="newVal">The new positioning option being evaluated.</param>
+        /// <param name="curBest">The current best positioning option.</param>
+        /// <returns>
+        /// 1 if newVal is better than curBest, -1 if worse, 0 if equal.
+        /// </returns>
         private int comparePathValues(PositionChoice positioning, RangeTarget newVal, RangeTarget curBest)
         {
             if (newVal.Weight == curBest.Weight)

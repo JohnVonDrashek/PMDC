@@ -18,49 +18,69 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events related to recovering HP
+    /// <summary>
+    /// Interface for healing events that provide HP recovery fraction information.
+    /// </summary>
     public interface IHealEvent
     {
+        /// <summary>
+        /// The numerator of the HP fraction to heal.
+        /// </summary>
         int HPNum { get; }
+
+        /// <summary>
+        /// The denominator of the HP fraction to heal.
+        /// </summary>
         int HPDen { get; }
     }
 
     /// <summary>
-    /// Event that heals the character based on the specified fraction of the character's max HP 
-    /// Stat drops will heal the character instead
+    /// Event that heals the character based on the specified fraction of the character's max HP.
     /// </summary>
     [Serializable]
     public class RestoreHPEvent : BattleEvent, IHealEvent
     {
         /// <summary>
-        /// The numerator of the fraction
+        /// The numerator of the HP fraction to restore.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the fraction
+        /// The denominator of the HP fraction to restore.
         /// </summary>
         public int Denominator;
 
         /// <summary>
-        /// Whether to affect the target or user 
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public int HPNum { get { return Numerator; } }
+
+        /// <inheritdoc/>
         public int HPDen { get { return Denominator; } }
 
+        /// <inheritdoc/>
         public RestoreHPEvent() { }
+
+        /// <summary>
+        /// Creates a new RestoreHPEvent with the specified fraction and target.
+        /// </summary>
         public RestoreHPEvent(int numerator, int denominator, bool affectTarget) { Numerator = numerator; Denominator = denominator; AffectTarget = affectTarget; }
+
+        /// <inheritdoc/>
         protected RestoreHPEvent(RestoreHPEvent other)
         {
             Numerator = other.Numerator;
             Denominator = other.Denominator;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RestoreHPEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -75,41 +95,54 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that heals the character depending on the map status
+    /// Event that heals the character depending on the map status.
     /// </summary>
     [Serializable]
     public class WeatherHPEvent : BattleEvent, IHealEvent
     {
         /// <summary>
-        /// The map status mapped to a bool
-        /// The bool indicates whether the heal will be boosted or reduced 
+        /// The map status mapped to a bool.
+        /// The bool indicates whether the heal will be boosted (true) or reduced (false).
         /// </summary>
         [JsonConverter(typeof(MapStatusBoolDictConverter))]
         [DataType(1, DataManager.DataType.MapStatus, false)]
         public Dictionary<string, bool> WeatherPair;
 
         /// <summary>
-        /// The numerator of the fractional heal
+        /// The base numerator of the fractional heal.
         /// </summary>
         public int HPDiv;
 
+        /// <inheritdoc/>
         public int HPNum { get { return HPDiv; } }
+
+        /// <inheritdoc/>
         public int HPDen { get { return 12; } }
 
+        /// <inheritdoc/>
         public WeatherHPEvent() { WeatherPair = new Dictionary<string, bool>(); }
+
+        /// <summary>
+        /// Creates a new WeatherHPEvent with the specified HP divisor and weather conditions.
+        /// </summary>
         public WeatherHPEvent(int hpDiv, Dictionary<string, bool> weather)
         {
             HPDiv = hpDiv;
             WeatherPair = weather;
         }
+
+        /// <inheritdoc/>
         protected WeatherHPEvent(WeatherHPEvent other) : this()
         {
             HPDiv = other.HPDiv;
             foreach (string weather in other.WeatherPair.Keys)
                 WeatherPair.Add(weather, other.WeatherPair[weather]);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WeatherHPEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int numerator = HPDiv;
@@ -134,25 +167,34 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that restores the user's HP based on the damage the move dealt 
+    /// Event that restores the user's HP based on the damage the move dealt.
     /// </summary>
     [Serializable]
     public class HPDrainEvent : BattleEvent
     {
         /// <summary>
-        /// The amount of HP restored calculated by damage dealt divided by this value
+        /// The divisor for calculating HP restored from damage dealt.
         /// </summary>
         public int DrainFraction;
 
+        /// <inheritdoc/>
         public HPDrainEvent() { }
+
+        /// <summary>
+        /// Creates a new HPDrainEvent with the specified drain fraction.
+        /// </summary>
         public HPDrainEvent(int drainFraction) { DrainFraction = drainFraction; }
+
+        /// <inheritdoc/>
         protected HPDrainEvent(HPDrainEvent other)
         {
             DrainFraction = other.DrainFraction;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new HPDrainEvent(this); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damageDone = context.GetContextStateInt<TotalDamageDealt>(true, 0);
@@ -172,14 +214,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that revives all fainted party memebers
+    /// Event that revives all fainted party members.
     /// </summary>
     [Serializable]
     public class ReviveAllEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public ReviveAllEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ReviveAllEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             bool revived = false;

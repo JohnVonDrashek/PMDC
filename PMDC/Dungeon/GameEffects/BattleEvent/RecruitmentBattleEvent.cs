@@ -18,13 +18,22 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events that handle recruitment
+    /// <summary>
+    /// Battle events that handle recruitment mechanics.
+    /// </summary>
 
+    /// <summary>
+    /// Abstract base class for events that modify recruitment rates.
+    /// </summary>
     [Serializable]
     public abstract class RecruitBoostEvent : BattleEvent
     {
+        /// <summary>
+        /// Calculates the recruitment rate modifier for this event.
+        /// </summary>
         protected abstract int GetRecruitRate(GameEventOwner owner, Character ownerChar, BattleContext context);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target != null)
@@ -44,14 +53,25 @@ namespace PMDC.Dungeon
         /// </summary>
         public int RecruitRate;
 
+        /// <inheritdoc/>
         public FlatRecruitmentEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FlatRecruitmentEvent"/> class with specified rate.
+        /// </summary>
+        /// <param name="recruitRate">The flat recruitment rate bonus.</param>
         public FlatRecruitmentEvent(int recruitRate) { RecruitRate = recruitRate; }
+
+        /// <inheritdoc/>
         protected FlatRecruitmentEvent(FlatRecruitmentEvent other)
         {
             RecruitRate = other.RecruitRate;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FlatRecruitmentEvent(this); }
 
+        /// <inheritdoc/>
         protected override int GetRecruitRate(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             return RecruitRate;
@@ -66,20 +86,39 @@ namespace PMDC.Dungeon
     public class TypeRecruitmentEvent : RecruitBoostEvent
     {
         [JsonConverter(typeof(ElementSetConverter))]
+        /// <summary>
+        /// Set of element types that provide a recruitment bonus.
+        /// </summary>
         [DataType(1, DataManager.DataType.Element, false)]
         public HashSet<string> Elements;
 
+        /// <inheritdoc/>
         public TypeRecruitmentEvent() { Elements = new HashSet<string>(); }
+
+        /// <summary>
+        /// Initializes a new instance with a single element type.
+        /// </summary>
+        /// <param name="element">The element type that provides a recruitment bonus.</param>
         public TypeRecruitmentEvent(string element) : this() { Elements.Add(element); }
+
+        /// <summary>
+        /// Initializes a new instance with multiple element types.
+        /// </summary>
+        /// <param name="elements">The set of element types that provide a recruitment bonus.</param>
         public TypeRecruitmentEvent(HashSet<string> elements) { Elements = elements; }
+
+        /// <inheritdoc/>
         protected TypeRecruitmentEvent(TypeRecruitmentEvent other)
             : this()
         {
             foreach (string element in other.Elements)
                 Elements.Add(element);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TypeRecruitmentEvent(this); }
 
+        /// <inheritdoc/>
         protected override int GetRecruitRate(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             MonsterID formData = context.Target.BaseForm;
@@ -92,14 +131,16 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that boosts the recruitment rate if the target is not the default skin. 
-    /// Otherwise, it drops the recruitment rate
+    /// Event that boosts the recruitment rate if the target is not the default skin.
+    /// Otherwise, it drops the recruitment rate.
     /// </summary>
     [Serializable]
     public class SkinRecruitmentEvent : RecruitBoostEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SkinRecruitmentEvent(); }
 
+        /// <inheritdoc/>
         protected override int GetRecruitRate(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             MonsterID formData = context.Target.BaseForm;
@@ -110,13 +151,15 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the recruitment rate based on the type matchup between the user and target
+    /// Event that modifies the recruitment rate based on the type matchup between the user and target.
     /// </summary>
     [Serializable]
     public class TypeMatchupRecruitmentEvent : RecruitBoostEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TypeMatchupRecruitmentEvent(); }
 
+        /// <inheritdoc/>
         protected override int GetRecruitRate(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int matchup1 = PreTypeEvent.CalculateTypeMatchup(context.User.Element1, context.Target.Element1);
@@ -130,13 +173,15 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that modifies the recruitment rate based on the level difference between the user and target
+    /// Event that modifies the recruitment rate based on the level difference between the user and target.
     /// </summary>
     [Serializable]
     public class LevelRecruitmentEvent : RecruitBoostEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LevelRecruitmentEvent(); }
 
+        /// <inheritdoc/>
         protected override int GetRecruitRate(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             return ((context.User.Level - context.Target.Level - 1) / 10 + 1) * 10;//between + and - 100, at max
@@ -144,26 +189,35 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that attempts to recruit the target.
-    /// If successful, the recruit can be nicknamed and added to the team
+    /// Event that attempts to recruit the target using an item.
+    /// If successful, the recruit can be nicknamed and added to the team.
     /// </summary>
     [Serializable]
     public class RecruitmentEvent : BaseRecruitmentEvent
     {
+        /// <inheritdoc/>
         public RecruitmentEvent()
         { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecruitmentEvent"/> class with a script event.
+        /// </summary>
+        /// <param name="scriptEvent">The script event to run when interacting with the recruit.</param>
         public RecruitmentEvent(BattleScriptEvent scriptEvent) : base(scriptEvent)
         {
 
         }
 
+        /// <inheritdoc/>
         public RecruitmentEvent(RecruitmentEvent other) : base(other)
         {
 
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RecruitmentEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             context.Target.CharDir = context.User.CharDir.Reverse();
@@ -219,6 +273,9 @@ namespace PMDC.Dungeon
             }
         }
 
+        /// <summary>
+        /// Handles the failure case when recruitment fails.
+        /// </summary>
         private IEnumerator<YieldInstruction> failRecruit(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             GameManager.Instance.BattleSE("DUN_Miss");
@@ -237,38 +294,49 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that attempts to recruit the target.
-    /// If successful, the recruit can be nicknamed and added to the team
+    /// Event that attempts to recruit a defeated target.
+    /// If successful, the recruit can be nicknamed and added to the team.
     /// </summary>
     [Serializable]
     public class DefeatRecruitmentEvent : BaseRecruitmentEvent
     {
         /// <summary>
-        /// The numerator of the modifier
+        /// The numerator of the recruitment rate modifier.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The denominator of the modififer
+        /// The denominator of the recruitment rate modifier.
         /// </summary>
         public int Denominator;
 
+        /// <inheritdoc/>
         public DefeatRecruitmentEvent()
         { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DefeatRecruitmentEvent"/> class with specified parameters.
+        /// </summary>
+        /// <param name="numerator">The numerator of the recruitment rate modifier.</param>
+        /// <param name="denominator">The denominator of the recruitment rate modifier.</param>
+        /// <param name="scriptEvent">The script event to run when interacting with the recruit.</param>
         public DefeatRecruitmentEvent(int numerator, int denominator, BattleScriptEvent scriptEvent) : base(scriptEvent)
         {
             Numerator = numerator;
             Denominator = denominator;
         }
 
+        /// <inheritdoc/>
         public DefeatRecruitmentEvent(DefeatRecruitmentEvent other) : base(other)
         {
             Numerator = other.Numerator;
             Denominator = other.Denominator;
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DefeatRecruitmentEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!context.Target.Dead)
@@ -325,32 +393,47 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Abstract base class for recruitment events.
+    /// Handles the core recruitment logic including adding characters to team and UI flows.
+    /// </summary>
     [Serializable]
     public abstract class BaseRecruitmentEvent : BattleEvent
     {
         /// <summary>
-        /// Tha lua battle script that runs when interacting with the recruit in dungeons 
+        /// The Lua battle script that runs when interacting with the recruit in dungeons.
         /// </summary>
         public BattleScriptEvent ActionScript;
 
+        /// <inheritdoc/>
         public BaseRecruitmentEvent()
         { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseRecruitmentEvent"/> class with a script event.
+        /// </summary>
+        /// <param name="scriptEvent">The script event to run when interacting with the recruit.</param>
         public BaseRecruitmentEvent(BattleScriptEvent scriptEvent)
         {
             ActionScript = scriptEvent;
         }
 
+        /// <inheritdoc/>
         public BaseRecruitmentEvent(BaseRecruitmentEvent other)
         {
             ActionScript = other.ActionScript;
         }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             yield return CoroutineManager.Instance.StartCoroutine(DungeonRecruit(owner, ownerChar, context.Target, ActionScript));
         }
 
+        /// <summary>
+        /// Performs the recruitment process for a character in a dungeon.
+        /// Handles team joining, nickname selection, and related UI flows.
+        /// </summary>
         public static IEnumerator<YieldInstruction> DungeonRecruit(GameEventOwner owner, Character ownerChar, Character targetChar, BattleScriptEvent actionScript)
         {
             GameManager.Instance.Fanfare("Fanfare/JoinTeam");

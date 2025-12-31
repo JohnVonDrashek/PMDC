@@ -14,10 +14,12 @@ using Newtonsoft.Json;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// THIS CLASS IS DEPRECATED.  Use RoomGenLoadEvo with a custom map using this shape instead.
-    /// Generates an evolution room.  It's 7x6 in size and hardcoded to look a specific way.
+    /// THIS CLASS IS DEPRECATED. Use <see cref="RoomGenLoadEvo{T}"/> with a custom map using this shape instead.
+    /// Generates a hardcoded evolution room layout of 7x6 in size with specific terrain patterns.
+    /// The room features platform areas and wall placements optimized for evolution gameplay.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The context type, must implement <see cref="ITiledGenContext"/>,
+    /// <see cref="IPostProcGenContext"/>, and <see cref="IPlaceableGenContext{EffectTile}"/>.</typeparam>
     [Serializable]
     public class RoomGenEvo<T> : RoomGen<T> where T : ITiledGenContext, IPostProcGenContext, IPlaceableGenContext<EffectTile>
     {
@@ -28,18 +30,36 @@ namespace PMDC.LevelGen
         //.......
         //.......
 
+        /// <summary>
+        /// The Y-axis offset where the main room area begins.
+        /// </summary>
         const int ROOM_OFFSET = 1;
+
+        /// <summary>
+        /// The width of the evolution room in tiles.
+        /// </summary>
         const int MAP_WIDTH = 7;
+
+        /// <summary>
+        /// The height of the evolution room in tiles.
+        /// </summary>
         const int MAP_HEIGHT = 6;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenEvo{T}"/> class.
+        /// </summary>
         public RoomGenEvo() { }
+
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() { return new RoomGenEvo<T>(); }
 
+        /// <inheritdoc/>
         public override Loc ProposeSize(IRandom rand)
         {
             return new Loc(MAP_WIDTH, MAP_HEIGHT);
         }
 
+        /// <inheritdoc/>
         protected override void PrepareFulfillableBorders(IRandom rand)
         {
             if (Draw.Width != MAP_WIDTH || Draw.Height != MAP_HEIGHT)
@@ -69,6 +89,15 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Draws the evolution room with hardcoded layout including:
+        /// - Room terrain filling the main area below the offset
+        /// - Central evolution platform with specific dimensions
+        /// - Wall placements at fixed locations
+        /// - Border tunnels connecting to adjacent rooms based on connection requirements
+        /// Falls back to default map drawing if room dimensions don't match expected size.
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             if (MAP_WIDTH != Draw.Width || MAP_HEIGHT != Draw.Height)
@@ -76,7 +105,7 @@ namespace PMDC.LevelGen
                 DrawMapDefault(map);
                 return;
             }
-            
+
 
             for (int x = 0; x < Draw.Width; x++)
             {
@@ -131,6 +160,10 @@ namespace PMDC.LevelGen
             SetRoomBorders(map);
         }
 
+        /// <summary>
+        /// Returns a formatted string representation of this room generator.
+        /// </summary>
+        /// <returns>The formatted type name of this room generator.</returns>
         public override string ToString()
         {
             return string.Format("{0}", this.GetType().GetFormattedTypeName());
@@ -139,10 +172,12 @@ namespace PMDC.LevelGen
 
 
     /// <summary>
-    /// THIS CLASS IS DEPRECATED.  Use RoomGenLoadEvo with a custom map using this shape instead.
-    /// Generates an evolution room.  It's 5x6 in size and hardcoded to look a specific way.
+    /// THIS CLASS IS DEPRECATED. Use <see cref="RoomGenLoadEvo{T}"/> with a custom map using this shape instead.
+    /// Generates a smaller hardcoded evolution room layout of 5x6 in size.
+    /// Similar to <see cref="RoomGenEvo{T}"/> but with a more compact design suitable for smaller dungeons.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The context type, must implement <see cref="ITiledGenContext"/>,
+    /// <see cref="IPostProcGenContext"/>, and <see cref="IPlaceableGenContext{EffectTile}"/>.</typeparam>
     [Serializable]
     public class RoomGenEvoSmall<T> : PermissiveRoomGen<T> where T : ITiledGenContext, IPostProcGenContext, IPlaceableGenContext<EffectTile>
     {
@@ -153,17 +188,38 @@ namespace PMDC.LevelGen
         //.#.#.
         //.....
 
+        /// <summary>
+        /// The width of the small evolution room in tiles.
+        /// </summary>
         const int MAP_WIDTH = 5;
+
+        /// <summary>
+        /// The height of the small evolution room in tiles.
+        /// </summary>
         const int MAP_HEIGHT = 6;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenEvoSmall{T}"/> class.
+        /// </summary>
         public RoomGenEvoSmall() { }
+
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() { return new RoomGenEvoSmall<T>(); }
 
+        /// <inheritdoc/>
         public override Loc ProposeSize(IRandom rand)
         {
             return new Loc(MAP_WIDTH, MAP_HEIGHT);
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Draws the small evolution room with hardcoded layout including:
+        /// - Room terrain filling most of the space
+        /// - Central evolution platform with specific dimensions
+        /// - Wall placements at fixed locations for a more compact layout
+        /// Falls back to default map drawing if room dimensions don't match expected size.
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             if (MAP_WIDTH != Draw.Width || MAP_HEIGHT != Draw.Height)
@@ -200,6 +256,10 @@ namespace PMDC.LevelGen
             SetRoomBorders(map);
         }
 
+        /// <summary>
+        /// Returns a formatted string representation of this room generator.
+        /// </summary>
+        /// <returns>The formatted type name of this room generator.</returns>
         public override string ToString()
         {
             return string.Format("{0}", this.GetType().GetFormattedTypeName());
@@ -209,43 +269,71 @@ namespace PMDC.LevelGen
 
 
     /// <summary>
-    /// Generates an evo room by loading a map as the room.
-    /// Includes tiles, items, enemies, and mapstarts.
-    /// Borders are specified by the walkable tile.
-    /// Also, this will specifically apply postproc mask to terrain that is not the RoomTerrain
-    /// Also, will apply postproc mask to the 3x2 tile area around the evo platform.
+    /// Generates an evolution room by loading a custom map file as the room layout.
+    /// Loads all content from a predefined map including tiles, items, enemies, and spawn points.
+    /// Automatically configures borders based on walkable tiles and applies post-processing masks
+    /// to non-standard terrain and the evolution platform area.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The context type, must inherit from <see cref="BaseMapGenContext"/>.</typeparam>
     [Serializable]
     public class RoomGenLoadEvo<T> : RoomGenLoadMapBase<T> where T : BaseMapGenContext
     {
+        /// <summary>
+        /// The width of the evolution platform in tiles.
+        /// </summary>
         const int PLAT_WIDTH = 3;
+
+        /// <summary>
+        /// The height of the evolution platform in tiles.
+        /// </summary>
         const int PLAT_HEIGHT = 2;
+
+        /// <summary>
+        /// The X-offset of the platform start position relative to the trigger tile.
+        /// </summary>
         const int PLAT_START_X = -1;
+
+        /// <summary>
+        /// The Y-offset of the platform start position relative to the trigger tile.
+        /// </summary>
         const int PLAT_START_Y = 0;
 
         /// <summary>
-        /// The ID of the tile used for evo.
+        /// The ID of the tile used to mark the evolution platform location.
+        /// This tile ID is searched within the loaded map to identify where the
+        /// evolution platform should be protected from terrain changes.
         /// </summary>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
         public string TriggerTile;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenLoadEvo{T}"/> class.
+        /// </summary>
         public RoomGenLoadEvo()
         {
             TriggerTile = "";
         }
 
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenLoadEvo{T}"/> class by copying another instance.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected RoomGenLoadEvo(RoomGenLoadEvo<T> other) : base(other)
         {
             this.TriggerTile = other.TriggerTile;
         }
 
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() { return new RoomGenLoadEvo<T>(this); }
 
-
-
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Draws the evolution room from the loaded map. Applies all map content and then:
+        /// - Marks all non-standard terrain with post-processing restrictions
+        /// - Marks the 3x2 evolution platform area around the trigger tile with post-processing restrictions
+        /// Falls back to default map drawing if room dimensions don't match the loaded map size.
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             if (this.Draw.Width != this.roomMap.Width || this.Draw.Height != this.roomMap.Height)
@@ -291,6 +379,16 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Prepares the borders that can be modified for connecting to adjacent rooms.
+        /// Uses the loaded map's tile data to determine where connections can be made:
+        /// - First, marks all walkable floor tiles as potential connection points
+        /// - Then, marks non-unbreakable tiles as backup connection points for borders that have no walkable options
+        /// This two-pass approach ensures at least some connection possibility for each border.
+        /// Note: Because the context is unavailable during border preparation, the tile ID
+        /// representing an opening (walkable floor) must be predefined as GenFloor.
+        /// </remarks>
         protected override void PrepareFulfillableBorders(IRandom rand)
         {
             // NOTE: Because the context is not passed in when preparing borders,

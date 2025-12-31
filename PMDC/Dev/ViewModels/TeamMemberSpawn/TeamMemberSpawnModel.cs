@@ -15,23 +15,52 @@ using RogueEssence.Dungeon;
 using RogueEssence.LevelGen;
 
 namespace PMDC.Dev.ViewModels
-{ 
+{
+    /// <summary>
+    /// View model for editing team member spawn configurations in the Avalonia editor.
+    /// Manages monster selection, skill/ability assignment, level ranges, and spawn modifiers
+    /// with support for filtering and reactive UI updates.
+    /// </summary>
     public class TeamMemberSpawnModel : ViewModelBase
     {
+        /// <summary>
+        /// The underlying team member spawn being edited.
+        /// </summary>
         public TeamMemberSpawn TeamSpawn;
+
+        /// <summary>
+        /// Gets or sets the collection box view model for spawn conditions.
+        /// </summary>
         public CollectionBoxViewModel SpawnConditions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the collection box view model for spawn features/modifiers.
+        /// </summary>
         public CollectionBoxViewModel SpawnFeatures { get; set; }
 
+        /// <summary>
+        /// Flag to control whether search operations should trigger filtering updates.
+        /// </summary>
         private bool _applySearch = true;
+
+        /// <summary>
+        /// Flag to control whether spawn feature changes should trigger UI updates.
+        /// Used to prevent infinite loops during batch operations.
+        /// </summary>
         private bool _checkSpawnFeatureDiff = true;
-        
+
         private int _selectedMonsterIndex;
+
+        /// <summary>
+        /// Gets or sets the index of the selected monster form.
+        /// When changed, updates the monster and refreshes available skills/abilities.
+        /// </summary>
         public int SelectedMonsterIndex
         {
             get { return _selectedMonsterIndex; }
             set
             {
-               
+
                 if (this.SetIfChanged(ref _selectedMonsterIndex, value))
                 {
                     UpdateMonster(_selectedMonsterIndex);
@@ -39,9 +68,16 @@ namespace PMDC.Dev.ViewModels
             }
         }
         
-        
+
+
+        /// <summary>
+        /// Backing field for the DisableUnusedSlots property.
+        /// </summary>
         private bool _disableUnusedSlots;
 
+        /// <summary>
+        /// Gets or sets whether unused move slots are disabled on this spawn.
+        /// </summary>
         public bool DisableUnusedSlots
         {
             get { return _disableUnusedSlots; }
@@ -53,10 +89,16 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
-        
+
+
+        /// <summary>
+        /// Backing field for the IsWeakMob property.
+        /// </summary>
         private bool _isWeakMonster;
 
+        /// <summary>
+        /// Gets or sets whether this spawn is a weak monster (reduced PP and belly).
+        /// </summary>
         public bool IsWeakMob
         {
             get { return _isWeakMonster; }
@@ -68,8 +110,16 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
+
+
+        /// <summary>
+        /// Backing field for the Unrecruitable property.
+        /// </summary>
         private bool _unrecruitable;
+
+        /// <summary>
+        /// Gets or sets whether this spawn cannot be recruited.
+        /// </summary>
         public bool Unrecruitable
         {
             get { return _unrecruitable; }
@@ -81,8 +131,12 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
 
+
+        /// <summary>
+        /// Toggles the MobSpawnMovesOff feature to disable or enable unused move slots.
+        /// </summary>
+        /// <param name="disable">True to disable unused slots, false to enable them.</param>
         private void ToggleUnusedSlots(bool disable)
         {
             List<MobSpawnExtra> features = SpawnFeatures.GetList<List<MobSpawnExtra>>();
@@ -102,7 +156,12 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
+
+
+        /// <summary>
+        /// Toggles the MobSpawnWeak feature to make the spawn weak or normal.
+        /// </summary>
+        /// <param name="weak">True to make the spawn weak, false to make it normal.</param>
         private void ToggleWeakMonster(bool weak)
         {
             List<MobSpawnExtra> features = SpawnFeatures.GetList<List<MobSpawnExtra>>();
@@ -121,7 +180,12 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
+
+
+        /// <summary>
+        /// Toggles the MobSpawnUnrecruitable feature to make the spawn recruitable or not.
+        /// </summary>
+        /// <param name="unrecruitable">True to make the spawn unrecruitable, false to make it recruitable.</param>
         private void ToggleUnrecruitable(bool unrecruitable)
         {
 
@@ -133,15 +197,23 @@ namespace PMDC.Dev.ViewModels
                     SpawnFeatures.DeleteItem(ii);
                 }
             }
-            
+
             if (unrecruitable)
             {
                 SpawnFeatures.InsertItem(SpawnFeatures.Collection.Count, new MobSpawnUnrecruitable());
             }
         }
-        
+
+
+        /// <summary>
+        /// Backing field for the SelectedIntrinsicIndex property.
+        /// </summary>
         private int _selectedIntrinsicIndex;
 
+        /// <summary>
+        /// Gets or sets the index of the selected intrinsic ability.
+        /// When changed, updates the spawn's intrinsic.
+        /// </summary>
         public int SelectedIntrinsicIndex
         {
             get { return _selectedIntrinsicIndex; }
@@ -154,6 +226,10 @@ namespace PMDC.Dev.ViewModels
             }
         }
 
+        /// <summary>
+        /// Updates the spawn's intrinsic ability based on the selected index.
+        /// </summary>
+        /// <param name="index">The index of the intrinsic ability to set.</param>
         private void UpdateIntrinsic(int index)
         {
             string intrinsic = "";
@@ -161,12 +237,20 @@ namespace PMDC.Dev.ViewModels
             {
                 intrinsic = intrinsicKeys[index];
                 SelectedIntrinsic = intrinsicData[index];
-            } 
+            }
 
             TeamSpawn.Spawn.Intrinsic = intrinsic;
         }
-        
+
+
+        /// <summary>
+        /// Backing field for the IncludeUnreleasedIntrinsics property.
+        /// </summary>
         private bool _includeUnreleasedIntrinsics;
+
+        /// <summary>
+        /// Gets or sets whether unreleased intrinsics are included in the filter results.
+        /// </summary>
         public bool IncludeUnreleasedIntrinsics
         {
             get { return _includeUnreleasedIntrinsics; }
@@ -182,7 +266,14 @@ namespace PMDC.Dev.ViewModels
             }
         }
 
+        /// <summary>
+        /// Backing field for the IncludeUnreleasedSkills property.
+        /// </summary>
         private bool _includeUnreleasedSkills;
+
+        /// <summary>
+        /// Gets or sets whether unreleased skills are included in the filter results.
+        /// </summary>
         public bool IncludeUnreleasedSkills
         {
             get { return _includeUnreleasedSkills; }
@@ -196,8 +287,16 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
+
+
+        /// <summary>
+        /// Backing field for the IncludeTemporaryForms property.
+        /// </summary>
         private bool _includeUnreleasedForms;
+
+        /// <summary>
+        /// Gets or sets whether temporary forms (e.g., Mega evolutions) are included in the filter results.
+        /// </summary>
         public bool IncludeTemporaryForms
         {
             get => _includeTemporaryForms;
@@ -210,8 +309,16 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
+
+
+        /// <summary>
+        /// Backing field for the IncludeUnreleasedForms property.
+        /// </summary>
         private bool _includeTemporaryForms;
+
+        /// <summary>
+        /// Gets or sets whether unreleased monster forms are included in the filter results.
+        /// </summary>
         public bool IncludeUnreleasedForms
         {
             get => _includeUnreleasedForms;
@@ -226,7 +333,14 @@ namespace PMDC.Dev.ViewModels
         }
 
 
+        /// <summary>
+        /// Backing field for the SearchMonsterFilter property.
+        /// </summary>
         private string _searchMonsterFilter;
+
+        /// <summary>
+        /// Gets or sets the search filter text for monster selection.
+        /// </summary>
         public string SearchMonsterFilter
         {
             get => _searchMonsterFilter;
@@ -239,7 +353,15 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
+
+        /// <summary>
+        /// Backing field for the SearchIntrinsicFilter property.
+        /// </summary>
         private string _searchIntrinsicFilter = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the search filter text for intrinsic ability selection.
+        /// </summary>
         public string SearchIntrinsicFilter
         {
             get => _searchIntrinsicFilter;
@@ -252,32 +374,56 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
+
+        /// <summary>
+        /// Gets or sets the minimum level for this spawn.
+        /// </summary>
         public int Min
         {
             get { return TeamSpawn.Spawn.Level.Min; }
             set { this.RaiseAndSetIfChanged(ref TeamSpawn.Spawn.Level.Min, value); }
         }
-        
+
+
         /// <summary>
-        /// Maximums of level ranges are internally stored as exclusive, so the displayed value must be the internal value - 1, but kept above the min to look clean.
-        /// Conversely, when the value is edited, the internal value must be set to the displayed value + 1.
+        /// Gets or sets the maximum level for this spawn.
+        /// Note: Maximum level ranges are internally stored as exclusive, so the displayed value is the internal value minus 1,
+        /// but is kept above the minimum level for display clarity. When edited, the internal value is set to displayed value plus 1.
         /// </summary>
         public int Max
         {
             get { return Math.Max(TeamSpawn.Spawn.Level.Max - 1, TeamSpawn.Spawn.Level.Min); }
             set { this.RaiseAndSetIfChanged(ref TeamSpawn.Spawn.Level.Max, value + 1); }
         }
-            
-        private DataGridType _gridViewType = DataGridType.Monster; 
+
+        /// <summary>
+        /// Backing field for the CurrentDataGridView property.
+        /// </summary>
+        private DataGridType _gridViewType = DataGridType.Monster;
+
+        /// <summary>
+        /// Gets or sets which data grid (Monster, Skills, Intrinsic, Other) is currently displayed.
+        /// </summary>
         public DataGridType CurrentDataGridView
         {
             get { return _gridViewType; }
             set { this.RaiseAndSetIfChanged(ref _gridViewType, value); }
         }
-        
+
+
+        /// <summary>
+        /// The current skill search filter text for the focused skill slot.
+        /// </summary>
         public string CurrentSkillSearchFilter;
-            
+
+        /// <summary>
+        /// Backing field for the SearchSkill0Filter property.
+        /// </summary>
         private string _searchSkill0Filter = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the search filter text for skill slot 0.
+        /// </summary>
         public string SearchSkill0Filter
         {
             get { return _searchSkill0Filter; }
@@ -289,9 +435,15 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
-         
+
+        /// <summary>
+        /// Backing field for the SearchSkill1Filter property.
+        /// </summary>
         private string _searchSkill1Filter = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the search filter text for skill slot 1.
+        /// </summary>
         public string SearchSkill1Filter
         {
             get { return _searchSkill1Filter; }
@@ -303,8 +455,15 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Backing field for the SearchSkill2Filter property.
+        /// </summary>
         private string _searchSkill2Filter = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the search filter text for skill slot 2.
+        /// </summary>
         public string SearchSkill2Filter
         {
             get { return _searchSkill2Filter; }
@@ -316,7 +475,15 @@ namespace PMDC.Dev.ViewModels
                 }
             }
         }
+
+        /// <summary>
+        /// Backing field for the SearchSkill3Filter property.
+        /// </summary>
         private string _searchSkill3Filter = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the search filter text for skill slot 3.
+        /// </summary>
         public string SearchSkill3Filter
         {
             get { return _searchSkill3Filter; }
@@ -329,6 +496,10 @@ namespace PMDC.Dev.ViewModels
             }
         }
 
+        /// <summary>
+        /// Filters the available monster forms based on the search filter text and release status.
+        /// </summary>
+        /// <param name="filter">The search string to filter monster forms by.</param>
         private void updateMonsterForms(string filter)
         {
             FilteredMonsterForms.Clear();
@@ -350,6 +521,11 @@ namespace PMDC.Dev.ViewModels
                 .Select(x => x.item);
             addFilteredItems<BaseMonsterFormViewModel>(FilteredMonsterForms, result);
         }
+
+        /// <summary>
+        /// Filters the available intrinsic abilities based on the search filter text, release status, and what the current monster can have.
+        /// </summary>
+        /// <param name="filter">The search string to filter intrinsics by.</param>
         private void updateIntrinsicData(string filter)
         {
             FilteredIntrinsicData.Clear();
@@ -393,13 +569,20 @@ namespace PMDC.Dev.ViewModels
                     .ThenByDescending(item => item.prefixStartsWith)
                     .Select(x => x.item);
             }
-            
+
+
             addFilteredItems<IntrinsicViewModel>(FilteredIntrinsicData, result);
         }
-        
+
+        /// <summary>
+        /// The index of the currently focused skill slot (0-3).
+        /// </summary>
         public int FocusedSkillIndex;
-        
-        // TODO: Remove logic from view?
+
+        /// <summary>
+        /// Updates the filtered skill data based on the search filter.
+        /// </summary>
+        /// <param name="filter">The search string to filter skills by.</param>
         public void UpdateSkillData(string filter)
         {
             CurrentSkillSearchFilter = filter;
@@ -446,7 +629,10 @@ namespace PMDC.Dev.ViewModels
 
             addFilteredItems<SkillDataViewModel>(FilteredSkillData, result);
         }
-        
+
+        /// <summary>
+        /// Gets or sets the chosen gender index for this spawn.
+        /// </summary>
         public int ChosenGender
         {
             get { return genderKeys.IndexOf((int) TeamSpawn.Spawn.BaseForm.Gender); }
@@ -456,6 +642,10 @@ namespace PMDC.Dev.ViewModels
             }
         }
 
+        /// <summary>
+        /// Sets the selected monster by index and updates the search filter to match.
+        /// </summary>
+        /// <param name="index">The index of the monster form to select.</param>
         public void SetMonster(int index)
         {
             SelectedMonsterIndex = index;
@@ -463,10 +653,14 @@ namespace PMDC.Dev.ViewModels
             SearchMonsterFilter = vm.Name;
         }
 
+        /// <summary>
+        /// Updates the spawn's monster form and resets associated skills and intrinsics.
+        /// </summary>
+        /// <param name="index">The index of the monster form to set.</param>
         private void UpdateMonster(int index)
         {
             BaseMonsterFormViewModel vm = monsterForms[index];
-            
+
             SetFormPossibleIntrinsics(vm.Key, vm.FormId);
             updateIntrinsicData(_searchIntrinsicFilter);
             _applySearch = false;
@@ -484,9 +678,17 @@ namespace PMDC.Dev.ViewModels
             SelectedIntrinsic = null;
             SelectedIntrinsicIndex = -1;
             _applySearch = true;
-            
+
         }
+
+        /// <summary>
+        /// Backing field for the SelectedMonsterForm property.
+        /// </summary>
         private BaseMonsterFormViewModel _selectedMonsterForm;
+
+        /// <summary>
+        /// Gets or sets the currently selected monster form view model.
+        /// </summary>
         public BaseMonsterFormViewModel SelectedMonsterForm
         {
             get => _selectedMonsterForm;
@@ -497,73 +699,170 @@ namespace PMDC.Dev.ViewModels
         }
         
         private IntrinsicViewModel _selectedIntrinsic;
+
+        /// <summary>
+        /// Gets or sets the currently selected intrinsic ability view model.
+        /// </summary>
         public IntrinsicViewModel SelectedIntrinsic
         {
             get => _selectedIntrinsic;
             set { this.RaiseAndSetIfChanged(ref _selectedIntrinsic, value); }
         }
-        
-        
+
+        /// <summary>
+        /// Backing field for the SelectedSkillData property.
+        /// </summary>
         private SkillDataViewModel _selectedSkillData;
+
+        /// <summary>
+        /// Gets or sets the currently selected skill data view model.
+        /// </summary>
         public SkillDataViewModel SelectedSkillData
         {
             get => _selectedSkillData;
             set { this.RaiseAndSetIfChanged(ref _selectedSkillData, value); }
         }
-        
+
+        /// <summary>
+        /// Gets or sets the chosen skin index for this spawn.
+        /// </summary>
         public int ChosenSkin
         {
             get { return skinKeys.IndexOf(TeamSpawn.Spawn.BaseForm.Skin); }
             set { this.RaiseAndSetIfChanged(ref TeamSpawn.Spawn.BaseForm.Skin, skinKeys[value]); }
         }
-        
+
+        /// <summary>
+        /// Gets or sets the chosen AI tactic index for this spawn.
+        /// </summary>
         public int ChosenTactic
         {
             get { return tacticKeys.IndexOf(TeamSpawn.Spawn.Tactic); }
             set { this.RaiseAndSetIfChanged(ref TeamSpawn.Spawn.Tactic, tacticKeys[value]); }
         }
-        
+
+        /// <summary>
+        /// Gets or sets the chosen team member role index for this spawn.
+        /// </summary>
         public int ChosenRole
         {
             get { return Roles.IndexOf(TeamSpawn.Role.ToLocal()); }
             set { this.RaiseAndSetIfChanged(ref TeamSpawn.Role,  (TeamMemberSpawn.MemberRole) value); }
         }
-        
+
+        /// <summary>
+        /// Backing field for the FocusIndex property.
+        /// </summary>
         private int _focusIndex;
+
+        /// <summary>
+        /// Gets or sets the index of the currently focused UI element.
+        /// Used to determine which data grid to display.
+        /// </summary>
         public int FocusIndex
         {
             get => _focusIndex;
             set => _focusIndex = value;
         }
         
+        /// <summary>
+        /// Sets the focus index and updates the data grid display accordingly.
+        /// </summary>
+        /// <param name="index">The new focus index.</param>
         public void SetFocusIndex(int index)
         {
             FocusIndex = index;
             UpdateDataGrid();
         }
-        
+
+        /// <summary>
+        /// Backing field for available AI tactic keys.
+        /// </summary>
         private List<string> tacticKeys;
+
+        /// <summary>
+        /// Backing field for available monster species keys.
+        /// </summary>
         private List<string> monsterKeys;
+
+        /// <summary>
+        /// Backing field for available skin keys.
+        /// </summary>
         private List<string> skinKeys;
+
+        /// <summary>
+        /// Backing field for available gender values.
+        /// </summary>
         private List<int> genderKeys;
+
+        /// <summary>
+        /// Backing field for available intrinsic ability keys.
+        /// </summary>
         private List<string> intrinsicKeys;
+
+        /// <summary>
+        /// Backing field for available skill keys.
+        /// </summary>
         private List<string> skillKeys;
-        
+
+        /// <summary>
+        /// Collection of all available monster forms.
+        /// </summary>
         private List<BaseMonsterFormViewModel> monsterForms;
+
+        /// <summary>
+        /// Collection of all available skills.
+        /// </summary>
         private List<SkillDataViewModel> skillData;
+
+        /// <summary>
+        /// Collection of all available intrinsic abilities.
+        /// </summary>
         private List<IntrinsicViewModel> intrinsicData;
+
+        /// <summary>
+        /// The indices of skills assigned to each of the 4 skill slots. -1 indicates no skill assigned.
+        /// </summary>
         public List<int> SkillIndex;
-        
+
+        /// <summary>
+        /// Gets or sets the collection of available AI tactics.
+        /// </summary>
         public ObservableCollection<string> Tactics { get; set; }
-        
+
+        /// <summary>
+        /// Gets or sets the collection of available skins.
+        /// </summary>
         public ObservableCollection<string> Skins { get; set; }
+
+        /// <summary>
+        /// Gets or sets the collection of available genders.
+        /// </summary>
         public ObservableCollection<string> Genders { get; set; }
-        public ObservableCollection<string> Roles { get; set;  }
+
+        /// <summary>
+        /// Gets or sets the collection of available team member roles.
+        /// </summary>
+        public ObservableCollection<string> Roles { get; set; }
+
+        /// <summary>
+        /// Gets or sets the filtered collection of monster forms matching the current search.
+        /// </summary>
         public ObservableCollection<BaseMonsterFormViewModel> FilteredMonsterForms { get; set; }
+
+        /// <summary>
+        /// Gets or sets the filtered collection of skills matching the current search.
+        /// </summary>
         public ObservableCollection<SkillDataViewModel> FilteredSkillData { get; set; }
+
+        /// <summary>
+        /// Gets or sets the filtered collection of intrinsic abilities matching the current search.
+        /// </summary>
         public ObservableCollection<IntrinsicViewModel> FilteredIntrinsicData { get; set; }
-        
-        
+
+        /// <summary>
+        /// Initializes the available genders from the data manager.
+        /// </summary>
         private void InitializeGenders()
         {
             Genders = new ObservableCollection<string>();
@@ -574,9 +873,13 @@ namespace PMDC.Dev.ViewModels
                 Genders.Add(((Gender)ii).ToLocal());
                 genderKeys.Add(ii);
             }
-            
+
+
         }
 
+        /// <summary>
+        /// Initializes the available intrinsics from the data manager.
+        /// </summary>
         private void InitializeIntrinsics()
         {
             FilteredIntrinsicData = new ObservableCollection<IntrinsicViewModel>();
@@ -595,7 +898,11 @@ namespace PMDC.Dev.ViewModels
 
         }
 
-
+        /// <summary>
+        /// Replaces a skill in the specified slot with the given skill index.
+        /// </summary>
+        /// <param name="index">The skill index to assign.</param>
+        /// <param name="skillIndex">The slot index to replace, or -1 to use the focused slot.</param>
         public void ReplaceSkillIndex(int index, int skillIndex = -1)
         {
             if (skillIndex != -1)
@@ -605,12 +912,17 @@ namespace PMDC.Dev.ViewModels
             else
             {
                 SkillIndex[FocusedSkillIndex] = index;
-                
+
             }
-            
+
             TeamSpawn.Spawn.SpecifiedSkills = getSkillList();
         }
-        
+
+        /// <summary>
+        /// Sets a skill in the specified slot and updates the search filter to match.
+        /// </summary>
+        /// <param name="skillData">The skill to assign.</param>
+        /// <param name="ind">The slot index to set, or -1 to use the focused slot.</param>
         public void SetSkill(SkillDataViewModel skillData, int ind = -1)
         {
             ReplaceSkillIndex(skillData.Index, ind);
@@ -633,42 +945,63 @@ namespace PMDC.Dev.ViewModels
                 SearchSkill2Filter = skillData.Name;
             } else if (index == 3)
             {
-                SearchSkill3Filter = skillData.Name;   
+                SearchSkill3Filter = skillData.Name;
             }
         }
-        
+
+        /// <summary>
+        /// Sets the selected ability and updates the search filter to match.
+        /// </summary>
+        /// <param name="vm">The ability view model to select.</param>
         public void SetIntrinsic(IntrinsicViewModel vm)
         {
             SelectedIntrinsicIndex = vm.Index;
             SearchIntrinsicFilter = vm.Name;
             TeamSpawn.Spawn.Intrinsic = intrinsicKeys[vm.Index];
         }
-        
+
+        /// <summary>
+        /// Resets the selected intrinsic to none.
+        /// </summary>
         public void ResetIntrinsic()
         {
             SelectedIntrinsicIndex = -1;
         }
-        
+
+        /// <summary>
+        /// Resets the skill in the specified slot to none.
+        /// </summary>
+        /// <param name="skillSlot">The slot index to reset, or -1 to use the focused slot.</param>
         public void ResetSkill(int skillSlot = -1)
         {
             ReplaceSkillIndex(-1, skillSlot);
         }
-        
-        // public void ResetMonster()
-        // {
-        //     SelectedMonsterIndex = -1;
-        // }
-        
+
+        /// <summary>
+        /// Gets the skill data view model at the specified index.
+        /// </summary>
+        /// <param name="index">The index of the skill.</param>
+        /// <returns>The skill data view model.</returns>
         public SkillDataViewModel SkillDataAtIndex(int index)
         {
             return skillData[index];
         }
-        
+
+        /// <summary>
+        /// Gets the monster form view model at the specified index.
+        /// </summary>
+        /// <param name="index">The index of the monster form.</param>
+        /// <returns>The monster form view model.</returns>
         public BaseMonsterFormViewModel MonsterAtIndex(int index)
         {
             return monsterForms[index];
         }
-        
+
+        /// <summary>
+        /// Gets the intrinsic ability view model at the specified index.
+        /// </summary>
+        /// <param name="index">The index of the intrinsic.</param>
+        /// <returns>The intrinsic view model.</returns>
         public IntrinsicViewModel IntrinsicAtIndex(int index)
         {
             return intrinsicData[index];
@@ -756,6 +1089,9 @@ namespace PMDC.Dev.ViewModels
         
      
 
+        /// <summary>
+        /// Initializes all data collections (monsters, skills, abilities, etc.) for the editor.
+        /// </summary>
         public void Initialize()
         {
             InitializeMonsters();
@@ -778,6 +1114,9 @@ namespace PMDC.Dev.ViewModels
         }
 
 
+        /// <summary>
+        /// The list of skill indices that the current monster form can learn.
+        /// </summary>
         public List<int> PossibleSkillIndexes;
         
         private void SetFormPossibleSkills(string species, int formId)
@@ -800,6 +1139,9 @@ namespace PMDC.Dev.ViewModels
             }
         }
 
+        /// <summary>
+        /// The list of intrinsic ability indices that the current monster form can have.
+        /// </summary>
         public List<int> PossibleIntrinsicIndexes;
         private void SetFormPossibleIntrinsics(string species, int formId)
         {
@@ -825,11 +1167,17 @@ namespace PMDC.Dev.ViewModels
             }
         }
         
+        /// <summary>
+        /// Called when spawn conditions are modified. Updates the underlying data.
+        /// </summary>
         public void SpawnConditionsChanged()
         {
             TeamSpawn.Spawn.SpawnConditions = SpawnConditions.GetList<List<MobSpawnCheck>>();
         }
         
+        /// <summary>
+        /// Called when spawn features are modified. Updates the underlying data and UI toggles.
+        /// </summary>
         public void SpawnFeaturesChanged()
         {
             TeamSpawn.Spawn.SpawnFeatures = SpawnFeatures.GetList<List<MobSpawnExtra>>();
@@ -843,6 +1191,13 @@ namespace PMDC.Dev.ViewModels
         }
 
 
+        /// <summary>
+        /// Opens an editor for a spawn condition item.
+        /// </summary>
+        /// <param name="index">The index of the condition to edit.</param>
+        /// <param name="element">The condition element to edit.</param>
+        /// <param name="advancedEdit">Whether to use advanced editing mode.</param>
+        /// <param name="op">The callback to apply the edit.</param>
         public void SpawnConditionsEditItem(int index, object element, bool advancedEdit, CollectionBoxViewModel.EditElementOp op)
         {
             string elementName = "Spawn Conditions[" + index + "]";
@@ -862,6 +1217,13 @@ namespace PMDC.Dev.ViewModels
             frmData.Show();
         }
         
+        /// <summary>
+        /// Opens an editor for a spawn feature item.
+        /// </summary>
+        /// <param name="index">The index of the feature to edit.</param>
+        /// <param name="element">The feature element to edit.</param>
+        /// <param name="advancedEdit">Whether to use advanced editing mode.</param>
+        /// <param name="op">The callback to apply the edit.</param>
         public void SpawnFeaturesEditItem(int index, object element, bool advancedEdit, CollectionBoxViewModel.EditElementOp op)
         {
             string elementName = "Spawn Features[" + index + "]";
@@ -880,6 +1242,9 @@ namespace PMDC.Dev.ViewModels
             
             frmData.Show();
         }
+        /// <summary>
+        /// Creates a new TeamMemberSpawnModel with default values.
+        /// </summary>
         public TeamMemberSpawnModel()
         {
             TeamSpawn = new TeamMemberSpawn();
@@ -893,6 +1258,11 @@ namespace PMDC.Dev.ViewModels
             SearchMonsterFilter = form.FormName.ToLocal();
             SelectedMonsterIndex = findMonsterForm("missingno", 0);
         }
+
+        /// <summary>
+        /// Creates a new TeamMemberSpawnModel from an existing spawn configuration.
+        /// </summary>
+        /// <param name="spawn">The spawn configuration to edit.</param>
         public TeamMemberSpawnModel(TeamMemberSpawn spawn)
         {
 
@@ -953,6 +1323,12 @@ namespace PMDC.Dev.ViewModels
             }
         }
 
+        /// <summary>
+        /// Determines if a string should be included in filtered results based on the filter.
+        /// </summary>
+        /// <param name="s">The string to test.</param>
+        /// <param name="filter">The filter text.</param>
+        /// <returns>True if the string matches the filter criteria.</returns>
         public bool ShouldAddToFilter(string s, string filter)
         {
             return prefixStartsWith(s, filter) || startsWith(s, filter);
@@ -976,6 +1352,10 @@ namespace PMDC.Dev.ViewModels
 
         private bool _finishedAdding;
 
+        /// <summary>
+        /// Gets whether the collection has finished adding filtered items.
+        /// Used to optimize UI updates during batch additions.
+        /// </summary>
         public bool FinishedAdding
         {
             get => _finishedAdding;
@@ -1017,6 +1397,12 @@ namespace PMDC.Dev.ViewModels
             return result;
         }
 
+        /// <summary>
+        /// Compares two strings for equality after sanitizing (lowercasing and removing whitespace).
+        /// </summary>
+        /// <param name="s1">The first string.</param>
+        /// <param name="s2">The second string.</param>
+        /// <returns>True if the sanitized strings are equal.</returns>
         public bool SanitizeStringEquals(string s1, string s2)
         {
             return sanitize(s1) == sanitize(s2);
@@ -1041,6 +1427,9 @@ namespace PMDC.Dev.ViewModels
             );
         }
 
+        /// <summary>
+        /// Updates which data grid is displayed based on the current focus index.
+        /// </summary>
         public void UpdateDataGrid()
         {
             DataGridType nextView = CurrentDataGridView;
@@ -1066,12 +1455,19 @@ namespace PMDC.Dev.ViewModels
 
     }
     
+    /// <summary>
+    /// Specifies which data grid is currently displayed in the spawn editor.
+    /// </summary>
     public enum DataGridType
     {
+        /// <summary>Monster selection grid.</summary>
         Monster = 0,
+        /// <summary>Skill selection grid.</summary>
         Skills = 1,
+        /// <summary>Ability selection grid.</summary>
         Intrinsic = 2,
+        /// <summary>Other data grid.</summary>
         Other = 3,
-    } 
-    
+    }
+
 }

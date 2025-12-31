@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -20,11 +20,23 @@ namespace PMDC.Dungeon
 {
     // Battle events that invoke attacks or attack effects
 
-
+    /// <summary>
+    /// Abstract base class for battle events that invoke additional attacks or actions.
+    /// Derived classes must implement CreateContext to specify what action to invoke.
+    /// </summary>
     [Serializable]
     public abstract class InvokeBattleEvent : BattleEvent
     {
+        /// <summary>
+        /// Creates the battle context for the invoked action.
+        /// </summary>
+        /// <param name="owner">The owner of the event.</param>
+        /// <param name="ownerChar">The character that owns this event.</param>
+        /// <param name="context">The current battle context.</param>
+        /// <returns>A new battle context for the invoked action, or null to cancel.</returns>
         protected abstract BattleContext CreateContext(GameEventOwner owner, Character ownerChar, BattleContext context);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BattleContext newContext = CreateContext(owner, ownerChar, context);
@@ -55,10 +67,22 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Abstract base class for battle events that invoke a specific move.
+    /// Derived classes must implement GetInvokedMove to specify which move to use.
+    /// </summary>
     [Serializable]
     public abstract class InvokedMoveEvent : InvokeBattleEvent
     {
+        /// <summary>
+        /// Gets the ID of the move to invoke.
+        /// </summary>
+        /// <param name="owner">The owner of the event.</param>
+        /// <param name="context">The current battle context.</param>
+        /// <returns>The skill ID to invoke, or empty string if no move should be invoked.</returns>
         protected abstract string GetInvokedMove(GameEventOwner owner, BattleContext context);
+
+        /// <inheritdoc/>
         protected override BattleContext CreateContext(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             string moveID = "";
@@ -105,13 +129,16 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that makes the user use the target's strongest base power move
+    /// Event that makes the user use the target's strongest base power move.
+    /// Selects the move with the highest base power from the target's moveset.
     /// </summary>
     [Serializable]
     public class StrongestMoveEvent : InvokedMoveEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StrongestMoveEvent(); }
 
+        /// <inheritdoc/>
         protected override string GetInvokedMove(GameEventOwner owner, BattleContext context)
         {
             int recordSlot = -1;
@@ -148,13 +175,16 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that makes the user randomly use any move.
+    /// Event that makes the user randomly use any released move from the game.
+    /// Selects a random move from all available released skills.
     /// </summary>
     [Serializable]
     public class RandomMoveEvent : InvokedMoveEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RandomMoveEvent(); }
 
+        /// <inheritdoc/>
         protected override string GetInvokedMove(GameEventOwner owner, BattleContext context)
         {
             List<string> releasedMoves = new List<string>();
@@ -172,20 +202,33 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// User will more likely use a random move that benefits the team
+    /// Event that makes the user more likely to use a random move that benefits the team.
+    /// Analyzes the current situation and selects helpful moves with 75% probability.
     /// </summary>
     [Serializable]
     public class NeededMoveEvent : InvokedMoveEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new NeededMoveEvent(); }
 
+        /// <summary>
+        /// Attempts to add a move to the list if it is released.
+        /// </summary>
+        /// <param name="moves">The list to add to.</param>
+        /// <param name="move">The move ID to add.</param>
         private void tryAddMove(List<string> moves, string move)
         {
             if (DataManager.Instance.DataIndices[DataManager.DataType.Skill].Get(move).Released)
                 moves.Add(move);
         }
 
-
+        /// <summary>
+        /// Attempts to add a move if it would be effective against seen characters.
+        /// </summary>
+        /// <param name="user">The user of the move.</param>
+        /// <param name="seenChars">Characters that can be targeted.</param>
+        /// <param name="moves">The list to add to.</param>
+        /// <param name="move">The move ID to add.</param>
         private void tryAddTargetMove(Character user, List<Character> seenChars, List<string> moves, string move)
         {
             int effectiveness = 0;
@@ -203,6 +246,7 @@ namespace PMDC.Dungeon
                 tryAddMove(moves, move);
         }
 
+        /// <inheritdoc/>
         protected override string GetInvokedMove(GameEventOwner owner, BattleContext context)
         {
             // scroll of need style move choice
@@ -553,13 +597,14 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that makes character will use a move that depends on the map status and dungeon type
+    /// Event that makes the character use a move that depends on the map status and dungeon type.
+    /// Selects moves based on current terrain or weather conditions.
     /// </summary>
     [Serializable]
     public class NatureMoveEvent : InvokedMoveEvent
     {
         /// <summary>
-        /// The move used mapped to the current map status
+        /// The move used mapped to the current map status.
         /// </summary>
         [JsonConverter(typeof(MapStatusSkillDictConverter))]
         [DataType(1, DataManager.DataType.MapStatus, false)]
@@ -567,23 +612,32 @@ namespace PMDC.Dungeon
         public Dictionary<string, string> TerrainPair;
 
         /// <summary>
-        /// The move used mapped to the current floor's nature environment
+        /// The move used mapped to the current floor's nature environment.
         /// </summary>
         [JsonConverter(typeof(ElementSkillDictConverter))]
         [DataType(1, DataManager.DataType.Element, false)]
         [DataType(2, DataManager.DataType.Skill, false)]
         public Dictionary<string, string> NaturePair;
 
+        /// <inheritdoc/>
         public NatureMoveEvent()
         {
             TerrainPair = new Dictionary<string, string>();
             NaturePair = new Dictionary<string, string>();
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NatureMoveEvent"/> class with the specified terrain and nature pairs.
+        /// </summary>
+        /// <param name="terrain">Dictionary mapping map statuses to skill IDs.</param>
+        /// <param name="moves">Dictionary mapping elements to skill IDs.</param>
         public NatureMoveEvent(Dictionary<string, string> terrain, Dictionary<string, string> moves)
         {
             TerrainPair = terrain;
             NaturePair = moves;
         }
+
+        /// <inheritdoc/>
         protected NatureMoveEvent(NatureMoveEvent other)
             : this()
         {
@@ -592,8 +646,11 @@ namespace PMDC.Dungeon
             foreach (string element in other.NaturePair.Keys)
                 NaturePair.Add(element, other.NaturePair[element]);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new NatureMoveEvent(this); }
 
+        /// <inheritdoc/>
         protected override string GetInvokedMove(GameEventOwner owner, BattleContext context)
         {
             foreach (string terrain in TerrainPair.Keys)
@@ -611,30 +668,42 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that makes the user use the last used move
-    /// </summary>  
+    /// Event that makes the user use the last used move stored in a status.
+    /// Copies the move from a status effect's IDState.
+    /// </summary>
     [Serializable]
     public class MirrorMoveEvent : InvokedMoveEvent
     {
         /// <summary>
-        /// A status containing the move in IDState that this event will use
-        /// This status should either be Last Used Effect, Last Ally Effect, Last Effect Hit By Someone Else
-        /// </summary>   
+        /// A status containing the move in IDState that this event will use.
+        /// This status should usually be Last Used Effect, Last Ally Effect, or Last Effect Hit By Someone Else.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string MoveStatusID;
 
+        /// <inheritdoc/>
         public MirrorMoveEvent() { MoveStatusID = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MirrorMoveEvent"/> class with the specified status ID.
+        /// </summary>
+        /// <param name="prevMoveStatusID">The status ID containing the move to copy.</param>
         public MirrorMoveEvent(string prevMoveStatusID)
         {
             MoveStatusID = prevMoveStatusID;
         }
+
+        /// <inheritdoc/>
         protected MirrorMoveEvent(MirrorMoveEvent other)
         {
             MoveStatusID = other.MoveStatusID;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MirrorMoveEvent(this); }
 
+        /// <inheritdoc/>
         protected override string GetInvokedMove(GameEventOwner owner, BattleContext context)
         {
             StatusEffect status = context.Target.GetStatusEffect(MoveStatusID);
@@ -646,43 +715,53 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that is called as a turn-taking battle action
-    /// </summary> 
+    /// Event that invokes a custom battle action with specified hitbox, explosion, and battle data.
+    /// Used for creating custom attack patterns.
+    /// </summary>
     [Serializable]
     public class InvokeCustomBattleEvent : InvokeBattleEvent
     {
         /// <summary>
-        /// Data on the hitbox of the attack. Controls range and targeting
+        /// Data on the hitbox of the attack. Controls range and targeting.
         /// </summary>
         public CombatAction HitboxAction;
 
         /// <summary>
-        /// Optional data to specify a splash effect on the tiles hit
+        /// Optional data to specify a splash effect on the tiles hit.
         /// </summary>
         public ExplosionData Explosion;
 
         /// <summary>
         /// Events that occur with this skill.
-        /// Before it's used, when it hits, after it's used, etc
+        /// Before it's used, when it hits, after it's used, etc.
         /// </summary>
         public BattleData NewData;
 
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log.
         /// </summary>
         [StringKey(0, true)]
         public StringKey Msg;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public InvokeCustomBattleEvent()
         {
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InvokeCustomBattleEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="action">The combat action defining the hitbox.</param>
+        /// <param name="explosion">The explosion data for splash effects.</param>
+        /// <param name="moveData">The battle data containing events.</param>
+        /// <param name="msg">The message to display.</param>
+        /// <param name="affectTarget">Whether to use the target as the action user.</param>
         public InvokeCustomBattleEvent(CombatAction action, ExplosionData explosion, BattleData moveData, StringKey msg, bool affectTarget = true)
         {
             HitboxAction = action;
@@ -691,6 +770,8 @@ namespace PMDC.Dungeon
             Msg = msg;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected InvokeCustomBattleEvent(InvokeCustomBattleEvent other)
         {
             HitboxAction = other.HitboxAction;
@@ -699,8 +780,11 @@ namespace PMDC.Dungeon
             Msg = other.Msg;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new InvokeCustomBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override BattleContext CreateContext(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             BattleContext newContext = new BattleContext(BattleActionType.Skill);
@@ -738,4 +822,3 @@ namespace PMDC.Dungeon
     }
 
 }
-

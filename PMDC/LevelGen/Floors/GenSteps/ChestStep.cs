@@ -12,11 +12,9 @@ namespace PMDC.LevelGen
     /// <summary>
     /// A monster house that takes the form of a booby-trapped chest.
     /// Once opened, items spill out, the walls lock down, and monsters appear.
-    /// All must be defeated in order to unlock.
-    /// It could also just be a normal chest.
-    /// This step chooses an existing room to put the house in.
+    /// All must be defeated in order to unlock. It could also just be a normal chest with treasure.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type.</typeparam>
     [Serializable]
     public class ChestStep<T> : MonsterHouseBaseStep<T> where T : ListMapGenContext
     {
@@ -25,21 +23,37 @@ namespace PMDC.LevelGen
         /// </summary>
         public bool Ambush;
 
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public ChestStep() : base()
         {
             Filters = new List<BaseRoomFilter>();
         }
+
+        /// <summary>
+        /// Initializes a new instance with the specified ambush setting and room filters.
+        /// </summary>
+        /// <param name="ambush">Whether the chest triggers a monster ambush when opened.</param>
+        /// <param name="filters">Filters to determine eligible rooms for chest placement.</param>
         public ChestStep(bool ambush, List<BaseRoomFilter> filters)
         {
             Ambush = ambush;
             Filters = filters;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         public ChestStep(ChestStep<T> other) : base(other)
         {
             Ambush = other.Ambush;
             Filters = new List<BaseRoomFilter>();
             Filters.AddRange(other.Filters);
         }
+
+        /// <inheritdoc/>
         public override MonsterHouseBaseStep<T> CreateNew() { return new ChestStep<T>(this); }
 
         /// <summary>
@@ -47,6 +61,7 @@ namespace PMDC.LevelGen
         /// </summary>
         public List<BaseRoomFilter> Filters { get; set; }
 
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             //choose a room to put the chest in
@@ -110,7 +125,7 @@ namespace PMDC.LevelGen
 
             int randIndex = map.Rand.Next(freeTiles.Count);
             Loc loc = freeTiles[randIndex];
-            
+
             EffectTile spawnedChest = new EffectTile("chest_full", true);
 
             MonsterHouseTableState mhtable = DataManager.Instance.UniversalEvent.UniversalStates.GetWithDefault<MonsterHouseTableState>();
@@ -119,7 +134,7 @@ namespace PMDC.LevelGen
                 //Mark ambush chests if visible monster houses are set
                 spawnedChest = new EffectTile(mhtable.ChestAmbushWarningTile, true);
             }
-            
+
             spawnedChest.TileStates.Set(new UnlockState("key"));
 
             if (Ambush && MobThemes.CanPick)
@@ -160,6 +175,10 @@ namespace PMDC.LevelGen
             GenContextDebug.DebugProgress("Placed Chest");
         }
 
+        /// <summary>
+        /// Returns a string representation of the chest step, including whether it is an ambush variant.
+        /// </summary>
+        /// <returns>A string describing the step type and ambush status.</returns>
         public override string ToString()
         {
             return "Chest Step" + (Ambush ? " Ambush" : "");

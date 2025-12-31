@@ -10,25 +10,48 @@ using Newtonsoft.Json;
 
 namespace PMDC.Dungeon
 {
-    //For battle events that occur for characters that aren't the target of the attack
+    // For battle events that occur for characters that aren't the target of the attack
 
+    /// <summary>
+    /// Event that boosts the damage of magical attacks if the user has the specified ability.
+    /// Used for abilities that enhance magic power when an ally is nearby.
+    /// </summary>
     [Serializable]
     public class SupportAbilityEvent : BattleEvent
     {
+        /// <summary>
+        /// The intrinsic ability ID that qualifies for the damage boost.
+        /// </summary>
         [JsonConverter(typeof(IntrinsicConverter))]
         [DataType(0, DataManager.DataType.Intrinsic, false)]
         public string SupportAbility;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SupportAbilityEvent"/> class with default values.
+        /// </summary>
         public SupportAbilityEvent() { SupportAbility = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SupportAbilityEvent"/> class with the specified ability.
+        /// </summary>
+        /// <param name="supportAbility">The intrinsic ability ID required for the boost.</param>
         public SupportAbilityEvent(string supportAbility)
         {
             SupportAbility = supportAbility;
         }
+        /// <summary>
+        /// Copy constructor for cloning an existing SupportAbilityEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected SupportAbilityEvent(SupportAbilityEvent other)
         {
             SupportAbility = other.SupportAbility;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SupportAbilityEvent(this); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Data.Category == BattleData.SkillCategory.Magical
@@ -38,28 +61,56 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that allows a bystander to snatch a status move targeting the user and redirect it to themselves.
+    /// This is triggered when an ally uses a beneficial status move on themselves.
+    /// </summary>
     [Serializable]
     public class SnatchEvent : BattleEvent
     {
+        /// <summary>
+        /// The visual emitter effect played when snatching the move.
+        /// </summary>
         public FiniteEmitter Emitter;
+
+        /// <summary>
+        /// The sound effect played when snatching the move.
+        /// </summary>
         [Sound(0)]
         public string Sound;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnatchEvent"/> class with default values.
+        /// </summary>
         public SnatchEvent() { Emitter = new EmptyFiniteEmitter(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnatchEvent"/> class with the specified emitter and sound.
+        /// </summary>
+        /// <param name="emitter">The visual emitter effect.</param>
+        /// <param name="sound">The sound effect ID.</param>
         public SnatchEvent(FiniteEmitter emitter, string sound)
             : this()
         {
             Emitter = emitter;
             Sound = sound;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing SnatchEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected SnatchEvent(SnatchEvent other)
             : this()
         {
             Emitter = (FiniteEmitter)other.Emitter.Clone();
             Sound = other.Sound;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SnatchEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ContextStates.Contains<Redirected>())
@@ -98,23 +149,41 @@ namespace PMDC.Dungeon
     }
 
 
-    //below, the effects deal exclusively with explosions
+    // Below, the effects deal exclusively with explosions
 
+    /// <summary>
+    /// Event that replaces the normal explosion effects with alternative effects when the explosion hits an ally.
+    /// This allows explosions to have different behavior for friendly targets.
+    /// </summary>
     [Serializable]
     public class AllyDifferentExplosionEvent : BattleEvent
     {
-        //also need to somehow specify alternative animations/sounds
+        /// <summary>
+        /// The alternative battle events to apply when the explosion hits an ally.
+        /// These replace the normal OnHits and remove base power.
+        /// </summary>
         public List<BattleEvent> BaseEvents;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AllyDifferentExplosionEvent"/> class with default values.
+        /// </summary>
         public AllyDifferentExplosionEvent() { BaseEvents = new List<BattleEvent>(); }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing AllyDifferentExplosionEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected AllyDifferentExplosionEvent(AllyDifferentExplosionEvent other)
             : this()
         {
             foreach (BattleEvent battleEffect in other.BaseEvents)
                 BaseEvents.Add((BattleEvent)battleEffect.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AllyDifferentExplosionEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character targetChar = ZoneManager.Instance.CurrentMap.GetCharAtLoc(context.ExplosionTile);
@@ -137,25 +206,53 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that dampens explosions, reducing their range to zero and optionally modifying their damage.
+    /// Used for abilities that suppress explosive attacks.
+    /// </summary>
     [Serializable]
     public class DampEvent : BattleEvent
     {
+        /// <summary>
+        /// The damage divisor. Positive values divide damage, negative values multiply it.
+        /// </summary>
         public int Div;
+
+        /// <summary>
+        /// The message displayed when the explosion is dampened.
+        /// </summary>
         StringKey Msg;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DampEvent"/> class with default values.
+        /// </summary>
         public DampEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DampEvent"/> class with the specified divisor and message.
+        /// </summary>
+        /// <param name="div">The damage divisor.</param>
+        /// <param name="msg">The message to display.</param>
         public DampEvent(int div, StringKey msg)
         {
             Div = div;
             Msg = msg;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing DampEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected DampEvent(DampEvent other)
         {
             Div = other.Div;
             Msg = other.Msg;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DampEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //only block explosions
@@ -176,11 +273,17 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that dampens explosions from thrown items, removing their splash effect.
+    /// Does not affect recruit items.
+    /// </summary>
     [Serializable]
     public class DampItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DampItemEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType == BattleActionType.Throw)
@@ -199,11 +302,18 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Event that allows characters to catch thrown items before they splash.
+    /// Prevents the explosion effect and sets up a catch event on hit.
+    /// Items that are already held, edible for allies, or ammo for wild teams cannot be caught.
+    /// </summary>
     [Serializable]
     public class CatchItemSplashEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CatchItemSplashEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType == BattleActionType.Throw)
@@ -255,24 +365,46 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that isolates a character from an explosion of a matching element type.
+    /// Reduces the explosion range to zero when the character is at the explosion center.
+    /// </summary>
     [Serializable]
     public class IsolateElementEvent : BattleEvent
     {
+        /// <summary>
+        /// The element type to isolate. If default element, affects all elements.
+        /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string Element;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IsolateElementEvent"/> class with default values.
+        /// </summary>
         public IsolateElementEvent() { Element = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IsolateElementEvent"/> class with the specified element.
+        /// </summary>
+        /// <param name="element">The element type to isolate.</param>
         public IsolateElementEvent(string element)
         {
             Element = element;
         }
+        /// <summary>
+        /// Copy constructor for cloning an existing IsolateElementEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected IsolateElementEvent(IsolateElementEvent other)
         {
             Element = other.Element;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new IsolateElementEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (Element != DataManager.Instance.DefaultElement && context.Data.Element != Element)
@@ -285,30 +417,63 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that draws attacks of a specific element type to the owner character.
+    /// Redirects the explosion center to the owner's location.
+    /// </summary>
     [Serializable]
     public class DrawAttackEvent : BattleEvent
     {
+        /// <summary>
+        /// The element type to draw. If default element, draws all elements.
+        /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string Element;
+
+        /// <summary>
+        /// The alignment of targets from which to draw attacks.
+        /// </summary>
         public Alignment DrawFrom;
+
+        /// <summary>
+        /// The message displayed when an attack is drawn.
+        /// </summary>
         public StringKey Msg;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DrawAttackEvent"/> class with default values.
+        /// </summary>
         public DrawAttackEvent() { Element = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DrawAttackEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="drawFrom">The alignment of targets from which to draw attacks.</param>
+        /// <param name="element">The element type to draw.</param>
+        /// <param name="msg">The message to display.</param>
         public DrawAttackEvent(Alignment drawFrom, string element, StringKey msg)
         {
             DrawFrom = drawFrom;
             Element = element;
             Msg = msg;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing DrawAttackEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected DrawAttackEvent(DrawAttackEvent other)
         {
             DrawFrom = other.DrawFrom;
             Element = other.Element;
             Msg = other.Msg;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DrawAttackEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ContextStates.Contains<Redirected>())
@@ -347,21 +512,44 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that allows a character to pass an attack to a nearby target at the cost of fullness.
+    /// Redirects the attack to an adjacent character when the owner is targeted.
+    /// </summary>
     [Serializable]
     public class PassAttackEvent : BattleEvent
     {
+        /// <summary>
+        /// The fullness cost to pass the attack.
+        /// </summary>
         public int BellyCost;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PassAttackEvent"/> class with default values.
+        /// </summary>
         public PassAttackEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PassAttackEvent"/> class with the specified belly cost.
+        /// </summary>
+        /// <param name="bellyCost">The fullness cost to pass the attack.</param>
         public PassAttackEvent(int bellyCost)
         {
             BellyCost = bellyCost;
         }
+        /// <summary>
+        /// Copy constructor for cloning an existing PassAttackEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected PassAttackEvent(PassAttackEvent other)
         {
             BellyCost = other.BellyCost;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PassAttackEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ContextStates.Contains<Redirected>())
@@ -408,12 +596,22 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Event that allows a character to cover for an ally by taking the attack instead.
+    /// Only works when the owner has at least 50% HP and the target is a friend.
+    /// </summary>
     [Serializable]
     public class CoverAttackEvent : BattleEvent
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CoverAttackEvent"/> class.
+        /// </summary>
         public CoverAttackEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CoverAttackEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ContextStates.Contains<Redirected>())
@@ -448,22 +646,44 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Event that allows a character to fetch a failed recruit item and pick it up.
+    /// Used for abilities that retrieve thrown items that missed or bounced.
+    /// </summary>
     [Serializable]
     public class FetchEvent : BattleEvent
     {
+        /// <summary>
+        /// The message displayed when fetching the item.
+        /// </summary>
         public StringKey Msg;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FetchEvent"/> class with default values.
+        /// </summary>
         public FetchEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FetchEvent"/> class with the specified message.
+        /// </summary>
+        /// <param name="msg">The message to display when fetching.</param>
         public FetchEvent(StringKey msg)
         {
             Msg = msg;
         }
+        /// <summary>
+        /// Copy constructor for cloning an existing FetchEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected FetchEvent(FetchEvent other)
         {
             Msg = other.Msg;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FetchEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ContextStates.Contains<BallFetch>())
@@ -544,17 +764,47 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Event that allows an ally to follow up with an additional attack after the user deals damage.
+    /// Invokes a specified skill from the bystander's position targeting the original target.
+    /// </summary>
     [Serializable]
     public class FollowUpEvent : InvokeBattleEvent
     {
+        /// <summary>
+        /// The skill ID to invoke as a follow-up attack.
+        /// </summary>
         [JsonConverter(typeof(SkillConverter))]
         [DataType(0, DataManager.DataType.Skill, false)]
         public string InvokedMove;
+
+        /// <summary>
+        /// Whether to target the original target or the original user.
+        /// </summary>
         public bool AffectTarget;
+
+        /// <summary>
+        /// The offset in front of the owner from which to aim the attack.
+        /// </summary>
         public int FrontOffset;
+
+        /// <summary>
+        /// The message displayed when the follow-up attack is triggered.
+        /// </summary>
         public StringKey Msg;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FollowUpEvent"/> class with default values.
+        /// </summary>
         public FollowUpEvent() { InvokedMove = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FollowUpEvent"/> class with the specified parameters.
+        /// </summary>
+        /// <param name="invokedMove">The skill ID to invoke.</param>
+        /// <param name="affectTarget">Whether to target the original target.</param>
+        /// <param name="frontOffset">The offset in front of the owner.</param>
+        /// <param name="msg">The message to display.</param>
         public FollowUpEvent(string invokedMove, bool affectTarget, int frontOffset, StringKey msg)
         {
             InvokedMove = invokedMove;
@@ -562,6 +812,11 @@ namespace PMDC.Dungeon
             FrontOffset = frontOffset;
             Msg = msg;
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing FollowUpEvent.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         protected FollowUpEvent(FollowUpEvent other)
         {
             InvokedMove = other.InvokedMove;
@@ -569,8 +824,11 @@ namespace PMDC.Dungeon
             FrontOffset = other.FrontOffset;
             Msg = other.Msg;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FollowUpEvent(this); }
-        
+
+        /// <inheritdoc/>
         protected override BattleContext CreateContext(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);

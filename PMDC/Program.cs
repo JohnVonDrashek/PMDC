@@ -23,16 +23,46 @@ using RogueEssence.LevelGen;
 namespace PMDC
 {
     /// <summary>
-    /// The main class.
+    /// Entry point for the PMDC (Pokémon Mystery Dungeon Clone) game application.
+    /// Handles command-line argument parsing, system initialization, and game mode selection.
+    /// Supports development mode, quest loading, mod management, asset conversion, data indexing, and guide generation.
     /// </summary>
     public static class Program
     {
         //[System.Runtime.InteropServices.DllImport("user32.dll")]
         //static extern bool SetProcessDPIAware();
 
+        /// <summary>
+        /// Builds and configures the Avalonia application for the editor.
+        /// Delegates to the RogueEssence Dev Program's builder.
+        /// </summary>
+        /// <returns>The configured Avalonia application builder for the data editor UI.</returns>
         public static AppBuilder BuildAvaloniaApp() => RogueEssence.Dev.Program.BuildAvaloniaApp();
+
         /// <summary>
         /// The main entry point for the application.
+        /// Parses command-line arguments and initializes the game or one of its utility modes (development, asset conversion, data indexing, guide generation, etc.).
+        /// Supports the following command-line arguments:
+        /// - <c>-dev</c> Runs the game in development mode with Lua debugging enabled.
+        /// - <c>-lang [code]</c> Specifies the language (en/es/de/zh/ko).
+        /// - <c>-guide</c> Generates a strategy guide as HTML files.
+        /// - <c>-csv</c> Generates a strategy guide as CSV files.
+        /// - <c>-wiki</c> Generates wiki-ready pages.
+        /// - <c>-asset [path]</c> Specifies a custom asset directory path.
+        /// - <c>-raw [path]</c> Specifies a custom raw asset directory path.
+        /// - <c>-appdata [path]</c> Specifies a custom application data directory.
+        /// - <c>-quest [folder]</c> Loads a quest from the MODS directory.
+        /// - <c>-mod [names...]</c> Loads additional mods from the MODS directory.
+        /// - <c>-index [types...]</c> Reindexes specified game data types.
+        /// - <c>-reserialize [types...]</c> Reserializes specified game data types.
+        /// - <c>-modfile [types...]</c> Resaves specified game data types as mod files.
+        /// - <c>-modpatch [types...]</c> Resaves specified game data types as patch files.
+        /// - <c>-convert [types...]</c> Converts graphics from raw assets to optimized format.
+        /// - <c>-preconvert</c> Rebuilds graphics indices before conversion.
+        /// - <c>-play [file]</c> Loads replay input from a file.
+        /// - <c>-nolog</c> Disables input logging.
+        /// - <c>-build</c> Builds the specified quest.
+        /// - <c>-help</c> Displays help information.
         /// </summary>
         [STAThread]
         static void Main()
@@ -621,8 +651,11 @@ namespace PMDC
             }
         }
 
-        // We used to have to map dlls manually, but FNA has a provisional solution now.
-        // Keep these comments for clarity
+        /// <summary>
+        /// Initializes native DLL mappings for cross-platform compatibility.
+        /// Pre-loads SDL before FNA3D to avoid multiple dylib issues on macOS.
+        /// This method ensures that SDL library bindings are properly initialized before graphics rendering systems are loaded.
+        /// </summary>
         public static void InitDllMap()
         {
             //CoreDllMap.Init();
@@ -632,6 +665,13 @@ namespace PMDC
             SDL.SDL_GetPlatform();
         }
 
+        /// <summary>
+        /// Initializes the data editor with all custom editors and type converters.
+        /// Registers editors for game data types including zone steps, room generators, spawners, battle data,
+        /// skill data, item data, status effects, map statuses, and various utility types.
+        /// This method must be called before launching the Avalonia editor UI to ensure all data types
+        /// can be properly edited in the development interface.
+        /// </summary>
         public static void InitDataEditor()
         {
             DataEditor.Init();

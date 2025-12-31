@@ -13,12 +13,20 @@ namespace PMDC.LevelGen
     /// This step should never be explicitly added to a map's gen steps.
     /// Instead, it needs to be dynamically added only when in rescue mode.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The base map generation context type.</typeparam>
     [Serializable]
     public class RescueSpawner<T> : GenStep<T> where T : BaseMapGenContext
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RescueSpawner{T}"/> class.
+        /// </summary>
         public RescueSpawner() { }
 
+        /// <summary>
+        /// Applies the rescue spawner to the map, placing a rescue flag and surrounding Monster House.
+        /// </summary>
+        /// <param name="map">The map generation context to apply the spawner to.</param>
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             //TODO: move magic numbers out of here

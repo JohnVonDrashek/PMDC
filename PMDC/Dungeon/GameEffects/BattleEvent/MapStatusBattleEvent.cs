@@ -18,52 +18,69 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events related to map statuses
-
-
-
     /// <summary>
-    /// Event that sets the specified map status
+    /// Event that sets the specified map status.
     /// </summary>
     [Serializable]
     public class GiveMapStatusEvent : BattleEvent
     {
         /// <summary>
-        /// The map status to add
+        /// The map status to add.
         /// </summary>
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
         public string StatusID;
 
         /// <summary>
-        /// The amount of turns the map status will last
+        /// The amount of turns the map status will last.
         /// </summary>
         public int Counter;
 
         /// <summary>
-        /// The message displayed in the dungeon log when the map status is added
+        /// The message displayed in the dungeon log when the map status is added.
         /// </summary>
         [StringKey(0, true)]
         public StringKey MsgOverride;
 
         /// <summary>
-        /// If the user contains one of the specified CharStates, then the weather is extended by the multiplier
+        /// If the user contains one of the specified CharStates, then the weather is extended by the multiplier.
         /// </summary>
         [StringTypeConstraint(1, typeof(CharState))]
         public List<FlagType> States;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GiveMapStatusEvent"/> class.
+        /// </summary>
         public GiveMapStatusEvent() { States = new List<FlagType>(); StatusID = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GiveMapStatusEvent"/> class with specified status ID.
+        /// </summary>
+        /// <param name="id">The map status ID to apply.</param>
         public GiveMapStatusEvent(string id)
         {
             States = new List<FlagType>();
             StatusID = id;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GiveMapStatusEvent"/> class with status ID and duration.
+        /// </summary>
+        /// <param name="id">The map status ID to apply.</param>
+        /// <param name="counter">The duration in turns.</param>
         public GiveMapStatusEvent(string id, int counter)
         {
             States = new List<FlagType>();
             StatusID = id;
             Counter = counter;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GiveMapStatusEvent"/> class with status ID, duration, and message.
+        /// </summary>
+        /// <param name="id">The map status ID to apply.</param>
+        /// <param name="counter">The duration in turns.</param>
+        /// <param name="msg">The message override to display.</param>
         public GiveMapStatusEvent(string id, int counter, StringKey msg)
         {
             States = new List<FlagType>();
@@ -71,6 +88,14 @@ namespace PMDC.Dungeon
             Counter = counter;
             MsgOverride = msg;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GiveMapStatusEvent"/> class with extension state.
+        /// </summary>
+        /// <param name="id">The map status ID to apply.</param>
+        /// <param name="counter">The duration in turns.</param>
+        /// <param name="msg">The message override to display.</param>
+        /// <param name="state">The CharState type that extends the duration.</param>
         public GiveMapStatusEvent(string id, int counter, StringKey msg, Type state)
         {
             States = new List<FlagType>();
@@ -79,6 +104,9 @@ namespace PMDC.Dungeon
             MsgOverride = msg;
             States.Add(new FlagType(state));
         }
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         protected GiveMapStatusEvent(GiveMapStatusEvent other)
             : this()
         {
@@ -87,8 +115,11 @@ namespace PMDC.Dungeon
             MsgOverride = other.MsgOverride;
             States.AddRange(other.States);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new GiveMapStatusEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //add the map status
@@ -121,13 +152,18 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that removes all the map statuses 
+    /// Event that removes all the map statuses with the MapWeatherState.
     /// </summary>
     [Serializable]
     public class RemoveWeatherEvent : BattleEvent
     {
+        /// <inheritdoc/>
+        public RemoveWeatherEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveWeatherEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //remove all other weather effects
@@ -143,32 +179,46 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the map status depending on the user's type 
+    /// Event that sets the map status depending on the user's type.
     /// </summary>
     [Serializable]
     public class TypeWeatherEvent : BattleEvent
     {
         /// <summary>
-        /// The element that maps to a map status. 
+        /// The element that maps to a map status.
         /// </summary>
         [JsonConverter(typeof(ElementMapStatusDictConverter))]
         [DataType(1, DataManager.DataType.Element, false)]
         [DataType(2, DataManager.DataType.MapStatus, false)]
         public Dictionary<string, string> WeatherPair;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TypeWeatherEvent"/> class.
+        /// </summary>
         public TypeWeatherEvent() { WeatherPair = new Dictionary<string, string>(); }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TypeWeatherEvent"/> class with specified mappings.
+        /// </summary>
+        /// <param name="weather">Dictionary mapping element types to map status IDs.</param>
         public TypeWeatherEvent(Dictionary<string, string> weather)
         {
             WeatherPair = weather;
         }
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         protected TypeWeatherEvent(TypeWeatherEvent other)
             : this()
         {
             foreach (string element in other.WeatherPair.Keys)
                 WeatherPair.Add(element, other.WeatherPair[element]);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TypeWeatherEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             string weather;
@@ -204,40 +254,55 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that bans the last move the character used by setting the move ID in the MapIDState
+    /// Event that bans the last move the character used by setting the move ID in the MapIDState.
     /// </summary>
     [Serializable]
     public class BanMoveEvent : BattleEvent
     {
         /// <summary>
-        /// The status that will store the move ID in MapIDState
-        /// This should usually be "move_ban" 
+        /// The status that will store the move ID in MapIDState.
+        /// This should usually be "move_ban".
         /// </summary>
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
         public string BanStatusID;
 
         /// <summary>
-        /// The status that contains the last used move in IDState status state
-        /// This should usually be "last_used_move"
+        /// The status that contains the last used move in IDState status state.
+        /// This should usually be "last_used_move".
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string LastMoveStatusID;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BanMoveEvent"/> class.
+        /// </summary>
         public BanMoveEvent() { BanStatusID = ""; LastMoveStatusID = ""; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BanMoveEvent"/> class with specified status IDs.
+        /// </summary>
+        /// <param name="banStatusID">The map status ID for storing banned moves.</param>
+        /// <param name="prevMoveID">The status ID that tracks the last used move.</param>
         public BanMoveEvent(string banStatusID, string prevMoveID)
         {
             BanStatusID = banStatusID;
             LastMoveStatusID = prevMoveID;
         }
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         protected BanMoveEvent(BanMoveEvent other)
         {
             BanStatusID = other.BanStatusID;
             LastMoveStatusID = other.LastMoveStatusID;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BanMoveEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             StatusEffect testStatus = context.Target.GetStatusEffect(LastMoveStatusID);

@@ -7,28 +7,60 @@ using RogueEssence.Dungeon;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// Abstract base class for AI plans that cause the character to flee from other characters.
+    /// Subclasses specify which characters to run from (allies, foes, or both) and
+    /// whether to abort the plan if cornered.
+    /// </summary>
     [Serializable]
     public abstract class AvoidPlan : AIPlan
     {
+        /// <summary>
+        /// The current path the character is following to escape.
+        /// Not serialized as it is recalculated each session.
+        /// </summary>
         [NonSerialized]
         private List<Loc> goalPath;
+
+        /// <summary>
+        /// History of locations visited, used to avoid backtracking when escaping.
+        /// Not serialized as it is recalculated each session.
+        /// </summary>
         [NonSerialized]
         private List<Loc> locHistory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AvoidPlan"/> class with default values.
+        /// </summary>
         public AvoidPlan() : base()
         { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AvoidPlan"/> class with the specified IQ flags.
+        /// </summary>
+        /// <param name="iq">The intelligence flags controlling AI behavior.</param>
         public AvoidPlan(AIFlags iq) : base(iq)
         {
             goalPath = new List<Loc>();
             locHistory = new List<Loc>();
         }
+
+        /// <summary>
+        /// Copy constructor for cloning an existing plan.
+        /// </summary>
+        /// <param name="other">The plan to copy from.</param>
         protected AvoidPlan(AvoidPlan other) : base(other) { }
 
+        /// <inheritdoc/>
         public override void Initialize(Character controlledChar)
         {
             //create a pathfinding map?
         }
 
+        /// <summary>
+        /// Called when this plan is activated. Resets the escape path and location history.
+        /// </summary>
+        /// <param name="currentPlan">The previously active plan.</param>
         public override void SwitchedIn(BasePlan currentPlan)
         {
             goalPath = new List<Loc>();
@@ -36,10 +68,28 @@ namespace PMDC.Dungeon
             base.SwitchedIn(currentPlan);
         }
 
+        /// <summary>
+        /// Gets whether this plan causes the character to run from allied characters.
+        /// </summary>
         protected abstract bool RunFromAllies { get; }
+
+        /// <summary>
+        /// Gets whether this plan causes the character to run from enemy characters.
+        /// </summary>
         protected abstract bool RunFromFoes { get; }
+
+        /// <summary>
+        /// Gets whether this plan should abort and defer to the next plan if the character is cornered.
+        /// </summary>
         protected abstract bool AbortIfCornered { get; }
 
+        /// <summary>
+        /// Evaluates the current situation and determines the best escape action.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="preThink">Whether this is a pre-think evaluation.</param>
+        /// <param name="rand">Random number generator for decision-making.</param>
+        /// <returns>The action to take, or null to defer to the next plan.</returns>
         public override GameAction Think(Character controlledChar, bool preThink, IRandom rand)
         {
             if (controlledChar.CantWalk)
@@ -60,6 +110,16 @@ namespace PMDC.Dungeon
             return DumbAvoid(controlledChar, preThink, seenCharacters, ownIndex, rand);
         }
 
+        /// <summary>
+        /// Attempts to find an optimal escape path using pathfinding and historical tracking.
+        /// This method plans routes to exits while avoiding backtracking and considering nearby threats.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="preThink">Whether this is a pre-think evaluation.</param>
+        /// <param name="seenCharacters">The list of visible characters to avoid.</param>
+        /// <param name="ownIndex">The character index of the controlled character.</param>
+        /// <param name="rand">Random number generator for path selection.</param>
+        /// <returns>The action to take to move along the escape path, or null if no path can be found.</returns>
         private GameAction SmartAvoid(Character controlledChar, bool preThink, List<Character> seenCharacters, CharIndex ownIndex, ReRandom rand)
         {
             StablePriorityQueue<double, Dir8> candidateDirs = new StablePriorityQueue<double, Dir8>();
@@ -167,6 +227,18 @@ namespace PMDC.Dungeon
             return SelectChoiceFromPath(controlledChar, goalPath);
 
         }
+
+        /// <summary>
+        /// Attempts to find the best escape direction by evaluating each possible direction
+        /// and choosing the one that maximizes distance from visible threats.
+        /// This is a simpler, greedier approach compared to SmartAvoid.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled by this AI.</param>
+        /// <param name="preThink">Whether this is a pre-think evaluation.</param>
+        /// <param name="seenCharacters">The list of visible characters to avoid.</param>
+        /// <param name="ownIndex">The character index of the controlled character.</param>
+        /// <param name="rand">Random number generator for path selection.</param>
+        /// <returns>The action to move in the best escape direction, or null if cornering should abort the plan.</returns>
         private GameAction DumbAvoid(Character controlledChar, bool preThink, List<Character> seenCharacters, CharIndex ownIndex, IRandom rand)
         {
             //pre-filter the seen characters

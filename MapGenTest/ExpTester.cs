@@ -16,14 +16,33 @@ using System.Xml.Linq;
 
 namespace MapGenTest
 {
+    /// <summary>
+    /// Test harness for comparing experience point distribution formulas.
+    /// Loads experience logs from gameplay sessions and simulates how different
+    /// exp handout algorithms would affect leveling progression.
+    /// </summary>
     public static class ExpTester
     {
+        /// <summary>
+        /// Directory path containing experience log CSV files.
+        /// </summary>
         public static string EXP_DIR;
 
-        static List<ExpLog> Logs;
+        /// <summary>
+        /// Loaded experience logs from gameplay sessions.
+        /// </summary>
+        private static List<ExpLog> Logs;
 
-        static List<(HandoutExpEvent expEvent, string name)> Handouts;
+        /// <summary>
+        /// List of experience handout formulas to compare, with descriptive names.
+        /// </summary>
+        private static List<(HandoutExpEvent expEvent, string name)> Handouts;
 
+        /// <summary>
+        /// Initializes the list of experience handout formulas to test.
+        /// Each formula represents a different approach to scaling exp gains
+        /// based on level differences between the player and defeated enemies.
+        /// </summary>
         public static void InitHandouts()
         {
             Handouts = new List<(HandoutExpEvent expEvent, string name)>();
@@ -116,6 +135,10 @@ namespace MapGenTest
             //}
         }
 
+        /// <summary>
+        /// Main entry point for the experience testing mode.
+        /// Loads experience logs and displays an interactive menu for comparing formulas.
+        /// </summary>
         public static void Run()
         {
             Logs = new List<ExpLog>();
@@ -224,6 +247,12 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Displays a comparison of all exp formulas for a selected log.
+        /// Shows final levels across all growth groups for each formula.
+        /// </summary>
+        /// <param name="state">The navigation state string.</param>
+        /// <param name="log">The experience log to analyze.</param>
         public static void ComparisonMenu(string state, ExpLog log)
         {
             state = log.Name;
@@ -263,6 +292,13 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Displays a floor-by-floor level progression for a specific growth group.
+        /// Compares all exp formulas side-by-side showing level at each floor.
+        /// </summary>
+        /// <param name="state">The navigation state string.</param>
+        /// <param name="log">The experience log to analyze.</param>
+        /// <param name="growth">The growth group ID to simulate.</param>
         public static void LevelLogMenu(string state, ExpLog log, string growth)
         {
             state = growth;
@@ -307,6 +343,11 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Tests all exp formulas against all growth groups and prints a comparison table.
+        /// </summary>
+        /// <param name="log">The experience log to analyze.</param>
+        /// <param name="addLevel">Level offset to add to the starting level.</param>
         public static void TestExp(ExpLog log, int addLevel)
         {
             Console.WriteLine(String.Format("{0,4}|{1,4}|{2,4}|{3,4}|{4,4}|{5,4}", "err", "fast", "fluc", "mfst", "mslo", "slow"));
@@ -323,6 +364,14 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Simulates level progression through an experience log using a specific formula and growth group.
+        /// </summary>
+        /// <param name="expEvent">The exp handout formula to use.</param>
+        /// <param name="log">The experience log containing enemy defeats.</param>
+        /// <param name="growth">The growth group ID for exp-to-level calculations.</param>
+        /// <param name="addLevel">Level offset to add to the starting level.</param>
+        /// <returns>A list of levels, one entry per floor in the log.</returns>
         public static List<int> GetLevelLog(HandoutExpEvent expEvent, ExpLog log, string growth, int addLevel)
         {
             List<int> levelLog = new List<int>();
@@ -358,6 +407,12 @@ namespace MapGenTest
         }
 
 
+        /// <summary>
+        /// Formats a menu item with its selection key (0-9, then A-Z).
+        /// </summary>
+        /// <param name="index">The zero-based index of the menu item.</param>
+        /// <param name="str">The description text for the menu item.</param>
+        /// <returns>A formatted string like "0) Description" or "A) Description".</returns>
         public static string GetSelectionString(int index, string str)
         {
             char select = (char)(index > 9 ? 'A' + index - 10 : '0' + index);
@@ -365,12 +420,31 @@ namespace MapGenTest
         }
     }
 
+    /// <summary>
+    /// Represents a logged gameplay session with experience point gains.
+    /// Parsed from CSV files containing zone, floor, exp yield, and enemy level data.
+    /// </summary>
     public class ExpLog
     {
+        /// <summary>
+        /// The name/identifier of this log (typically the source filename).
+        /// </summary>
         public string Name;
+
+        /// <summary>
+        /// The zone location where this gameplay session took place.
+        /// </summary>
         public ZoneLoc Zone;
+
+        /// <summary>
+        /// List of experience gains, each containing the floor location,
+        /// base exp yield of the defeated enemy, and its level.
+        /// </summary>
         public List<(SegLoc segLoc, int expYield, int level)> Exps;
 
+        /// <summary>
+        /// Initializes a new empty experience log.
+        /// </summary>
         public ExpLog()
         {
             Zone = ZoneLoc.Invalid;

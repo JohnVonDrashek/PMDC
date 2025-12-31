@@ -7,13 +7,18 @@ using RogueEssence;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// Given a floor plan, this step attaches a boss room connected to an existing room, and then attaches a vault room that is unlocked when the player defeats the boss.
+    /// Given a floor plan, this step attaches a boss room connected to an existing room,
+    /// and then attaches a vault room that is unlocked when the player defeats the boss.
+    /// This creates a classic boss-fight-to-treasure progression.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The floor plan generation context type.</typeparam>
     [Serializable]
     public class AddBossRoomStep<T> : FloorPlanStep<T>
         where T : class, IFloorPlanGenContext
     {
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public AddBossRoomStep()
             : base()
         {
@@ -23,6 +28,13 @@ namespace PMDC.LevelGen
             this.VaultHallComponents = new ComponentCollection();
             this.Filters = new List<BaseRoomFilter>();
         }
+
+        /// <summary>
+        /// Initializes a new instance with the specified room and hall generators.
+        /// </summary>
+        /// <param name="bossRooms">The room types that can be used for the boss room.</param>
+        /// <param name="vaultRooms">The room types that can be used for the vault/treasure room.</param>
+        /// <param name="genericHalls">The hall types that can be used to connect rooms.</param>
         public AddBossRoomStep(IRandPicker<RoomGen<T>> bossRooms, IRandPicker<RoomGen<T>> vaultRooms, IRandPicker<PermissiveRoomGen<T>> genericHalls)
             : base()
         {
@@ -76,6 +88,7 @@ namespace PMDC.LevelGen
         /// </summary>
         public ComponentCollection VaultHallComponents { get; set; }
 
+        /// <inheritdoc/>
         public override void ApplyToPath(IRandom rand, FloorPlan floorPlan)
         {
             //attempt 10 times
@@ -135,6 +148,12 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Selects a random eligible room or hall to attach the boss room expansion to, based on the configured filters.
+        /// </summary>
+        /// <param name="rand">The random number generator to use for selection.</param>
+        /// <param name="floorPlan">The current floor plan to expand.</param>
+        /// <returns>A boss room expansion if a valid location is found; otherwise null.</returns>
         public virtual FloorPathBranch<T>.ListPathBranchExpansion? ChooseRoomExpansion(IRandom rand, FloorPlan floorPlan)
         {
             List<RoomHallIndex> availableExpansions = new List<RoomHallIndex>();
@@ -161,12 +180,12 @@ namespace PMDC.LevelGen
         //TODO: refactor the below reduncancies
 
         /// <summary>
-        /// Returns a random boss room or hall that can fit in the specified floor.
+        /// Prepares and returns a randomly selected boss room or connecting hall that fits within the specified floor.
         /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="floorPlan"></param>
-        /// <param name="isHall"></param>
-        /// <returns></returns>
+        /// <param name="rand">The random number generator to use for selecting a room type and determining its size.</param>
+        /// <param name="floorPlan">The floor plan that constrains the maximum dimensions for the returned room.</param>
+        /// <param name="isHall">If true, prepares a hall-type room; if false, prepares a boss-type room.</param>
+        /// <returns>A prepared room generator constrained to fit within the floor plan dimensions.</returns>
         public virtual RoomGen<T> PrepareBossRoom(IRandom rand, FloorPlan floorPlan, bool isHall)
         {
             RoomGen<T> room;
@@ -186,12 +205,12 @@ namespace PMDC.LevelGen
         }
 
         /// <summary>
-        /// Returns a random boss room or hall that can fit in the specified floor.
+        /// Prepares and returns a randomly selected treasure/vault room or connecting hall that fits within the specified floor.
         /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="floorPlan"></param>
-        /// <param name="isHall"></param>
-        /// <returns></returns>
+        /// <param name="rand">The random number generator to use for selecting a room type and determining its size.</param>
+        /// <param name="floorPlan">The floor plan that constrains the maximum dimensions for the returned room.</param>
+        /// <param name="isHall">If true, prepares a hall-type room; if false, prepares a treasure room.</param>
+        /// <returns>A prepared room generator constrained to fit within the floor plan dimensions.</returns>
         public virtual RoomGen<T> PrepareTreasureRoom(IRandom rand, FloorPlan floorPlan, bool isHall)
         {
             RoomGen<T> room;

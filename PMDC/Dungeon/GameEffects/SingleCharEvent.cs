@@ -19,9 +19,16 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// Single character event that decrements a countdown and executes effects when it reaches zero.
+    /// Used for timed status effects like Perish Song.
+    /// </summary>
     [Serializable]
     public class CountDownEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The effects to execute when the countdown reaches zero.
+        /// </summary>
         public List<SingleCharEvent> Effects;
 
         public CountDownEvent() { Effects = new List<SingleCharEvent>(); }
@@ -48,6 +55,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that waits until all active animations have completed.
+    /// Used to synchronize visual effects with game logic.
+    /// </summary>
     [Serializable]
     public class WaitAnimsOverEvent : SingleCharEvent
     {
@@ -59,6 +70,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Respawn event that spawns enemies at random valid locations.
+    /// Can be constrained to spawn within a radius of player characters.
+    /// </summary>
     [Serializable]
     public class RespawnFromRandomEvent : RespawnBaseEvent
     {
@@ -157,6 +172,10 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Respawn event that spawns enemies at pre-designated eligible spawn points.
+    /// Uses the map's spawn tile system to find valid locations.
+    /// </summary>
     [Serializable]
     public class RespawnFromEligibleEvent : RespawnBaseEvent
     {
@@ -245,6 +264,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Base class for enemy respawn events that occur periodically during gameplay.
+    /// Manages respawn timing and enemy count limits.
+    /// </summary>
     [Serializable]
     public abstract class RespawnBaseEvent : SingleCharEvent
     {
@@ -306,6 +329,10 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Single character event that despawns enemies that move too far from the player.
+    /// Helps manage map performance by removing distant enemies.
+    /// </summary>
     [Serializable]
     public class DespawnRadiusEvent : SingleCharEvent
     {
@@ -368,9 +395,16 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event wrapper that only applies when the character belongs to a specific family.
+    /// Used for family-exclusive item effects.
+    /// </summary>
     [Serializable]
     public class FamilySingleEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The event to execute if the family condition is met.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public FamilySingleEvent()
@@ -396,13 +430,23 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event wrapper that only applies when the character is on a specific terrain type.
+    /// Used for terrain-conditional effects.
+    /// </summary>
     [Serializable]
     public class TerrainNeededEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The terrain type ID that must be present for the event to trigger.
+        /// </summary>
         [JsonConverter(typeof(TerrainConverter))]
         [DataType(0, DataManager.DataType.Terrain, false)]
         public string Terrain;
 
+        /// <summary>
+        /// The event to execute if the terrain condition is met.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public TerrainNeededEvent()
@@ -429,9 +473,16 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that decrements a counter and removes the status when it reaches zero.
+    /// Standard event for duration-based status effects.
+    /// </summary>
     [Serializable]
     public class CountDownRemoveEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Whether to display a message when the status is removed.
+        /// </summary>
         public bool ShowMessage;
 
         public CountDownRemoveEvent() { }
@@ -458,6 +509,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that increments a counter each turn.
+    /// Used for effects that build up over time.
+    /// </summary>
     [Serializable]
     public class CountUpEvent : SingleCharEvent
     {
@@ -470,6 +525,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that heals HP based on the status effect's HPState value.
+    /// Used for regeneration and healing-over-time effects.
+    /// </summary>
     [Serializable]
     public class HealEvent : SingleCharEvent
     {
@@ -482,6 +541,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that deals HP damage based on the status effect's HPState value.
+    /// Used for damage-over-time effects like poison and burn.
+    /// </summary>
     [Serializable]
     public class DamageEvent : SingleCharEvent
     {
@@ -494,10 +557,21 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that damages all non-foe characters within a radius.
+    /// Used for area-of-effect damage-over-time effects.
+    /// </summary>
     [Serializable]
     public class DamageAreaEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The radius within which targets are affected.
+        /// </summary>
         public int Range;
+
+        /// <summary>
+        /// Animations to play when the damage triggers.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public DamageAreaEvent()
@@ -541,9 +615,16 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that removes the status if its target character is null.
+    /// Used for effects that track a specific target (like Lock-On).
+    /// </summary>
     [Serializable]
     public class CheckNullTargetEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Whether to display a message when the status is removed.
+        /// </summary>
         public bool ShowMessage;
 
         public CheckNullTargetEvent() { }
@@ -564,11 +645,18 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that plays a sound effect.
+    /// Used to add audio feedback to status effects.
+    /// </summary>
     [Serializable]
     public class SoundEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The sound effect ID to play.
+        /// </summary>
         public string Sound;
-        
+
         public override GameEvent Clone() { return new SoundEvent(); }
 
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, SingleCharContext context)
@@ -577,9 +665,17 @@ namespace PMDC.Dungeon
             yield break;
         }
     }
+
+    /// <summary>
+    /// Single character event that removes the owning status effect.
+    /// Used to trigger status removal from within the status itself.
+    /// </summary>
     [Serializable]
     public class RemoveEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Whether to display a message when the status is removed.
+        /// </summary>
         public bool ShowMessage;
 
         public RemoveEvent() { }
@@ -598,9 +694,16 @@ namespace PMDC.Dungeon
             yield return CoroutineManager.Instance.StartCoroutine(context.User.RemoveStatusEffect(((StatusEffect)owner).ID, ShowMessage));
         }
     }
+    /// <summary>
+    /// Single character event that logs a message to the battle log.
+    /// Formats the message with the user's display name.
+    /// </summary>
     [Serializable]
     public class BattleLogEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The localized message key to display.
+        /// </summary>
         public StringKey Message;
 
         public BattleLogEvent() { }
@@ -623,9 +726,16 @@ namespace PMDC.Dungeon
             yield break;
         }
     }
+    /// <summary>
+    /// Single character event that logs a message including both user and owner names.
+    /// Used when the message references the source of the effect.
+    /// </summary>
     [Serializable]
     public class BattleLogOwnerEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The localized message key to display.
+        /// </summary>
         public StringKey Message;
 
         public BattleLogOwnerEvent() { }
@@ -647,12 +757,27 @@ namespace PMDC.Dungeon
     }
 
 
+    /// <summary>
+    /// Single character event that plays a visual and audio animation on a character.
+    /// Used to add visual effects to status effects and abilities.
+    /// </summary>
     [Serializable]
     public class AnimEvent : SingleCharEvent
     {
+        /// <summary>
+        /// The particle emitter for the visual effect.
+        /// </summary>
         public FiniteEmitter Emitter;
+
+        /// <summary>
+        /// The sound effect to play with the animation.
+        /// </summary>
         [Sound(0)]
         public string Sound;
+
+        /// <summary>
+        /// Number of frames to wait after playing the animation.
+        /// </summary>
         public int Delay;
 
         public AnimEvent()
@@ -688,6 +813,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that deals damage as a fraction of the target's max HP.
+    /// Used for percentage-based damage effects like Leech Seed or poisoning.
+    /// </summary>
     [Serializable]
     public class FractionDamageEvent : SingleCharEvent
     {
@@ -695,6 +824,10 @@ namespace PMDC.Dungeon
         /// How much HP damage to inflict as a fraction of the target's total HP.
         /// </summary>
         public int HPFraction;
+
+        /// <summary>
+        /// Message to display when dealing damage.
+        /// </summary>
         public string Message;
 
         public FractionDamageEvent() { }
@@ -718,6 +851,10 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that heals HP as a fraction of the target's max HP.
+    /// Used for percentage-based healing effects.
+    /// </summary>
     [Serializable]
     public class FractionHealEvent : SingleCharEvent
     {
@@ -725,6 +862,10 @@ namespace PMDC.Dungeon
         /// How much HP to heal as a fraction of the target's total HP.
         /// </summary>
         public int HPFraction;
+
+        /// <summary>
+        /// Message to display when healing.
+        /// </summary>
         [StringKey(0, true)]
         public StringKey Message;
 
@@ -755,9 +896,16 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Single character event that removes specified terrain types from the user's location.
+    /// Used for effects that clear terrain obstacles.
+    /// </summary>
     [Serializable]
     public class RemoveLocTerrainEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Set of terrain type IDs that can be removed.
+        /// </summary>
         [JsonConverter(typeof(TerrainSetConverter))]
         public HashSet<string> TileTypes;
 
@@ -794,6 +942,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A remove loc trap event.
+    /// </summary>
     public class RemoveLocTrapEvent : SingleCharEvent
     {
         public override GameEvent Clone() { return new RemoveLocTrapEvent(); }
@@ -814,12 +965,21 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A single map status except event.
+    /// </summary>
     public class SingleMapStatusExceptEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusListConverter))]
         [DataType(1, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<string> States;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
 
@@ -854,11 +1014,20 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A single except event.
+    /// </summary>
     public class SingleExceptEvent : SingleCharEvent
     {
         [StringTypeConstraint(1, typeof(CharState))]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<FlagType> States;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
 
@@ -895,19 +1064,43 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A give status event.
+    /// </summary>
     public class GiveStatusEvent : SingleCharEvent
     {
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string StatusID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool SilentCheck;
         [SubGroup]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StateCollection<StatusState> States;
         [StringKey(0, true)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey TriggerMsg;
         [Sound(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string TriggerSound;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public FiniteEmitter TriggerEmitter;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int TriggerDelay;
 
         public GiveStatusEvent() { States = new StateCollection<StatusState>(); StatusID = ""; }
@@ -986,10 +1179,16 @@ namespace PMDC.Dungeon
         }
     }
     [Serializable]
+    /// <summary>
+    /// A remove status event.
+    /// </summary>
     public class RemoveStatusEvent : SingleCharEvent
     {
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string StatusID;
 
         public RemoveStatusEvent() { StatusID = ""; }
@@ -1011,12 +1210,27 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A invoke attack event.
+    /// </summary>
     public class InvokeAttackEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public CombatAction HitboxAction;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public ExplosionData Explosion;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public BattleData NewData;
         [StringKey(0, true)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Msg;
 
         public InvokeAttackEvent() { }
@@ -1102,9 +1316,15 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A use state item event.
+    /// </summary>
     public class UseStateItemEvent : SingleCharEvent
     {
         [StringKey(2, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Dictionary<ItemData.UseType, StringKey> UseMsgs;
 
         public UseStateItemEvent()
@@ -1205,14 +1425,26 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A weather forme event.
+    /// </summary>
     public class WeatherFormeEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MonsterConverter))]
         [DataType(0, DataManager.DataType.Monster, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ReqSpecies;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int DefaultForme;
         [JsonConverter(typeof(MapStatusIntDictConverter))]
         [DataType(1, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Dictionary<string, int> WeatherPair;
 
         public WeatherFormeEvent() { WeatherPair = new Dictionary<string, int>(); ReqSpecies = ""; }
@@ -1266,12 +1498,24 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A revolving forme event.
+    /// </summary>
     public class RevolvingFormeEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MonsterConverter))]
         [DataType(0, DataManager.DataType.Monster, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ReqSpecies;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Form1;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Form2;
 
         public RevolvingFormeEvent() { ReqSpecies = ""; }
@@ -1313,14 +1557,32 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A meteor forme event.
+    /// </summary>
     public class MeteorFormeEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MonsterConverter))]
         [DataType(0, DataManager.DataType.Monster, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ReqSpecies;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int ResultForme;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int FormeMult;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int PercentHP;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Below;
 
         public MeteorFormeEvent() { ReqSpecies = ""; }
@@ -1370,6 +1632,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A pre death event.
+    /// </summary>
     public class PreDeathEvent : SingleCharEvent
     {
         public PreDeathEvent() { }
@@ -1406,6 +1671,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A set death event.
+    /// </summary>
     public class SetDeathEvent : SingleCharEvent
     {
         public SetDeathEvent() { }
@@ -1430,10 +1698,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A set trap single event.
+    /// </summary>
     public class SetTrapSingleEvent : SingleCharEvent
     {
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string TrapID;
 
         public SetTrapSingleEvent() { }
@@ -1462,6 +1736,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A handout exp event.
+    /// </summary>
     public abstract class HandoutExpEvent : SingleCharEvent
     {
         /// <summary>
@@ -1565,7 +1842,13 @@ namespace PMDC.Dungeon
     [Serializable]
     public class HandoutScaledExpEvent : HandoutExpEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Numerator;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Denominator;
         public HandoutScaledExpEvent() { }
         public HandoutScaledExpEvent(int numerator, int denominator, int levelBuffer) { Numerator = numerator; Denominator = denominator; }
@@ -1619,6 +1902,9 @@ namespace PMDC.Dungeon
 
         public HandoutExpEvent UnderleveledHandout;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public HandoutExpEvent OverleveledHandout;
 
         public HandoutPiecewiseExpEvent() { }
@@ -1819,12 +2105,21 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A impostor revive event.
+    /// </summary>
     public class ImpostorReviveEvent : SingleCharEvent
     {
         [JsonConverter(typeof(IntrinsicConverter))]
         [DataType(0, DataManager.DataType.Intrinsic, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string AbilityID;
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string StatusID;
         public ImpostorReviveEvent() { AbilityID = ""; StatusID = ""; }
         public ImpostorReviveEvent(string abilityID, string statusID) { AbilityID = abilityID; StatusID = statusID; }
@@ -1864,10 +2159,22 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A mercy revive event.
+    /// </summary>
     public class MercyReviveEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool AskToUse;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool AffectPlayers;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool AffectEnemies;
         public MercyReviveEvent() { }
         public MercyReviveEvent(bool askToUse, bool affectPlayers, bool affectEnemies)
@@ -1928,6 +2235,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A auto revive event.
+    /// </summary>
     public class AutoReviveEvent : SingleCharEvent
     {
         /// <summary>
@@ -1945,6 +2255,9 @@ namespace PMDC.Dungeon
 
         [JsonConverter(typeof(ItemConverter))]
         [DataType(0, DataManager.DataType.Item, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ChangeTo;
 
         public AutoReviveEvent() { ChangeTo = ""; }
@@ -2161,10 +2474,19 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A partial trap event.
+    /// </summary>
     public class PartialTrapEvent : SingleCharEvent
     {
         [StringKey(0, true)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Message;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public PartialTrapEvent()
@@ -2207,13 +2529,28 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A nightmare event.
+    /// </summary>
     public class NightmareEvent : SingleCharEvent
     {
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string SleepID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Denominator;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Msg;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public NightmareEvent()
@@ -2265,10 +2602,22 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A leech seed event.
+    /// </summary>
     public class LeechSeedEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Message;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Range;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HPFraction;
 
         public LeechSeedEvent(StringKey message, int range, int hpFraction)
@@ -2341,6 +2690,9 @@ namespace PMDC.Dungeon
         }
     }
     [Serializable]
+    /// <summary>
+    /// A pursuit event.
+    /// </summary>
     public class PursuitEvent : SingleCharEvent
     {
         public PursuitEvent() { }
@@ -2475,10 +2827,16 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A early bird event.
+    /// </summary>
     public class EarlyBirdEvent : SingleCharEvent
     {
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string SleepID;
         public EarlyBirdEvent() { SleepID = ""; }
         public EarlyBirdEvent(string sleepID)
@@ -2504,8 +2862,14 @@ namespace PMDC.Dungeon
         }
     }
     [Serializable]
+    /// <summary>
+    /// A burn event.
+    /// </summary>
     public class BurnEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HPFraction;
         
         public BurnEvent() { }
@@ -2534,8 +2898,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A walked this turn event.
+    /// </summary>
     public class WalkedThisTurnEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool AffectNonFocused;
 
         public WalkedThisTurnEvent() { }
@@ -2562,11 +2932,26 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A poison single event.
+    /// </summary>
     public class PoisonSingleEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Toxic;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool AffectNonFocused;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HPFraction;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int RestoreHPFraction;
         
         public PoisonSingleEvent() { }
@@ -2614,11 +2999,26 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A poison end event.
+    /// </summary>
     public class PoisonEndEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Toxic;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool ReducedDamage;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HPFraction;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HealHPFraction;
 
         public PoisonEndEvent() { }
@@ -2672,6 +3072,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A alternate paralysis event.
+    /// </summary>
     public class AlternateParalysisEvent : SingleCharEvent
     {
         public override GameEvent Clone() { return new AlternateParalysisEvent(); }
@@ -2685,8 +3088,14 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A max hp needed event.
+    /// </summary>
     public class MaxHPNeededEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public MaxHPNeededEvent() { }
@@ -2749,10 +3158,19 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A belly needed event.
+    /// </summary>
     public class BellyNeededEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Fullness;
 
         public BellyNeededEvent() { }
@@ -2776,11 +3194,20 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A react to hit event.
+    /// </summary>
     public class ReactToHitEvent : SingleCharEvent
     {
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string HitStatusID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public ReactToHitEvent() { HitStatusID = ""; }
@@ -2801,11 +3228,20 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A weather needed single event.
+    /// </summary>
     public class WeatherNeededSingleEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string WeatherID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public WeatherNeededSingleEvent() { WeatherID = ""; }
@@ -2825,9 +3261,18 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A regenerator event.
+    /// </summary>
     public class RegeneratorEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Range;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HPFraction;
 
         public RegeneratorEvent() { }
@@ -2858,9 +3303,18 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A royal veil event.
+    /// </summary>
     public class RoyalVeilEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Range;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HealHPFraction;
 
         public RoyalVeilEvent() { }
@@ -2895,9 +3349,18 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A chance event.
+    /// </summary>
     public class ChanceEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Chance;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public ChanceEvent() { }
@@ -2917,10 +3380,19 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A cure all event.
+    /// </summary>
     public class CureAllEvent : SingleCharEvent
     {
         [StringKey(0, true)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Message;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public CureAllEvent()
@@ -2968,6 +3440,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A ally reviver event.
+    /// </summary>
     public class AllyReviverEvent : SingleCharEvent
     {
         public AllyReviverEvent() { }
@@ -3009,8 +3484,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A compass event.
+    /// </summary>
     public class CompassEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public FiniteEmitter Emitter;
 
         /// <summary>
@@ -3080,11 +3561,20 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A stair sensor event.
+    /// </summary>
     public class StairSensorEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string SniffedStatusID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public FiniteEmitter Emitter;
 
         public StairSensorEvent()
@@ -3148,9 +3638,18 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A hint temp tile event.
+    /// </summary>
     public class HintTempTileEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public FiniteEmitter Emitter;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey HintMsg;
 
         public HintTempTileEvent() { }
@@ -3188,11 +3687,20 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A acute sniffer event.
+    /// </summary>
     public class AcuteSnifferEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string SniffedStatusID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public AcuteSnifferEvent()
@@ -3234,11 +3742,20 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A map surveyor event.
+    /// </summary>
     public class MapSurveyorEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string SniffedStatusID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Radius;
 
         public MapSurveyorEvent()
@@ -3289,6 +3806,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A reveal all event.
+    /// </summary>
     public class RevealAllEvent : SingleCharEvent
     {
         public RevealAllEvent() { }
@@ -3309,13 +3829,25 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A give map status single event.
+    /// </summary>
     public class GiveMapStatusSingleEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string StatusID;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Counter;
         [StringKey(0, true)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey MsgOverride;
 
         public GiveMapStatusSingleEvent() { StatusID = ""; }
@@ -3366,9 +3898,18 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A gain item event.
+    /// </summary>
     public abstract class GainItemEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Chance;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public GainItemEvent()
@@ -3419,6 +3960,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A pickup event.
+    /// </summary>
     public class PickupEvent : GainItemEvent
     {
         public PickupEvent()
@@ -3465,9 +4009,15 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A gather event.
+    /// </summary>
     public class GatherEvent : GainItemEvent
     {
         [DataType(1, DataManager.DataType.Item, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<string> GatherItems;
 
         public GatherEvent()
@@ -3525,8 +4075,14 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A deep breath event.
+    /// </summary>
     public class DeepBreathEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool RestoreAll;
 
         public DeepBreathEvent() { }
@@ -3579,11 +4135,17 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A plate element event.
+    /// </summary>
     public class PlateElementEvent : SingleCharEvent
     {
         [JsonConverter(typeof(ItemElementDictConverter))]
         [DataType(1, DataManager.DataType.Item, false)]
         [DataType(2, DataManager.DataType.Element, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Dictionary<string, string> TypePair;
 
         public PlateElementEvent() { TypePair = new Dictionary<string, string>(); }
@@ -3611,10 +4173,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A give illusion event.
+    /// </summary>
     public class GiveIllusionEvent : SingleCharEvent
     {
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string IllusionID;
 
         public GiveIllusionEvent() { IllusionID = ""; }
@@ -3665,11 +4233,20 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A weather aligned event.
+    /// </summary>
     public class WeatherAlignedEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string BadWeatherID;
         [JsonConverter(typeof(MapStatusConverter))]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string GoodWeatherID;
 
         public WeatherAlignedEvent() { BadWeatherID = ""; GoodWeatherID = ""; }
@@ -3709,15 +4286,30 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A weather forme single event.
+    /// </summary>
     public class WeatherFormeSingleEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MonsterConverter))]
         [DataType(0, DataManager.DataType.Monster, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ReqSpecies;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int DefaultForme;
         [JsonConverter(typeof(MapStatusIntDictConverter))]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Dictionary<string, int> WeatherPair;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public WeatherFormeSingleEvent() { WeatherPair = new Dictionary<string, int>(); ReqSpecies = ""; Anims = new List<AnimEvent>(); }
@@ -3784,12 +4376,21 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A weather damage event.
+    /// </summary>
     public class WeatherDamageEvent : SingleCharEvent
     {
         [StringTypeConstraint(1, typeof(CharState))]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<FlagType> States;
         [JsonConverter(typeof(ElementSetConverter))]
         [DataType(1, DataManager.DataType.Element, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public HashSet<string> ExceptionElements;
 
         public WeatherDamageEvent() { States = new List<FlagType>(); ExceptionElements = new HashSet<string>(); }
@@ -3833,10 +4434,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A weather heal event.
+    /// </summary>
     public class WeatherHealEvent : SingleCharEvent
     {
         [JsonConverter(typeof(ElementSetConverter))]
         [DataType(1, DataManager.DataType.Element, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public HashSet<string> ExceptionElements;
 
         public WeatherHealEvent() { ExceptionElements = new HashSet<string>(); }
@@ -3871,8 +4478,14 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A team hunger event.
+    /// </summary>
     public class TeamHungerEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int HungerAmount;
 
         public TeamHungerEvent() { }
@@ -3896,6 +4509,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A weather fill event.
+    /// </summary>
     public class WeatherFillEvent : SingleCharEvent
     {
         public WeatherFillEvent() { }
@@ -3928,6 +4544,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A map status fill event.
+    /// </summary>
     public class MapStatusFillEvent : SingleCharEvent
     {
         public MapStatusFillEvent() { }
@@ -3961,6 +4580,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A map status count down event.
+    /// </summary>
     public class MapStatusCountDownEvent : SingleCharEvent
     {
         public MapStatusCountDownEvent() { }
@@ -3982,6 +4604,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A map tick event.
+    /// </summary>
     public class MapTickEvent : SingleCharEvent
     {
         public MapTickEvent() { }
@@ -3999,26 +4624,59 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A time limit event.
+    /// </summary>
     public class TimeLimitEvent : SingleCharEvent
     {
         public const int WARN_1 = 300;
         public const int WARN_2 = 200;
         public const int WARN_3 = 100;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public FiniteEmitter Emitter;
         [Music(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string BGM;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Warning1;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Warning2;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Warning3;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey TimeOut;
         [Sound(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string WarningSE1;
         [Sound(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string WarningSE2;
         [Sound(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string WarningSE3;
         [Sound(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string TimeOutSE;
 
         public TimeLimitEvent()
@@ -4128,6 +4786,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A reveal secret event.
+    /// </summary>
     public class RevealSecretEvent : SingleCharEvent
     {
 
@@ -4156,6 +4817,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A ask unlock event.
+    /// </summary>
     public class AskUnlockEvent : SingleCharEvent
     {
         public AskUnlockEvent() { }
@@ -4210,6 +4874,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A notice event.
+    /// </summary>
     public class NoticeEvent : SingleCharEvent
     {
         public NoticeEvent() { }
@@ -4242,6 +4909,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A single char state script event.
+    /// </summary>
     public class SingleCharStateScriptEvent : SingleCharEvent
     {
         public override GameEvent Clone() { return new SingleCharStateScriptEvent(); }
@@ -4262,6 +4932,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A ask leader event.
+    /// </summary>
     public class AskLeaderEvent : SingleCharEvent
     {
         public AskLeaderEvent() { }
@@ -4292,6 +4965,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A ask if danger event.
+    /// </summary>
     public class AskIfDangerEvent : SingleCharEvent
     {
         public AskIfDangerEvent() { }
@@ -4339,10 +5015,19 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A stealth evo event.
+    /// </summary>
     public class StealthEvoEvent : SingleCharEvent
     {
         [DataType(1, DataManager.DataType.Monster, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public HashSet<string> CheckSpecies;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int PercentChance;
 
         public StealthEvoEvent() { CheckSpecies = new HashSet<string>(); }
@@ -4402,10 +5087,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A ask evo event.
+    /// </summary>
     public class AskEvoEvent : SingleCharEvent
     {
         [JsonConverter(typeof(ItemConverter))]
         [DataType(0, DataManager.DataType.Item, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ExceptionItem;
 
         public AskEvoEvent() { ExceptionItem = ""; }
@@ -4600,8 +5291,14 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A prepare level event.
+    /// </summary>
     public class PrepareLevelEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Level;
         public PrepareLevelEvent() { }
         public PrepareLevelEvent(int level) { Level = level; }
@@ -4620,6 +5317,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A reset floor event.
+    /// </summary>
     public class ResetFloorEvent : SingleCharEvent
     {
         public ResetFloorEvent() { }
@@ -4652,6 +5352,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A rescue event.
+    /// </summary>
     public class RescueEvent : SingleCharEvent
     {
         public RescueEvent() { }
@@ -4678,6 +5381,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A next floor event.
+    /// </summary>
     public class NextFloorEvent : SingleCharEvent
     {
         public NextFloorEvent() { }
@@ -4725,6 +5431,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A switch map event.
+    /// </summary>
     public class SwitchMapEvent : SingleCharEvent
     {
         public SwitchMapEvent() { }
@@ -4782,17 +5491,32 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A transport on element event.
+    /// </summary>
     public class TransportOnElementEvent : SingleCharEvent
     {
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string TargetElement;
 
         [Sound(0)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string Sound;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey FailMessage;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey SuccessMessage;
 
         public TransportOnElementEvent() { }
@@ -4880,6 +5604,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A end game event.
+    /// </summary>
     public class EndGameEvent : SingleCharEvent
     {
         public EndGameEvent() { }
@@ -4900,8 +5627,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A dialogue event.
+    /// </summary>
     public class DialogueEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Message;
 
         public DialogueEvent() { }
@@ -4924,6 +5657,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A prepare cutscene event.
+    /// </summary>
     public class PrepareCutsceneEvent : SingleCharEvent
     {
         public PrepareCutsceneEvent() { }
@@ -4938,9 +5674,18 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A prepare camera event.
+    /// </summary>
     public class PrepareCameraEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Loc CamCenter;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Relative;
 
         public PrepareCameraEvent() { }
@@ -5043,6 +5788,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A fade title event.
+    /// </summary>
     public class FadeTitleEvent : SingleCharEvent
     {
         public FadeTitleEvent() { }
@@ -5064,6 +5812,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A fade in event.
+    /// </summary>
     public class FadeInEvent : SingleCharEvent
     {
         public FadeInEvent() { }
@@ -5078,6 +5829,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A special intro event.
+    /// </summary>
     public class SpecialIntroEvent : SingleCharEvent
     {
         public SpecialIntroEvent() { }
@@ -5094,6 +5848,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A reactivate items event.
+    /// </summary>
     public class ReactivateItemsEvent : SingleCharEvent
     {
         public ReactivateItemsEvent() { }
@@ -5122,6 +5879,9 @@ namespace PMDC.Dungeon
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string CheckClearStatus;
 
         public BeginBattleEvent() { CheckClearStatus = ""; }
@@ -5150,6 +5910,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A check boss clear event.
+    /// </summary>
     public class CheckBossClearEvent : SingleCharEvent
     {
         public CheckBossClearEvent() { }
@@ -5202,6 +5965,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A reveal front trap event.
+    /// </summary>
     public class RevealFrontTrapEvent : SingleCharEvent
     {
         public override GameEvent Clone() { return new RevealFrontTrapEvent(); }
@@ -5232,6 +5998,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A trigger underfoot event.
+    /// </summary>
     public class TriggerUnderfootEvent : SingleCharEvent
     {
         public TriggerUnderfootEvent() { }
@@ -5395,12 +6164,21 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A temp tile to stairs event.
+    /// </summary>
     public class TempTileToStairsEvent : SingleCharEvent
     {
         [DataType(0, DataManager.DataType.Tile, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ResultTile;
 
         [DataType(0, DataManager.DataType.MapStatus, true)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string RemoveMapStatus;
 
         public TempTileToStairsEvent()
@@ -5440,8 +6218,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A temp tile collapse event.
+    /// </summary>
     public class TempTileCollapseEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<AnimEvent> Anims;
 
         public TempTileCollapseEvent() { Anims = new List<AnimEvent>(); }
@@ -5492,8 +6276,14 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A open vault event.
+    /// </summary>
     public class OpenVaultEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<Loc> OpenLocs;
         public OpenVaultEvent() { OpenLocs = new List<Loc>(); }
         public OpenVaultEvent(List<Loc> locs) { OpenLocs = locs; }
@@ -5528,12 +6318,24 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A open self event.
+    /// </summary>
     public class OpenSelfEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public BattleFX Anim;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool PreOpen;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Fanfare;
 
         public OpenSelfEvent()
@@ -5598,14 +6400,32 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A open other passage event.
+    /// </summary>
     public class OpenOtherPassageEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string TimeLimitStatus;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public FiniteEmitter Emitter;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string WarningBGM;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public StringKey Warning;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string WarningSE;
 
         public OpenOtherPassageEvent()
@@ -5723,6 +6543,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A changed song event.
+    /// </summary>
     public class ChangedSongEvent : SingleCharEvent
     {
         public ChangedSongEvent() { }
@@ -5743,8 +6566,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A trigger switch event.
+    /// </summary>
     public class TriggerSwitchEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Simultaneous;
 
         public TriggerSwitchEvent() { }
@@ -5862,6 +6691,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A chest event.
+    /// </summary>
     public class ChestEvent : SingleCharEvent
     {
         /// <summary>
@@ -6004,6 +6836,9 @@ namespace PMDC.Dungeon
      [Serializable]
     public class SpawnItemsEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<MapItem> Items;
         
         /// <summary>
@@ -6087,6 +6922,9 @@ namespace PMDC.Dungeon
      [Serializable]
     public class SpawnEnemiesEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<MobSpawn> Enemies;
         
         /// <summary>
@@ -6200,9 +7038,18 @@ namespace PMDC.Dungeon
      [Serializable]
     public class SpawnRandomItemsEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SpawnList<MapItem> Items;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int MinAmount;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int MaxAmount;
         
         /// <summary>
@@ -6288,8 +7135,17 @@ namespace PMDC.Dungeon
      [Serializable]
     public class SpawnRandomEnemiesEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SpawnList<MobSpawn> Enemies;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int MinAmount;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int MaxAmount;
         
         /// <summary>
@@ -6405,6 +7261,9 @@ namespace PMDC.Dungeon
      [Serializable]
      public class TransformTileEvent : SingleCharEvent
      {
+         /// <summary>
+         /// Gets or sets the value.
+         /// </summary>
          public EffectTile TileToTransformInto;
          public TransformTileEvent() { }
          public override GameEvent Clone() { return new TransformTileEvent(); }
@@ -6424,9 +7283,18 @@ namespace PMDC.Dungeon
     
 
     [Serializable]
+    /// <summary>
+    /// A locked tile.
+    /// </summary>
     public class LockedTile
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Loc LockedLoc;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string OldTerrain;
 
         public LockedTile(Loc loc, string terrain)
@@ -6437,10 +7305,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A lockdown event.
+    /// </summary>
     public abstract class LockdownEvent : SingleCharEvent
     {
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string CheckClearStatus;
 
         public LockdownEvent() { CheckClearStatus = ""; }
@@ -6598,6 +7472,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A lockdown tile event.
+    /// </summary>
     public class LockdownTileEvent : LockdownEvent
     {
         //activate by tiles; use the tile state variables
@@ -6625,11 +7502,20 @@ namespace PMDC.Dungeon
         }
     }
     [Serializable]
+    /// <summary>
+    /// A lockdown map event.
+    /// </summary>
     public class LockdownMapEvent : LockdownEvent
     {
         //activated by map; use the variables set here
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Rect Bounds;
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<SingleCharEvent> ResultEvents;
         public LockdownMapEvent() { }
         public LockdownMapEvent(string checkClear) : base(checkClear) { }
@@ -6653,6 +7539,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A monster house event.
+    /// </summary>
     public abstract class MonsterHouseEvent : SingleCharEvent
     {
         protected virtual IEnumerator<YieldInstruction> FailSpawn(GameEventOwner owner, Character ownerChar, SingleCharContext context) { yield break; }
@@ -6761,6 +7650,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A monster house tile event.
+    /// </summary>
     public class MonsterHouseTileEvent : MonsterHouseEvent
     {
         //activated by tile; get context info from tile states
@@ -6779,6 +7671,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A monster house owner event.
+    /// </summary>
     public class MonsterHouseOwnerEvent : MonsterHouseEvent
     {
         /// <summary>
@@ -6859,10 +7754,19 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A monster house map event.
+    /// </summary>
     public class MonsterHouseMapEvent : MonsterHouseEvent
     {
         //activated by map; use the variables set here
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Rect Bounds;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<MobSpawn> Mobs;
 
         public MonsterHouseMapEvent() { Mobs = new List<MobSpawn>(); }
@@ -6887,11 +7791,20 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A monster hall map event.
+    /// </summary>
     public class MonsterHallMapEvent : SingleCharEvent
     {
         //activated by map; use the variables set here
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<Rect> Phases;
         public List<List<MobSpawn>> Mobs;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public bool Continuation;
 
         public MonsterHallMapEvent() { Mobs = new List<List<MobSpawn>>(); Phases = new List<Rect>(); }
@@ -7045,6 +7958,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A boss spawn event.
+    /// </summary>
     public class BossSpawnEvent : SingleCharEvent
     {
         public BossSpawnEvent() { }
@@ -7216,10 +8132,19 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A check intrude bounds event.
+    /// </summary>
     public class CheckIntrudeBoundsEvent : SingleCharEvent
     {
         //activated by map; use the variables set here
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Rect Bounds;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<SingleCharEvent> Effects;
 
         public CheckIntrudeBoundsEvent() { Effects = new List<SingleCharEvent>(); }
@@ -7256,10 +8181,19 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A check turns passed event.
+    /// </summary>
     public class CheckTurnsPassedEvent : SingleCharEvent
     {
         //activated by map; use the variables set here
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int TurnTotal;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<SingleCharEvent> Effects;
 
         public CheckTurnsPassedEvent() { Effects = new List<SingleCharEvent>(); }
@@ -7293,10 +8227,22 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A check house clear event.
+    /// </summary>
     public class CheckHouseClearEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public Rect Bounds;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<LockedTile> LockedLocs;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public List<SingleCharEvent> ResultEvents;
         public CheckHouseClearEvent() { LockedLocs = new List<LockedTile>(); ResultEvents = new List<SingleCharEvent>(); }
         public CheckHouseClearEvent(Rect bounds) : this() { Bounds = bounds; }
@@ -7370,6 +8316,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A check triggers event.
+    /// </summary>
     public class CheckTriggersEvent : SingleCharEvent
     {
         public CheckTriggersEvent() { }
@@ -7388,13 +8337,25 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A periodic spawn entrance guards.
+    /// </summary>
     public class PeriodicSpawnEntranceGuards : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Period;
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int Maximum;
 
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string GuardStatus;
 
         public PeriodicSpawnEntranceGuards() { GuardStatus = ""; }
@@ -7472,10 +8433,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A init shop price event.
+    /// </summary>
     public class InitShopPriceEvent : SingleCharEvent
     {
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ShopTile;
 
         public InitShopPriceEvent() { }
@@ -7506,10 +8473,16 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A end shop event.
+    /// </summary>
     public class EndShopEvent : SingleCharEvent
     {
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public string ShopTile;
 
         public EndShopEvent() { }
@@ -7533,8 +8506,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A null char event.
+    /// </summary>
     public class NullCharEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public NullCharEvent()
@@ -7559,8 +8538,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A player char event.
+    /// </summary>
     public class PlayerCharEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public PlayerCharEvent()
@@ -7585,8 +8570,14 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A leader char event.
+    /// </summary>
     public class LeaderCharEvent : SingleCharEvent
     {
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public SingleCharEvent BaseEvent;
 
         public LeaderCharEvent()
@@ -7610,6 +8601,9 @@ namespace PMDC.Dungeon
 
 
     [Serializable]
+    /// <summary>
+    /// A share equip event.
+    /// </summary>
     public abstract class ShareEquipEvent : SingleCharEvent
     {
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, SingleCharContext context)
@@ -7629,6 +8623,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A share on map starts event.
+    /// </summary>
     public class ShareOnMapStartsEvent : ShareEquipEvent
     {
         public override GameEvent Clone() { return new ShareOnMapStartsEvent(); }
@@ -7637,6 +8634,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A share on map turn ends event.
+    /// </summary>
     public class ShareOnMapTurnEndsEvent : ShareEquipEvent
     {
         public override GameEvent Clone() { return new ShareOnMapTurnEndsEvent(); }
@@ -7645,6 +8645,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A share on turn ends event.
+    /// </summary>
     public class ShareOnTurnEndsEvent : ShareEquipEvent
     {
         public override GameEvent Clone() { return new ShareOnTurnEndsEvent(); }
@@ -7653,6 +8656,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A share on turn starts event.
+    /// </summary>
     public class ShareOnTurnStartsEvent : ShareEquipEvent
     {
         public override GameEvent Clone() { return new ShareOnTurnStartsEvent(); }
@@ -7661,6 +8667,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A share on deaths event.
+    /// </summary>
     public class ShareOnDeathsEvent : ShareEquipEvent
     {
         public override GameEvent Clone() { return new ShareOnDeathsEvent(); }
@@ -7669,6 +8678,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A share on walks event.
+    /// </summary>
     public class ShareOnWalksEvent : ShareEquipEvent
     {
         public override GameEvent Clone() { return new ShareOnWalksEvent(); }
@@ -7724,6 +8736,9 @@ namespace PMDC.Dungeon
     }
 
     [Serializable]
+    /// <summary>
+    /// A natural regen event.
+    /// </summary>
     public abstract class NaturalRegenEvent : SingleCharEvent
     {
         public abstract int calculateRegen(GameEventOwner owner, Character ownerChar, SingleCharContext context);

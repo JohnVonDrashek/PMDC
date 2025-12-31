@@ -11,28 +11,44 @@ namespace PMDC.LevelGen
 {
     /// <summary>
     /// A standard monster house that appears as a room filled with treasure.
-    /// When an explorer enters the premises, the monsters appear.
-    /// This step chooses an existing room to put the house in.
+    /// When an explorer enters the room, the monsters appear and the trap is sprung.
+    /// This step chooses an existing room from the floor plan to convert into the monster house.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The map generation context type.</typeparam>
     [Serializable]
     public class MonsterHouseStep<T> : MonsterHouseBaseStep<T> where T : ListMapGenContext
     {
-
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public MonsterHouseStep() : base() { Filters = new List<BaseRoomFilter>(); }
+
+        /// <summary>
+        /// Initializes a new instance with the specified room filters.
+        /// </summary>
+        /// <param name="filters">Filters to determine eligible rooms for the monster house.</param>
         public MonsterHouseStep(List<BaseRoomFilter> filters) : base() { Filters = filters; }
+
+        /// <summary>
+        /// Copy constructor for cloning.
+        /// </summary>
+        /// <param name="other">The instance to copy from.</param>
         public MonsterHouseStep(MonsterHouseStep<T> other) : base(other)
         {
             Filters = new List<BaseRoomFilter>();
             Filters.AddRange(other.Filters);
         }
+
+        /// <inheritdoc/>
         public override MonsterHouseBaseStep<T> CreateNew() { return new MonsterHouseStep<T>(this); }
 
         /// <summary>
-        /// Used to filter out unwanted rooms to be used for this monster house.
+        /// Gets or sets the list of filters used to determine eligible rooms for the monster house.
+        /// These filters exclude rooms that do not match the specified criteria.
         /// </summary>
         public List<BaseRoomFilter> Filters { get; set; }
 
+        /// <inheritdoc/>
         public override void Apply(T map)
         {
             if (!ItemThemes.CanPick)

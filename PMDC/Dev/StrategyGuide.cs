@@ -12,10 +12,22 @@ using PMDC.Dungeon;
 
 namespace PMDC.Dev
 {
+    /// <summary>
+    /// Generates strategy guide documentation for the game, including item, move, ability,
+    /// and encounter guides in HTML, CSV, and wiki formats.
+    /// </summary>
     public static class StrategyGuide
     {
+        /// <summary>
+        /// The number of progress bar chunks used for console output display.
+        /// </summary>
         private const int TOTAL_CHUNKS = 60;
 
+        /// <summary>
+        /// Writes content to a wiki-formatted text file in the WIKI directory.
+        /// </summary>
+        /// <param name="name">The name of the wiki page (used as filename without extension).</param>
+        /// <param name="content">The wiki-formatted content to write.</param>
         private static void WriteToWiki(string name, string content)
         {
             if (!Directory.Exists(PathMod.APP_PATH + "WIKI/"))
@@ -36,6 +48,11 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Writes guide data to a CSV (tab-separated values) file in the GUIDE directory.
+        /// </summary>
+        /// <param name="name">The name of the guide (used as filename without extension).</param>
+        /// <param name="stats">A list of string arrays where each array represents a row, with the first row being headers.</param>
         private static void writeCSVGuide(string name, List<string[]> stats)
         {
 
@@ -51,6 +68,11 @@ namespace PMDC.Dev
             Console.WriteLine();
         }
 
+        /// <summary>
+        /// Writes guide data to an HTML file in the GUIDE directory with styling and navigation.
+        /// </summary>
+        /// <param name="name">The name of the guide (used as filename and page title without extension).</param>
+        /// <param name="stats">A list of string arrays where each array represents a row, with the first row being headers.</param>
         private static void writeHTMLGuide(string name, List<string[]> stats)
         {
             string table =
@@ -208,11 +230,21 @@ namespace PMDC.Dev
             Console.WriteLine();
         }
         
+        /// <summary>
+        /// Returns the CSS class "current" if the name matches the title for navigation highlighting.
+        /// </summary>
+        /// <param name="name">The current page name.</param>
+        /// <param name="title">The navigation item title.</param>
+        /// <returns>The class attribute string if matched; otherwise empty string.</returns>
         public static string currentIfEqual(string name, string title)
         {
             return name == title ? "class=\"current\"" : "";
         }
 
+        /// <summary>
+        /// Generates an item guide listing all released items with their properties.
+        /// </summary>
+        /// <param name="csv">If true, outputs CSV format; otherwise outputs HTML format.</param>
         public static void PrintItemGuide(bool csv)
         {
             List<string[]> stats = new List<string[]>();
@@ -233,6 +265,9 @@ namespace PMDC.Dev
                 writeHTMLGuide("Items", stats);
         }
 
+        /// <summary>
+        /// Generates wiki-formatted pages for each released item.
+        /// </summary>
         public static void PrintItemWiki()
         {
             List<string> itemKeys = DataManager.Instance.DataIndices[DataManager.DataType.Item].GetOrderedKeys(true);
@@ -257,6 +292,10 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Generates a move guide listing all moves with their type, power, accuracy, and descriptions.
+        /// </summary>
+        /// <param name="csv">If true, outputs CSV format; otherwise outputs HTML format.</param>
         public static void PrintMoveGuide(bool csv)
         {
             List<string[]> stats = new List<string[]>();
@@ -291,6 +330,10 @@ namespace PMDC.Dev
                 writeHTMLGuide("Moves", stats);
         }
 
+        /// <summary>
+        /// Generates an ability guide listing all abilities with their descriptions.
+        /// </summary>
+        /// <param name="csv">If true, outputs CSV format; otherwise outputs HTML format.</param>
         public static void PrintAbilityGuide(bool csv)
         {
             List<string[]> stats = new List<string[]>();
@@ -316,6 +359,11 @@ namespace PMDC.Dev
                 writeHTMLGuide("Abilities", stats);
         }
 
+        /// <summary>
+        /// Combines a set of floor indices into human-readable range strings (e.g., "1-5").
+        /// </summary>
+        /// <param name="floors">A set of floor indices (0-based) to combine into ranges.</param>
+        /// <returns>A list of range strings representing consecutive floors, with 1-based numbering.</returns>
         private static List<string> combineFloorRanges(HashSet<int> floors)
         {
             List<string> rangeStrings = new List<string>();
@@ -350,6 +398,10 @@ namespace PMDC.Dev
             return rangeStrings;
         }
 
+        /// <summary>
+        /// Generates an encounter guide listing all monsters with their join rates and locations.
+        /// </summary>
+        /// <param name="csv">If true, outputs CSV format; otherwise outputs HTML format.</param>
         public static void PrintEncounterGuide(bool csv)
         {
             List<string> monsterKeys = DataManager.Instance.DataIndices[DataManager.DataType.Monster].GetOrderedKeys(true);
@@ -484,6 +536,14 @@ namespace PMDC.Dev
                 writeHTMLGuide("Encounters", stats);
         }
 
+        /// <summary>
+        /// Displays a progress bar in the console for long-running operations.
+        /// </summary>
+        /// <param name="message">The message to display during progress.</param>
+        /// <param name="ending">The message to display when complete.</param>
+        /// <param name="totalChunks">The total width of the progress bar in characters.</param>
+        /// <param name="progress">The current progress value.</param>
+        /// <param name="total">The total value representing 100% completion.</param>
         public static void ProgressBar(string message, string ending, int totalChunks, int progress, int total)
         {
 #if !DEBUG

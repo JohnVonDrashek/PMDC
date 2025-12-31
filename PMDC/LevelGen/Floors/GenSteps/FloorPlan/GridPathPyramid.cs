@@ -5,15 +5,12 @@ using System.Reactive.Joins;
 
 namespace PMDC.LevelGen
 {
-    //TODO: Break this awful pathgen down.  Maybe AddBranch needs a GridPathBranchSpread equivalent?
     /// <summary>
-    /// An awful and overspecific floor plan made specifically for one floor of one dungeon.
-    /// Places a giant room somewhere in the center of the mega floor
-    /// Places a connecting room directly below it
-    /// Behaves like GridPathBranch starting from that connecting room.
-    /// Don't use this class anywhere else.  It needs to be broken down later.
+    /// A specialized floor plan generator that creates a pyramid-like structure.
+    /// Places a giant room somewhere in the center of the floor with a connecting room below it,
+    /// then expands outward using branch-style path generation from that connecting room.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The room grid generation context type.</typeparam>
     [Serializable]
     public class GridPathPyramid<T> : GridPathStartStepGeneric<T>
         where T : class, IRoomGridGenContext
@@ -26,14 +23,14 @@ namespace PMDC.LevelGen
 
         /// <summary>
         /// The percent amount of branching paths the layout will have in relation to its straight paths.
-        /// 0 = A layout without branches. (Worm)
-        /// 50 = A layout that branches once for every two extensions. (Tree)
-        /// 100 = A layout that branches once for every extension. (Branchier Tree)
-        /// 200 = A layout that branches twice for every extension. (Fuzzy Worm)
+        /// 0 = A layout without branches (Worm). 50 = Branches once for every two extensions (Tree).
+        /// 100 = Branches once for every extension (Branchier Tree). 200 = Branches twice for every extension.
         /// </summary>
         public RandRange BranchRatio { get; set; }
 
-
+        /// <summary>
+        /// The size of the giant central hall in grid cells.
+        /// </summary>
         public Loc GiantHallSize;
 
         /// <summary>
@@ -47,7 +44,7 @@ namespace PMDC.LevelGen
         public ComponentCollection LargeRoomComponents { get; set; }
 
         /// <summary>
-        /// Components that the rooms in the furthest direction from the giant room in a cardinal will be given, in addition to the normal components.
+        /// Components given to corner rooms (furthest from the giant room in each diagonal direction).
         /// </summary>
         public ComponentCollection CornerRoomComponents { get; set; }
 
@@ -56,6 +53,9 @@ namespace PMDC.LevelGen
         /// </summary>
         public bool NoForcedBranches { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public GridPathPyramid()
             : base()
         {
@@ -64,6 +64,15 @@ namespace PMDC.LevelGen
             CornerRoomComponents = new ComponentCollection();
         }
 
+        /// <summary>
+        /// Applies the pyramid path generation algorithm to the floor plan.
+        /// Creates a giant central hall positioned in the middle of the floor, adds a connecting room below it,
+        /// then expands outward using branching paths. Marks corner rooms (in each diagonal direction from the center)
+        /// with special components.
+        /// </summary>
+        /// <param name="rand">The random number generator for all procedural decisions.</param>
+        /// <param name="floorPlan">The grid-based floor plan to modify with rooms and halls.</param>
+        /// <inheritdoc/>
         public override void ApplyToPath(IRandom rand, GridPlan floorPlan)
         {
             RoomGen<T> roomGen = GiantHallGen.Pick(rand);
@@ -229,6 +238,10 @@ namespace PMDC.LevelGen
 
         }
 
+        /// <summary>
+        /// Returns a string representation of this generator showing the room ratio and branch ratio percentages.
+        /// </summary>
+        /// <returns>Formatted string with class name and configuration percentages.</returns>
         public override string ToString()
         {
             return string.Format("{0}: Fill:{1}% Branch:{2}%", this.GetType().GetFormattedTypeName(), this.RoomRatio, this.BranchRatio);
@@ -238,11 +251,12 @@ namespace PMDC.LevelGen
         //These were copied from GridPathBranchSpread.  FIND A WAY TO NOT REPEAT THIS CODE.
 
         /// <summary>
-        /// Gets the directions a room can expand in.
+        /// Gets the cardinal directions a room can expand into from a given location.
+        /// A direction is available if the adjacent cell is within bounds (or wraps) and does not contain a room.
         /// </summary>
-        /// <param name="floorPlan"></param>
-        /// <param name="loc"></param>
-        /// <returns></returns>
+        /// <param name="floorPlan">The grid-based floor plan to check against.</param>
+        /// <param name="loc">The grid location to check expansion directions from.</param>
+        /// <returns>An enumerable of cardinal directions where expansion is possible.</returns>
         protected static IEnumerable<Dir4> GetRoomExpandDirs(GridPlan floorPlan, Loc loc)
         {
             foreach (Dir4 dir in DirExt.VALID_DIR4)
@@ -254,6 +268,13 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Expands the path in the specified direction by adding a hall and a new room.
+        /// </summary>
+        /// <param name="rand">The random number generator for picking room and hall types.</param>
+        /// <param name="floorPlan">The grid-based floor plan to modify.</param>
+        /// <param name="chosenRay">The ray defining the direction and starting point of the expansion.</param>
+        /// <returns>True if the path was successfully expanded; false otherwise.</returns>
         protected bool ExpandPath(IRandom rand, GridPlan floorPlan, LocRay4 chosenRay)
         {
             floorPlan.SetHall(chosenRay, this.GenericHalls.Pick(rand), this.HallComponents.Clone());
@@ -263,6 +284,14 @@ namespace PMDC.LevelGen
             return true;
         }
 
+        /// <summary>
+        /// Pops a location from the list with preference toward locations with higher adjacency ratings.
+        /// Locations with more empty adjacent spaces are prioritized to encourage organic growth patterns.
+        /// </summary>
+        /// <param name="floorPlan">The grid-based floor plan for rating calculation.</param>
+        /// <param name="rand">The random number generator (not directly used; kept for override compatibility).</param>
+        /// <param name="locs">The list of locations to choose from; the selected location is removed.</param>
+        /// <returns>The selected location with the highest adjacency rating.</returns>
         protected virtual Loc PopRandomLoc(GridPlan floorPlan, IRandom rand, List<Loc> locs)
         {
             //choose the location with the lowest adjacencies out of 5
@@ -289,6 +318,14 @@ namespace PMDC.LevelGen
             return branch;
         }
 
+        /// <summary>
+        /// Calculates an adjacency rating for a location based on empty neighboring cells.
+        /// Diagonal directions contribute 1 point, cardinal directions contribute 2x multiplier.
+        /// Higher ratings indicate locations surrounded by more open space.
+        /// </summary>
+        /// <param name="floorPlan">The grid-based floor plan to check against.</param>
+        /// <param name="branch">The grid location to rate.</param>
+        /// <returns>An integer rating where higher values indicate more adjacent empty space.</returns>
         private int getRating(GridPlan floorPlan, Loc branch)
         {
             int rating = 0;
@@ -310,6 +347,13 @@ namespace PMDC.LevelGen
         }
 
 
+        /// <summary>
+        /// Gets the available expansion directions from a location, weighted by the amount of open space around each destination.
+        /// Directions with more adjacent empty spaces are given higher spawn weights to encourage expansion into open areas.
+        /// </summary>
+        /// <param name="floorPlan">The grid-based floor plan to check against.</param>
+        /// <param name="newTerminal">The grid location to find expansion directions from.</param>
+        /// <returns>A spawn list of rays representing available expansion directions, weighted by open space availability.</returns>
         protected virtual SpawnList<LocRay4> GetExpandDirChances(GridPlan floorPlan, Loc newTerminal)
         {
             SpawnList<LocRay4> availableRays = new SpawnList<LocRay4>();

@@ -31,16 +31,34 @@ namespace PMDC.LevelGen
         //?X...X?
         //??...??
 
+        /// <summary>
+        /// Gets or sets the spawner for items to place inside the guarded cave.
+        /// </summary>
         public BulkSpawner<T, MapItem> Treasures;
+
+        /// <summary>
+        /// Gets or sets the spawner for effect tile treasures to place inside the guarded cave.
+        /// </summary>
         public BulkSpawner<T, EffectTile> TileTreasures;
+
+        /// <summary>
+        /// Gets or sets the spawn list of possible guard monsters that can spawn at the cave entrance.
+        /// </summary>
         public SpawnList<MobSpawn> GuardTypes;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenGuardedCave{T}"/> class.
+        /// </summary>
         public RoomGenGuardedCave()
         {
             Treasures = new BulkSpawner<T, MapItem>();
             TileTreasures = new BulkSpawner<T, EffectTile>();
             GuardTypes = new SpawnList<MobSpawn>();
         }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenGuardedCave{T}"/> class by copying another instance.
+        /// </summary>
+        /// <param name="other">The instance to copy.</param>
         protected RoomGenGuardedCave(RoomGenGuardedCave<T> other)
         {
             Treasures = other.Treasures.Copy();
@@ -49,8 +67,15 @@ namespace PMDC.LevelGen
             for (int ii = 0; ii < other.GuardTypes.Count; ii++)
                 GuardTypes.Add(other.GuardTypes.GetSpawn(ii).Copy(), other.GuardTypes.GetSpawnRate(ii));
         }
+
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() { return new RoomGenGuardedCave<T>(this); }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Proposes a size for the guarded cave that is large enough to accommodate all treasures and the guard monster,
+        /// plus 4 additional tiles to account for walls and the entrance tunnel.
+        /// </remarks>
         public override Loc ProposeSize(IRandom rand)
         {
             Loc caveSize = new Loc(1);
@@ -65,6 +90,13 @@ namespace PMDC.LevelGen
             return caveSize + new Loc(4);
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Prepares the fulfillable borders for connections. When the room fits the proposed size,
+        /// connections are only allowed at the corners (top) and bottom center (for entrance tunnel).
+        /// For left and right sides, connections are only allowed at the bottom. If the room doesn't fit
+        /// the proposed size, all borders are made fulfillable.
+        /// </remarks>
         protected override void PrepareFulfillableBorders(IRandom rand)
         {
             Loc size = ProposeSize(rand);
@@ -93,6 +125,12 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Draws the guarded cave room on the map. Creates a central cave area containing treasures guarded by a single monster.
+        /// The cave has walls on the sides and a tunnel entrance at the bottom center. If the room doesn't fit the proposed size,
+        /// uses the default drawing method.
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             Loc caveSize = ProposeSize(((IGenContext)map).Rand);

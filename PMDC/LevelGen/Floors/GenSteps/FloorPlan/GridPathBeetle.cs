@@ -4,44 +4,53 @@ using RogueElements;
 namespace PMDC.LevelGen
 {
     /// <summary>
-    /// Populates the empty floor plan of a map by creating a path consisting of one big room in the middle, with normal rooms connected to it.
+    /// Populates the empty floor plan of a map by creating a beetle-shaped layout.
+    /// This consists of one large central room (the body) with smaller rooms attached like legs.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The room grid generation context type.</typeparam>
     [Serializable]
     public class GridPathBeetle<T> : GridPathStartStepGeneric<T>
         where T : class, IRoomGridGenContext
     {
         /// <summary>
-        /// Choose a horizontal or vertical orientation.
+        /// Gets or sets a value indicating whether to use a horizontal or vertical orientation for the beetle body.
+        /// When true, the body extends vertically; when false, it extends horizontally.
         /// </summary>
         public bool Vertical;
 
         /// <summary>
-        /// The number of small rooms attached to the main large room, as a percent of the rooms possible.
+        /// Gets or sets the percentage chance (0-100) for each position to spawn a leg room attached to the main body.
+        /// Higher values result in more leg rooms being created.
         /// </summary>
         public int LegPercent;
 
         /// <summary>
-        /// The number of connections between adjacent small rooms, as a percent of the connections possible.
+        /// Gets or sets the percentage chance (0-100) for adjacent leg rooms to be connected to each other.
+        /// This creates cross-connections between neighboring legs, adding complexity to the layout.
         /// </summary>
         public int ConnectPercent;
 
         /// <summary>
-        /// Allows the main body to be in a corner instead of in the center.
+        /// Gets or sets a value indicating whether the main body can be placed in a corner instead of being centered.
+        /// When true, the body can spawn at either end of the available space; when false, it spawns in the middle.
         /// </summary>
         public bool FromCorners;
 
-
         /// <summary>
-        /// The room types that can be used for the giant room in the layout.
+        /// Gets or sets the room types that can be used for the giant central room in the layout.
+        /// If no giant hall generator is specified, falls back to generic rooms.
         /// </summary>
         public SpawnList<RoomGen<T>> GiantHallGen;
 
         /// <summary>
-        /// Components that the giant room will be labeled with.
+        /// Gets or sets the components that the giant central room will be labeled with.
+        /// These components define special properties or behaviors of the large body room.
         /// </summary>
         public ComponentCollection LargeRoomComponents { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GridPathBeetle{T}"/> class with default values.
+        /// </summary>
         public GridPathBeetle()
             : base()
         {
@@ -49,6 +58,7 @@ namespace PMDC.LevelGen
             LargeRoomComponents = new ComponentCollection();
         }
 
+        /// <inheritdoc/>
         public override void ApplyToPath(IRandom rand, GridPlan floorPlan)
         {
             int gapLength = Vertical ? floorPlan.GridHeight : floorPlan.GridWidth;
@@ -148,6 +158,11 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Returns a string representation of this floor plan generator's configuration.
+        /// Includes orientation, leg spawn percentage, and connection percentage.
+        /// </summary>
+        /// <returns>A formatted string describing the beetle layout parameters.</returns>
         public override string ToString()
         {
             return string.Format("{0}: Vert:{1} Leg:{2}% Connect:{3}%", this.GetType().GetFormattedTypeName(), this.Vertical, this.LegPercent, this.ConnectPercent);

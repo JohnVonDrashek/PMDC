@@ -12,11 +12,14 @@ using Newtonsoft.Json;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// Item given event that automatically curses an item when equipped.
+    /// Used for items with the auto-curse property.
+    /// </summary>
     [Serializable]
     public class AutoCurseItemEvent : ItemGivenEvent
     {
-        public override GameEvent Clone() { return new AutoCurseItemEvent(); }
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
             if (!context.User.EquippedItem.Cursed)
@@ -33,11 +36,14 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Item given event that displays a warning message when equipping a cursed item.
+    /// Notifies the player that the item is cursed and cannot be removed normally.
+    /// </summary>
     [Serializable]
     public class CurseWarningEvent : ItemGivenEvent
     {
-        public override GameEvent Clone() { return new CurseWarningEvent(); }
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
             if (context.User.EquippedItem.Cursed && !context.User.CanRemoveStuck)
@@ -49,25 +55,47 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Structure representing a fake item configuration that transforms into a monster when picked up.
+    /// Associates an item ID with the species that disguises as that item.
+    /// </summary>
     [Serializable]
     public struct ItemFake
     {
+        /// <summary>
+        /// The item ID that this fake item appears as.
+        /// </summary>
         [DataType(0, DataManager.DataType.Item, false)]
         public string Item;
+
+        /// <summary>
+        /// The monster species that is disguised as the item.
+        /// </summary>
         [DataType(0, DataManager.DataType.Monster, false)]
         public string Species;
 
+        /// <summary>
+        /// Initializes a new ItemFake with the specified item and species.
+        /// </summary>
+        /// <param name="item">The item ID to disguise as.</param>
+        /// <param name="species">The monster species hiding as this item.</param>
         public ItemFake(string item, string species)
         {
             Item = item;
             Species = species;
         }
 
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             return (obj is ItemFake) && Equals((ItemFake)obj);
         }
 
+        /// <summary>
+        /// Determines whether this ItemFake equals another ItemFake.
+        /// </summary>
+        /// <param name="other">The ItemFake to compare with.</param>
+        /// <returns>True if the item and species match.</returns>
         public bool Equals(ItemFake other)
         {
             if (Species != other.Species)
@@ -78,33 +106,53 @@ namespace PMDC.Dungeon
             return true;
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return String.GetHashCode(Species) ^ String.GetHashCode(Item);
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             return String.Format("{0}:{1}", Item, Species);
         }
     }
 
+    /// <summary>
+    /// Item given event that transforms fake items into enemy monsters when picked up.
+    /// Implements the mimic-like behavior where disguised monsters reveal themselves.
+    /// </summary>
     [Serializable]
     public class FakeItemEvent : ItemGivenEvent
     {
+        /// <summary>
+        /// Maps fake item configurations to the monster spawns that appear when the item is picked up.
+        /// </summary>
         [JsonConverter(typeof(ItemFakeTableConverter))]
         public Dictionary<ItemFake, MobSpawn> SpawnTable;
 
+        /// <summary>
+        /// Initializes a new instance with an empty spawn table.
+        /// </summary>
         public FakeItemEvent()
         {
             SpawnTable = new Dictionary<ItemFake, MobSpawn>();
         }
 
+        /// <summary>
+        /// Initializes a new instance with the specified spawn table.
+        /// </summary>
+        /// <param name="spawnTable">The mapping of fake items to monster spawns.</param>
         public FakeItemEvent(Dictionary<ItemFake, MobSpawn> spawnTable)
         {
             this.SpawnTable = spawnTable;
         }
 
+        /// <summary>
+        /// Copy constructor for cloning an existing FakeItemEvent.
+        /// </summary>
+        /// <param name="other">The FakeItemEvent to clone.</param>
         public FakeItemEvent(FakeItemEvent other)
         {
             this.SpawnTable = new Dictionary<ItemFake, MobSpawn>();
@@ -112,8 +160,7 @@ namespace PMDC.Dungeon
                 this.SpawnTable.Add(fake, other.SpawnTable[fake].Copy());
         }
 
-        public override GameEvent Clone() { return new FakeItemEvent(this); }
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
             ItemFake fake = new ItemFake(context.Item.Value, context.Item.HiddenValue);
@@ -140,6 +187,13 @@ namespace PMDC.Dungeon
             yield break;
         }
 
+        /// <summary>
+        /// Spawns a fake item monster near the specified character with animation.
+        /// </summary>
+        /// <param name="chara">The character who triggered the fake item.</param>
+        /// <param name="item">The item that was revealed to be fake.</param>
+        /// <param name="spawn">The monster spawn configuration to use.</param>
+        /// <returns>A coroutine for the spawn sequence.</returns>
         public static IEnumerator<YieldInstruction> SpawnFake(Character chara, InvItem item, MobSpawn spawn)
         {
             //pause
@@ -180,6 +234,12 @@ namespace PMDC.Dungeon
             ZoneManager.Instance.CurrentMap.UpdateExploration(mob);
         }
 
+        /// <summary>
+        /// Removes the fake item from the character's equipped item or inventory.
+        /// Searches both the equipped slot and all inventory slots for a matching item.
+        /// </summary>
+        /// <param name="chara">The character to remove the fake item from.</param>
+        /// <param name="fake">The fake item configuration to match and delete.</param>
         private static void deleteFakeItem(Character chara, ItemFake fake)
         {
             //delete the item from held items and inventory (just check all slots for the an item that matches and delete it)
@@ -202,11 +262,14 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Item given event that checks and notifies when an equipped item's effects can be shared.
+    /// Used by abilities that allow held item benefits to extend to teammates.
+    /// </summary>
     [Serializable]
     public class CheckEquipPassValidityEvent : ItemGivenEvent
     {
-        public override GameEvent Clone() { return new CheckEquipPassValidityEvent(); }
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
             if (!String.IsNullOrEmpty(context.User.EquippedItem.ID))
@@ -219,6 +282,12 @@ namespace PMDC.Dungeon
             yield break;
         }
 
+        /// <summary>
+        /// Determines whether an item's effects can be shared with other characters.
+        /// Items with certain event types or non-zero priority effects cannot be passed.
+        /// </summary>
+        /// <param name="entry">The item data to check.</param>
+        /// <returns>True if the item's effects can be shared.</returns>
         public static bool CanItemEffectBePassed(ItemData entry)
         {
             //no refresh events allowed

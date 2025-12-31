@@ -9,9 +9,16 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
+    /// <summary>
+    /// Flags that control AI behavior and decision-making capabilities.
+    /// These flags can be combined to create different AI personalities and intelligence levels.
+    /// </summary>
     [Flags]
     public enum AIFlags
     {
+        /// <summary>
+        /// No special AI capabilities enabled.
+        /// </summary>
         None = 0,
         /// <summary>
         /// will not attack enemyoffriend
@@ -57,11 +64,18 @@ namespace PMDC.Dungeon
         PlayerSense = 256,
     }
 
+    /// <summary>
+    /// Abstract base class for all AI behavior plans in the dungeon.
+    /// AI plans define how characters make decisions during their turn, including
+    /// movement, attacking, item usage, and special behaviors.
+    /// Plans are evaluated in priority order and return a <see cref="GameAction"/> when they apply.
+    /// </summary>
     [Serializable]
     public abstract class AIPlan : BasePlan
     {
         /// <summary>
-        /// The strategy that the monster takes when it goes aggro
+        /// The intelligence flags that control the AI's decision-making capabilities.
+        /// Determines behaviors like whether to attack allies, use items, avoid traps, etc.
         /// </summary>
         public AIFlags IQ;
 
@@ -110,6 +124,9 @@ namespace PMDC.Dungeon
             }
         }
 
+        /// <summary>
+        /// Defines how the AI selects which attack or skill to use.
+        /// </summary>
         public enum AttackChoice
         {
             /// <summary>
@@ -134,6 +151,9 @@ namespace PMDC.Dungeon
             SmartAttack,
         }
 
+        /// <summary>
+        /// Defines how the AI positions itself relative to targets.
+        /// </summary>
         public enum PositionChoice
         {
             /// <summary>
@@ -150,15 +170,31 @@ namespace PMDC.Dungeon
             Avoid,
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AIPlan"/> class with default values.
+        /// </summary>
         public AIPlan()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AIPlan"/> class with the specified IQ flags.
+        /// </summary>
+        /// <param name="iq">The intelligence flags that control AI behavior.</param>
         public AIPlan(AIFlags iq)
         {
             this.IQ = iq;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AIPlan"/> class with full configuration.
+        /// </summary>
+        /// <param name="iq">The intelligence flags that control AI behavior.</param>
+        /// <param name="attackRange">Minimum range to target before considering attack moves.</param>
+        /// <param name="statusRange">Minimum range to target before considering status moves.</param>
+        /// <param name="selfStatusRange">Minimum range to target before considering self-targeting status moves.</param>
+        /// <param name="restrictedMobilityTypes">Terrain types the AI will not enter even if capable.</param>
+        /// <param name="restrictMobilityPassable">Whether to restrict movement on passable terrain.</param>
         public AIPlan(AIFlags iq, int attackRange, int statusRange, int selfStatusRange,
             TerrainData.Mobility restrictedMobilityTypes, bool restrictMobilityPassable)
         {
@@ -171,6 +207,10 @@ namespace PMDC.Dungeon
             this.AbandonRangeOnHit = true;
         }
 
+        /// <summary>
+        /// Copy constructor for cloning an existing AI plan.
+        /// </summary>
+        /// <param name="other">The AI plan to copy from.</param>
         protected AIPlan(AIPlan other)
         {
             IQ = other.IQ;
@@ -292,6 +332,13 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Checks if the specified location is blocked by a character of the given alignment.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <param name="testLoc">The location to check.</param>
+        /// <param name="alignment">The alignment(s) to consider as blockers.</param>
+        /// <returns>True if blocked by a character matching the alignment; otherwise, false.</returns>
         protected bool BlockedByChar(Character controlledChar, Loc testLoc, Alignment alignment)
         {
             Character character = ZoneManager.Instance.CurrentMap.GetCharAtLoc(testLoc);
@@ -303,6 +350,12 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Checks if the specified location is blocked due to terrain restrictions configured for this AI.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <param name="testLoc">The location to check.</param>
+        /// <returns>True if the terrain at the location is restricted; otherwise, false.</returns>
         protected bool BlockedByTerrain(Character controlledChar, Loc testLoc)
         {
             Tile tile = ZoneManager.Instance.CurrentMap.GetTile(testLoc);
@@ -324,6 +377,13 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Checks if the specified location is blocked by a trap that the AI should avoid.
+        /// Only applies if the AI has the TrapAvoider flag set.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <param name="testLoc">The location to check.</param>
+        /// <returns>True if blocked by a trap; otherwise, false.</returns>
         protected bool BlockedByTrap(Character controlledChar, Loc testLoc)
         {
             if ((IQ & AIFlags.TrapAvoider) == AIFlags.None)
@@ -361,6 +421,14 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Checks if the specified location is blocked by a hazardous entity.
+        /// Only applies if the AI has the PlayerSense flag set.
+        /// Prevents walking into entities like Silcoon/Cascoon that attack when approached.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <param name="testLoc">The location to check.</param>
+        /// <returns>True if blocked by a hazard; otherwise, false.</returns>
         protected bool BlockedByHazard(Character controlledChar, Loc testLoc)
         {
             if ((IQ & AIFlags.PlayerSense) == AIFlags.None)
@@ -376,6 +444,13 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Checks if the path to the specified location is blocked by any obstacle.
+        /// Combines checks for tiles, traps, terrain restrictions, and hazards.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <param name="testLoc">The location to check.</param>
+        /// <returns>True if the path is blocked; otherwise, false.</returns>
         protected bool IsPathBlocked(Character controlledChar, Loc testLoc)
         {
             if (ZoneManager.Instance.CurrentMap.TileBlocked(testLoc, controlledChar.Mobility))
@@ -391,6 +466,10 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Gets the alignments that this AI considers valid targets for attacks.
+        /// </summary>
+        /// <returns>The alignment flags for acceptable targets.</returns>
         protected Alignment GetAcceptableTargetAlignments()
         {
             Alignment target = Alignment.Foe;
@@ -416,6 +495,12 @@ namespace PMDC.Dungeon
             return false;
         }
 
+        /// <summary>
+        /// Gets all characters that are valid targets for the AI to attack.
+        /// Filters based on alignment, player sense, illusion effects, and other factors.
+        /// </summary>
+        /// <param name="controlledChar">The character being controlled.</param>
+        /// <returns>An enumerable of valid target characters.</returns>
         protected IEnumerable<Character> GetAcceptableTargets(Character controlledChar)
         {
             List<Character> seenCharacters = controlledChar.GetSeenCharacters(GetAcceptableTargetAlignments());
@@ -604,6 +689,12 @@ namespace PMDC.Dungeon
             return Grid.FindNPaths(mapStart, mapSize, controlledChar.CharLoc, wrappedEnds, checkBlock, checkDiagBlock, 1, false);
         }
 
+        /// <summary>
+        /// Converts a path of locations into a game action for the next step in the path.
+        /// </summary>
+        /// <param name="controlledChar">The character to move along the path.</param>
+        /// <param name="path">The list of locations representing the path (in reverse order).</param>
+        /// <returns>A GameAction to move along the path or wait if path is too short.</returns>
         protected GameAction SelectChoiceFromPath(Character controlledChar, List<Loc> path)
         {
             if (path.Count <= 1)
@@ -612,6 +703,13 @@ namespace PMDC.Dungeon
                 return TrySelectWalk(controlledChar, ZoneManager.Instance.CurrentMap.GetClosestDir8(path[path.Count - 1], path[path.Count - 2]));
         }
 
+        /// <summary>
+        /// Attempts to perform a walk action in the specified direction, attacking if an enemy is in the way.
+        /// Assumes the direction has already been checked for blocking against visible enemies.
+        /// </summary>
+        /// <param name="controlledChar">The character attempting to walk.</param>
+        /// <param name="dir">The direction to walk.</param>
+        /// <returns>A GameAction to either move, attack, or wait.</returns>
         protected GameAction TrySelectWalk(Character controlledChar, Dir8 dir)
         {
             //assumes that this direction was checked for blocking against VISIBLE enemies, and no-walking
@@ -635,13 +733,14 @@ namespace PMDC.Dungeon
         }
 
         /// <summary>
-        /// 
+        /// Evaluates and chooses an attack action based on the specified attack pattern and visible threats.
+        /// Handles special status effects like sleep and freeze.
         /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="controlledChar"></param>
-        /// <param name="attackPattern"></param>
-        /// <param name="includeImagine">Excludes imaginary hits from causing attack fallthrough.  This will also skip threat checking.</param>
-        /// <returns></returns>
+        /// <param name="rand">The random number generator for weighted choices.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="attackPattern">The attack pattern strategy to use.</param>
+        /// <param name="excludeImagine">If true, excludes imaginary hits from fallthrough and skips threat checking.</param>
+        /// <returns>A GameAction representing the chosen attack, or a wait action if no valid attack is found.</returns>
         protected GameAction TryAttackChoice(IRandom rand, Character controlledChar, AttackChoice attackPattern, bool excludeImagine = false)
         {
             List<Character> seenChars = controlledChar.GetSeenCharacters(Alignment.Self | Alignment.Friend | Alignment.Foe);
@@ -741,6 +840,13 @@ namespace PMDC.Dungeon
             }
         }
 
+        /// <summary>
+        /// Checks if a skill at the specified index is usable by the character.
+        /// A skill is usable if it exists, has charges, is not sealed, and is enabled.
+        /// </summary>
+        /// <param name="controlledChar">The character to check.</param>
+        /// <param name="ii">The skill index to check.</param>
+        /// <returns>True if the skill is usable; otherwise, false.</returns>
         public bool IsSkillUsable(Character controlledChar, int ii)
         {
             if (!String.IsNullOrEmpty(controlledChar.Skills[ii].Element.SkillNum) && controlledChar.Skills[ii].Element.Charges > 0 && !controlledChar.Skills[ii].Element.Sealed && controlledChar.Skills[ii].Element.Enabled)
@@ -785,6 +891,14 @@ namespace PMDC.Dungeon
             return moveIndices[choice];
         }
 
+        /// <summary>
+        /// Always uses the default basic attack and never chooses moves.
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character performing the attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction using the default attack or wait.</returns>
         protected GameAction TryDefaultAttackChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             List<ActionDirValue> backupIndices = new List<ActionDirValue>();
@@ -806,6 +920,15 @@ namespace PMDC.Dungeon
         }
 
 
+        /// <summary>
+        /// Randomly chooses from weighted move options, including hypothetical out-of-range choices.
+        /// This pattern can cause the AI to move forward sometimes due to weighted selection.
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction representing the weighted choice, or wait if no options available.</returns>
         protected GameAction TryDumbAttackChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             List<ActionDirValue> moveIndices = new List<ActionDirValue>();
@@ -858,6 +981,14 @@ namespace PMDC.Dungeon
         }
 
 
+        /// <summary>
+        /// Chooses a status move first and foremost, falling back to attacking moves if only hypothetical hits are available.
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction using a status move or attack, or wait if none available.</returns>
         protected GameAction TryStatusMoveChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             //first pass list of move candidates containing all status moves
@@ -885,6 +1016,15 @@ namespace PMDC.Dungeon
             return new GameAction(GameAction.ActionType.Wait, Dir8.None);
         }
 
+        /// <summary>
+        /// Randomly chooses from weighted move options, always preferring actual hits over hypothetical ones.
+        /// If only hypothetical moves are available, falls back to available attack moves.
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction representing the weighted choice or wait if none available.</returns>
         protected GameAction TryRandomMoveChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             //first pass list of move candidates containing all moves, including hypothetical
@@ -950,13 +1090,14 @@ namespace PMDC.Dungeon
         }
 
         /// <summary>
-        /// Always chooses the best attack
+        /// Always chooses the best attack by finding moves with the highest calculated value.
+        /// Evaluates all usable skills and equipped items, prioritizing damaging moves over status moves.
         /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="controlledChar"></param>
-        /// <param name="defaultDir"></param>
-        /// <param name="seenChars"></param>
-        /// <returns></returns>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction using the best attack found, or a wait action if no attacks are available.</returns>
         protected GameAction TryBestAttackChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             List<ActionDirValue> highestIndices = new List<ActionDirValue>();
@@ -1000,6 +1141,15 @@ namespace PMDC.Dungeon
             return new GameAction(GameAction.ActionType.Wait, Dir8.None);
         }
 
+        /// <summary>
+        /// Chooses an attack while under a forced move status effect, using the forced move direction.
+        /// Falls back to the default attack if no forced move is active.
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction using the forced move direction or attack if can't walk.</returns>
         protected GameAction TryForcedAttackChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             //check to see if currently under a force-move status
@@ -1042,7 +1192,15 @@ namespace PMDC.Dungeon
                 return new GameAction(GameAction.ActionType.Wait, Dir8.None);
         }
 
-        //TODO: refactor this better...
+        /// <summary>
+        /// Chooses an attack while the character is asleep.
+        /// Only allows moves that can be used while asleep (sleep talk, snore, lum berry).
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction using an available sleep-compatible move.</returns>
         protected GameAction TrySleepAttackChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             List<ActionDirValue> highestIndices = new List<ActionDirValue>();
@@ -1084,6 +1242,15 @@ namespace PMDC.Dungeon
             return new GameAction(GameAction.ActionType.Attack, Dir8.None);
         }
 
+        /// <summary>
+        /// Chooses an attack while the character is frozen.
+        /// Only allows fire-type moves and lum berry that can be used while frozen.
+        /// </summary>
+        /// <param name="rand">The random number generator.</param>
+        /// <param name="controlledChar">The character choosing an attack.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threatening character.</param>
+        /// <returns>A GameAction using a fire-type move or ice-thawing item.</returns>
         protected GameAction TryFreezeAttackChoice(IRandom rand, Character controlledChar, List<Character> seenChars, Character closestThreat)
         {
             List<ActionDirValue> highestIndices = new List<ActionDirValue>();
@@ -1188,14 +1355,14 @@ namespace PMDC.Dungeon
         }
 
         /// <summary>
-        /// 
+        /// Calculates the value of using a skill in each of the 8 directions.
         /// </summary>
-        /// <param name="controlledChar"></param>
-        /// <param name="closestThreat">A character that will be used to judge an imagined hit. Leave blank for no imagined hits.</param>
-        /// <param name="seenChars"></param>
-        /// <param name="moveIndex"></param>
-        /// <param name="dirs"></param>
-        /// <param name="includeImagined">Whether or not we want to consider hypothetical hit weights.</param>
+        /// <param name="controlledChar">The character performing the action.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threat character, used for determining imagined hit values.</param>
+        /// <param name="moveIndex">The skill ID to evaluate.</param>
+        /// <param name="dirs">Output array of hit values for each direction (indexed 0-7).</param>
+        /// <param name="includeImagined">Whether to consider hypothetical hits for targets out of range.</param>
         protected void GetActionValues(Character controlledChar, List<Character> seenChars, Character closestThreat, string moveIndex, HitValue[] dirs, bool includeImagined)
         {
             SkillData entry = DataManager.Instance.GetSkill(moveIndex);
@@ -1248,6 +1415,15 @@ namespace PMDC.Dungeon
             }
         }
 
+        /// <summary>
+        /// Calculates the value of using an item for each direction.
+        /// Only evaluates items that are berries, seeds, wands, or medicines.
+        /// </summary>
+        /// <param name="controlledChar">The character using the item.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threat character.</param>
+        /// <param name="itemIndex">The item ID to evaluate.</param>
+        /// <param name="dirs">Output array of hit values for each direction (indexed 0-7).</param>
         protected void GetItemUseValues(Character controlledChar, List<Character> seenChars, Character closestThreat, string itemIndex, HitValue[] dirs)
         {
             ItemData entry = DataManager.Instance.GetItem(itemIndex);
@@ -1264,6 +1440,15 @@ namespace PMDC.Dungeon
             dirs[(int)defaultDir] = highestVal;
         }
 
+        /// <summary>
+        /// Calculates the value of throwing an item in each direction.
+        /// Only evaluates items that are berries, seeds, or ammunition.
+        /// </summary>
+        /// <param name="controlledChar">The character throwing the item.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="closestThreat">The closest threat character.</param>
+        /// <param name="itemIndex">The item ID to evaluate.</param>
+        /// <param name="dirs">Output array of hit values for each direction (indexed 0-7).</param>
         protected void GetItemThrowValues(Character controlledChar, List<Character> seenChars, Character closestThreat, string itemIndex, HitValue[] dirs)
         {
             ItemData entry = DataManager.Instance.GetItem(itemIndex);
@@ -1316,12 +1501,12 @@ namespace PMDC.Dungeon
 
 
         /// <summary>
-        /// 
+        /// Fills a hash table with potential target locations for ranged attacks based on seen characters and their accessible positions.
         /// </summary>
-        /// <param name="controlledChar"></param>
-        /// <param name="seenChars"></param>
-        /// <param name="endHash"></param>
-        /// <param name="blindspotOnly">Will only treat blindspot attacks as attacks that need to path to tiles.</param>
+        /// <param name="controlledChar">The character performing the action.</param>
+        /// <param name="seenChars">The list of visible characters to calculate target positions for.</param>
+        /// <param name="endHash">The output dictionary mapping target locations to their priority weights.</param>
+        /// <param name="blindspotOnly">If true, only considers blind spot attacks; ignores area-of-effect attacks.</param>
         protected void FillRangeTargets(Character controlledChar, List<Character> seenChars, Dictionary<Loc, RangeTarget> endHash, bool blindspotOnly)
         {
             foreach (Character seenChar in seenChars)
@@ -1791,6 +1976,21 @@ namespace PMDC.Dungeon
             return GetActionDirValue(skillIndex, entry, hitboxAction, explosion, entry?.Data, rangeMod, controlledChar, seenChars, dir, 100);
         }
 
+        /// <summary>
+        /// Calculates the hit value for using an action in a specific direction against all visible targets.
+        /// Used to evaluate both skill actions and item actions.
+        /// </summary>
+        /// <param name="skillIndex">The skill ID (empty string for items).</param>
+        /// <param name="entry">The skill data (null for items).</param>
+        /// <param name="hitboxAction">The combat action defining the attack area.</param>
+        /// <param name="explosion">The explosion data defining secondary effects.</param>
+        /// <param name="data">The battle data (skill or item).</param>
+        /// <param name="rangeMod">Range modification to apply to the action.</param>
+        /// <param name="controlledChar">The character performing the action.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="dir">The direction of the action.</param>
+        /// <param name="defaultVal">The default value if no targets are hit.</param>
+        /// <returns>A HitValue representing the calculated value of the action in this direction.</returns>
         protected HitValue GetActionDirValue(string skillIndex, SkillData entry, CombatAction hitboxAction, ExplosionData explosion, BattleData data, int rangeMod, Character controlledChar, List<Character> seenChars, Dir8 dir, int defaultVal)
         {
             if (hitboxAction == null)
@@ -1883,6 +2083,18 @@ namespace PMDC.Dungeon
                 return new HitValue(maxValue, directHit);
         }
 
+        /// <summary>
+        /// Calculates the value of using a skill attack against a specific target.
+        /// Takes into account alignment (foe vs ally) and applies sign correction.
+        /// </summary>
+        /// <param name="controlledChar">The character performing the attack.</param>
+        /// <param name="moveIndex">The skill ID.</param>
+        /// <param name="entry">The skill data.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="target">The target character.</param>
+        /// <param name="rangeMod">Range modification applied to the skill.</param>
+        /// <param name="defaultVal">Default value if effect cannot be determined.</param>
+        /// <returns>The calculated attack value, negative for foe damage, positive for ally/self benefit.</returns>
         protected int GetAttackValue(Character controlledChar, string moveIndex, SkillData entry, List<Character> seenChars, Character target, int rangeMod, int defaultVal)
         {
             int delta = GetTargetEffect(controlledChar, moveIndex, entry, seenChars, target, rangeMod, defaultVal);
@@ -1890,6 +2102,16 @@ namespace PMDC.Dungeon
             return AlignTargetEffect(controlledChar, entry.Data, target, delta);
         }
 
+        /// <summary>
+        /// Calculates the value of using a battle action (from an item) against a specific target.
+        /// </summary>
+        /// <param name="controlledChar">The character using the action.</param>
+        /// <param name="data">The battle data of the action.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="target">The target character.</param>
+        /// <param name="rangeMod">Range modification applied.</param>
+        /// <param name="defaultVal">Default value if effect cannot be determined.</param>
+        /// <returns>The calculated battle value.</returns>
         protected int GetBattleValue(Character controlledChar, BattleData data, List<Character> seenChars, Character target, int rangeMod, int defaultVal)
         {
             int delta = GetTargetBattleDataEffectWithRangeLimit(controlledChar, data, seenChars, target, 0, 1, defaultVal);
@@ -1897,6 +2119,15 @@ namespace PMDC.Dungeon
             return AlignTargetEffect(controlledChar, data, target, delta);
         }
 
+        /// <summary>
+        /// Aligns the effect value based on the target's alignment and applies player sense logic.
+        /// Flips the sign of damage for foes and checks if attacking should be avoided (sleep, freeze, special AIs).
+        /// </summary>
+        /// <param name="controlledChar">The character performing the action.</param>
+        /// <param name="data">The battle data defining the action.</param>
+        /// <param name="target">The target character.</param>
+        /// <param name="delta">The raw effect value (positive = beneficial to target).</param>
+        /// <returns>The aligned effect value (negative for damage to foes, positive for allies).</returns>
         protected int AlignTargetEffect(Character controlledChar, BattleData data, Character target, int delta)
         {
             bool teamPartner = (IQ & AIFlags.TeamPartner) != AIFlags.None;
@@ -1974,15 +2205,16 @@ namespace PMDC.Dungeon
         }
 
         /// <summary>
-        /// 
+        /// Calculates the net effect of a skill on a target, considering damage, healing, status effects, and stat changes.
         /// </summary>
-        /// <param name="controlledChar"></param>
-        /// <param name="moveIndex"></param>
-        /// <param name="entry"></param>
-        /// <param name="seenChars"></param>
-        /// <param name="target"></param>
-        /// <param name="rangeMod"></param>
-        /// <returns>Positive number means a positive effect for the target, negative number means a negative effect for the target.</returns>
+        /// <param name="controlledChar">The character using the skill.</param>
+        /// <param name="moveIndex">The skill ID.</param>
+        /// <param name="entry">The skill data.</param>
+        /// <param name="seenChars">The list of visible characters.</param>
+        /// <param name="target">The target character to evaluate against.</param>
+        /// <param name="rangeMod">Range modification applied to the skill.</param>
+        /// <param name="defaultVal">Default value if effect cannot be determined.</param>
+        /// <returns>Positive value means a beneficial effect for the target, negative means detrimental.</returns>
         protected int GetTargetEffect(Character controlledChar, string moveIndex, SkillData entry, List<Character> seenChars, Character target, int rangeMod, int defaultVal)
         {
             //when trying to attack an enemy, first check for getting in range of any attack, and use that attack if possible
@@ -2828,6 +3060,11 @@ namespace PMDC.Dungeon
             return addedWorth;
         }
 
+        /// <summary>
+        /// Gets all valid tile locations at the border of the character's sight range.
+        /// </summary>
+        /// <param name="controlledChar">The character whose sight boundary to check.</param>
+        /// <returns>A list of locations at the outer edges of sight range.</returns>
         protected List<Loc> GetAreaExits(Character controlledChar)
         {
             //get all tiles that are within the border of sight range, or within the border of the screen
@@ -2850,6 +3087,13 @@ namespace PMDC.Dungeon
             return loc_list;
         }
 
+        /// <summary>
+        /// Attempts to add a location to a destination list if it is passable and safe.
+        /// Checks for blocked tiles, traps, terrain restrictions, and hazards.
+        /// </summary>
+        /// <param name="controlledChar">The character checking passability.</param>
+        /// <param name="loc_list">The list to add the location to if valid.</param>
+        /// <param name="border_loc">The location to check.</param>
         protected void TryAddDest(Character controlledChar, List<Loc> loc_list, Loc border_loc)
         {
             if (ZoneManager.Instance.CurrentMap.TileBlocked(border_loc, controlledChar.Mobility, false))
@@ -2866,11 +3110,27 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Represents a game action paired with its hit value in a specific direction.
+    /// Used by AI to evaluate and compare different attack options.
+    /// </summary>
     public struct ActionDirValue
     {
+        /// <summary>
+        /// The game action to perform.
+        /// </summary>
         public GameAction Action;
+
+        /// <summary>
+        /// The hit value assessment for this action.
+        /// </summary>
         public HitValue Hit;
 
+        /// <summary>
+        /// Creates a new action-direction value pair.
+        /// </summary>
+        /// <param name="action">The game action.</param>
+        /// <param name="hit">The hit value for this action.</param>
         public ActionDirValue(GameAction action, HitValue hit)
         {
             Action = action;
@@ -2878,12 +3138,32 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Represents the calculated value of an attack or action hitting a target.
+    /// Higher values indicate more desirable outcomes for the AI.
+    /// </summary>
     public struct HitValue
     {
+        /// <summary>
+        /// The numerical value of the hit. Higher is better.
+        /// </summary>
         public int Value;
+
+        /// <summary>
+        /// Whether this is a direct hit on the target.
+        /// </summary>
         public bool DirectHit;
+
+        /// <summary>
+        /// Whether this hit is hypothetical (target not in range but would be valuable).
+        /// </summary>
         public bool ImaginedHit;
 
+        /// <summary>
+        /// Creates a new hit value.
+        /// </summary>
+        /// <param name="value">The numerical value.</param>
+        /// <param name="direct">Whether this is a direct hit.</param>
         public HitValue(int value, bool direct)
         {
             Value = value;
@@ -2891,6 +3171,12 @@ namespace PMDC.Dungeon
             ImaginedHit = false;
         }
 
+        /// <summary>
+        /// Creates a new hit value with imagined hit flag.
+        /// </summary>
+        /// <param name="value">The numerical value.</param>
+        /// <param name="direct">Whether this is a direct hit.</param>
+        /// <param name="imagined">Whether this is an imagined/hypothetical hit.</param>
         public HitValue(int value, bool direct, bool imagined)
         {
             Value = value;
@@ -2898,6 +3184,11 @@ namespace PMDC.Dungeon
             ImaginedHit = imagined;
         }
 
+        /// <summary>
+        /// Compares this hit value to another for ordering.
+        /// </summary>
+        /// <param name="other">The other hit value to compare.</param>
+        /// <returns>Negative if less than, zero if equal, positive if greater than.</returns>
         public int CompareTo(HitValue other)
         {
             int val = Value.CompareTo(other.Value);
@@ -2912,11 +3203,27 @@ namespace PMDC.Dungeon
         }
     }
 
+    /// <summary>
+    /// Represents a potential target location for ranged attacks.
+    /// Stores the weight (priority) of the target and the character of origin.
+    /// </summary>
     public class RangeTarget
     {
+        /// <summary>
+        /// The priority weight of this target. Higher weights are more desirable.
+        /// </summary>
         public int Weight;
+
+        /// <summary>
+        /// The character that is the origin of this target calculation.
+        /// </summary>
         public Character Origin;
 
+        /// <summary>
+        /// Creates a new range target.
+        /// </summary>
+        /// <param name="origin">The origin character.</param>
+        /// <param name="weight">The priority weight.</param>
         public RangeTarget(Character origin, int weight)
         {
             Origin = origin;

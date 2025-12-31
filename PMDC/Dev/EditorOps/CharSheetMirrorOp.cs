@@ -10,10 +10,24 @@ using RogueEssence.Dev;
 
 namespace PMDC.Dev
 {
+    /// <summary>
+    /// Editor operation that mirrors character sprite animations horizontally.
+    /// Copies animation frames from one direction to its opposite, flipping offsets and shadows
+    /// to create symmetric animations. Can mirror from left-to-right or right-to-left.
+    /// </summary>
     [Serializable]
     public class CharSheetMirrorOp : CharSheetOp
     {
+        /// <summary>
+        /// Determines the direction of the mirror operation.
+        /// When <c>true</c>, mirrors from right-to-left; when <c>false</c>, mirrors from left-to-right.
+        /// </summary>
         public bool StartRight;
+
+        /// <summary>
+        /// Gets the animation indices this operation applies to.
+        /// </summary>
+        /// <returns>An array containing all animation indices available in the graphics manager.</returns>
         public override int[] Anims
         {
             get
@@ -25,7 +39,18 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Gets the display name of this operation based on the mirror direction.
+        /// </summary>
+        /// <returns>"Mirror Right->Left" if <see cref="StartRight"/> is true; otherwise "Mirror Left->Right".</returns>
         public override string Name { get { return StartRight ? "Mirror Right->Left" : "Mirror Left->Right"; } }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Mirrors the specified animation by copying frames from one direction to its opposite direction,
+        /// with horizontally-flipped offsets and shadow offsets. This creates symmetric animations when
+        /// the source direction matches the <see cref="StartRight"/> setting.
+        /// </remarks>
         public override void Apply(CharSheet sheet, int anim)
         {
             for (int ii = 0; ii < sheet.AnimData[anim].Sequences.Count; ii++)

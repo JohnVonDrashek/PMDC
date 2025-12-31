@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,32 +18,46 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events related to actions using or throwing items
+    /// <summary>
+    /// Battle events related to actions using or throwing items.
+    /// </summary>
 
 
     /// <summary>
-    /// Event that modifies the battle data if the character is hit by an item
+    /// Event that modifies the battle data if the character is hit by an item.
+    /// When a thrown item hits this target, the item is destroyed and replaced with alternate battle data.
     /// </summary>
     [Serializable]
     public class ThrowItemDestroyEvent : BattleEvent
     {
         /// <summary>
-        /// Events that occur when hit by an item
-        /// Before it's used, when it hits, after it's used, etc
+        /// The replacement battle data to use when the item is destroyed on impact.
+        /// Defines hit effects, damage, etc.
         /// </summary>
         public BattleData NewData;
 
+        /// <inheritdoc/>
         public ThrowItemDestroyEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThrowItemDestroyEvent"/> class with specified battle data.
+        /// </summary>
+        /// <param name="moveData">The battle data to use when the item is destroyed.</param>
         public ThrowItemDestroyEvent(BattleData moveData)
         {
             NewData = moveData;
         }
+
+        /// <inheritdoc/>
         protected ThrowItemDestroyEvent(ThrowItemDestroyEvent other)
         {
             NewData = new BattleData(other.NewData);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ThrowItemDestroyEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType == BattleActionType.Throw)
@@ -67,13 +81,16 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that prevents item of dropping by setting ItemDestroyed global context state
+    /// Event that prevents an item from dropping by setting the ItemDestroyed global context state.
+    /// When applied, thrown items will not land on the ground after hitting a target.
     /// </summary>
     [Serializable]
     public class ThrowItemPreventDropEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ThrowItemPreventDropEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType == BattleActionType.Throw)
@@ -85,15 +102,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that removes the user's held item and sets the item in the context
+    /// Event that removes the user's held item and sets it in the battle context.
+    /// Used for moves that transfer the user's held item to a target.
     /// </summary>
     [Serializable]
     public class HeldItemMoveEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public HeldItemMoveEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new HeldItemMoveEvent(); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             bool attackerCannotDrop = false;
@@ -118,15 +139,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the user to pass the held item to the target
+    /// Event that causes the user to pass the held item to the target.
+    /// Handles cases where the target already has an item or a full inventory.
     /// </summary>
     [Serializable]
     public class BestowItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public BestowItemEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BestowItemEvent(); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!String.IsNullOrEmpty(context.Target.EquippedItem.ID) && context.Target.CharStates.Contains<StickyHoldState>())
@@ -171,15 +196,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the character to equip the item in the BattleContext
+    /// Event that causes the character to equip the item in the BattleContext.
+    /// Used when a character catches a thrown item.
     /// </summary>
     [Serializable]
     public class CatchItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public CatchItemEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CatchItemEvent(); }
 
-
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (!String.IsNullOrEmpty(context.Item.ID))
@@ -194,14 +223,19 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that turns the target into an item from the current map's spawn pool
+    /// Event that turns the target into an item from the current map's spawn pool.
+    /// The target is removed from the map and replaced with a randomly spawned item.
     /// </summary>
     [Serializable]
     public class ItemizerEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public ItemizerEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ItemizerEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.Dead)
@@ -222,13 +256,16 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the item to land where the strike hitbox ended
+    /// Event that causes an item to land where the strike hitbox ended.
+    /// Used to handle item drop behavior after a throw action misses or completes.
     /// </summary>
     [Serializable]
     public class LandItemEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new LandItemEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if ((context.GetContextStateInt<AttackHitTotal>(true, 0) == 0) && !context.GlobalContextStates.Contains<ItemDestroyed>())

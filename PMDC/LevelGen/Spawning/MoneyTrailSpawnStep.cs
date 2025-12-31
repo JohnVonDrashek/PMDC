@@ -13,18 +13,32 @@ namespace PMDC.LevelGen
     /// <summary>
     /// Spawns money in a trail leading up to an item at the endpoint.
     /// </summary>
-    /// <typeparam name="TGenContext"></typeparam>
-    /// <typeparam name="TSpawnable"></typeparam>
+    /// <remarks>
+    /// This step distributes spawnable items across selected rooms and creates money trails
+    /// leading away from those items. Each trail moves in a random direction with bouncing off
+    /// map edges, spawning progressively more valuable money as it approaches the endpoint.
+    /// </remarks>
+    /// <typeparam name="TGenContext">The generation context type, must support room grid operations, item placement, and money spawning.</typeparam>
+    /// <typeparam name="TSpawnable">The type of spawnable item.</typeparam>
     [Serializable]
     public class MoneyTrailSpawnStep<TGenContext, TSpawnable> : RoomSpawnStep<TGenContext, TSpawnable>
         where TGenContext : class, IRoomGridGenContext, IPlaceableGenContext<TSpawnable>, IPlaceableGenContext<MoneySpawn>, ISpawningGenContext<MoneySpawn>
         where TSpawnable : ISpawnable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MoneyTrailSpawnStep{TGenContext, TSpawnable}"/> class with default values.
+        /// </summary>
         public MoneyTrailSpawnStep()
             : base()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MoneyTrailSpawnStep{TGenContext, TSpawnable}"/> class with specified parameters.
+        /// </summary>
+        /// <param name="spawn">The spawner responsible for picking items to place.</param>
+        /// <param name="trailLength">The range of lengths for money trails in tiles.</param>
+        /// <param name="placementValue">The range of money values to place at each position along the trail.</param>
         public MoneyTrailSpawnStep(IStepSpawner<TGenContext, TSpawnable> spawn, RandRange trailLength, IntRange placementValue)
             : base(spawn)
         {
@@ -32,10 +46,25 @@ namespace PMDC.LevelGen
             this.PlacementValue = placementValue;
         }
 
+        /// <summary>
+        /// The length of the money trail in tiles.
+        /// </summary>
         public RandRange TrailLength;
 
+        /// <summary>
+        /// The range of money values to place at each tile, interpolating from min to max along the trail.
+        /// </summary>
         public IntRange PlacementValue;
 
+        /// <summary>
+        /// Distributes the spawnable items across randomly selected rooms and creates money trails for each.
+        /// </summary>
+        /// <remarks>
+        /// This method attempts to place each spawnable item in a random room that passes the configured filters,
+        /// then creates money trails from those rooms using a proportional share of the total available money budget.
+        /// </remarks>
+        /// <param name="map">The map generation context containing the grid plan and random number generator.</param>
+        /// <param name="spawns">The list of spawnable items to distribute across rooms.</param>
         public override void DistributeSpawns(TGenContext map, List<TSpawnable> spawns)
         {
             List<int> spawnedRooms = new List<int>();
@@ -68,6 +97,18 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Creates a money trail starting from a specific room and moving in a random direction.
+        /// </summary>
+        /// <remarks>
+        /// This method spawns money along a trail path, with values interpolating from the minimum to maximum
+        /// PlacementValue range. The trail moves forward in the specified direction with random bouncing off
+        /// map edges. The total cost is deducted from the money budget.
+        /// </remarks>
+        /// <param name="map">The map generation context.</param>
+        /// <param name="startIdx">The index of the starting room.</param>
+        /// <param name="startDegrees">The initial direction in degrees (clockwise from down).</param>
+        /// <param name="moneyToSpawn">Reference to the remaining money budget, updated after spawning.</param>
         private void spawnWithTrail(TGenContext map, int startIdx, int startDegrees, ref int moneyToSpawn)
         {
             int avgCost = (PlacementValue.Min + PlacementValue.Max) / 2;
@@ -123,12 +164,12 @@ namespace PMDC.LevelGen
             moneyToSpawn -= totalCost;
         }
         /// <summary>
-        /// 
+        /// Moves the trail forward in the current rotation direction, bouncing off map edges.
         /// </summary>
-        /// <param name="map"></param>
-        /// <param name="inLoc"></param>
-        /// <param name="degreeRotation">Rotation is treated as clockwise from down</param>
-        /// <returns></returns>
+        /// <param name="map">The map generation context.</param>
+        /// <param name="inLoc">The current location.</param>
+        /// <param name="degreeRotation">Rotation is treated as clockwise from down. Updated with random variation.</param>
+        /// <returns>The new location after moving forward.</returns>
         private Loc moveForward(TGenContext map, Loc inLoc, ref int degreeRotation)
         {
             //move in the chosen direction
@@ -160,11 +201,11 @@ namespace PMDC.LevelGen
         }
 
         /// <summary>
-        /// 
+        /// Converts a degree rotation to a cardinal/diagonal direction with randomization.
         /// </summary>
-        /// <param name="rand"></param>
-        /// <param name="degreeRotation">Rotation is treated as clockwise from down</param>
-        /// <returns></returns>
+        /// <param name="rand">Random number generator.</param>
+        /// <param name="degreeRotation">Rotation in degrees, treated as clockwise from down.</param>
+        /// <returns>The corresponding 8-way direction.</returns>
         private Dir8 getRandDirFromDegree(IRandom rand, int degreeRotation)
         {
             int dir = degreeRotation / 45;
@@ -176,6 +217,13 @@ namespace PMDC.LevelGen
 
 
 
+        /// <summary>
+        /// Attempts to place a spawnable item in a random free tile within a room.
+        /// </summary>
+        /// <param name="map">The map generation context.</param>
+        /// <param name="roomIdx">The index of the room to spawn the item in.</param>
+        /// <param name="spawn">The spawnable item to place.</param>
+        /// <returns>True if the item was successfully placed, false if no free tiles were available.</returns>
         private bool spawnItemInRoom(TGenContext map, int roomIdx, TSpawnable spawn)
         {
             IRoomGen room = map.GridPlan.GetRoom(roomIdx);
@@ -191,6 +239,13 @@ namespace PMDC.LevelGen
             return false;
         }
 
+        /// <summary>
+        /// Attempts to place money in a random free tile within a room.
+        /// </summary>
+        /// <param name="map">The map generation context.</param>
+        /// <param name="roomIdx">The index of the room to spawn money in.</param>
+        /// <param name="spawn">The money spawn object containing the amount to place.</param>
+        /// <returns>True if the money was successfully placed, false if no free tiles were available.</returns>
         private bool spawnInMoneyRoom(TGenContext map, int roomIdx, MoneySpawn spawn)
         {
             IRoomGen room = map.GridPlan.GetRoom(roomIdx);

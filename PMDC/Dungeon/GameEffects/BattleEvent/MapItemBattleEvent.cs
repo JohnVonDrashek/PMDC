@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -18,32 +18,47 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle events that affect items on the dungeon map
+    /// <summary>
+    /// Battle events that affect items on the dungeon map or deal with money.
+    /// </summary>
 
 
     /// <summary>
-    /// Event that destroys the item on the tile
+    /// Event that destroys the item on the target tile.
+    /// Can be blocked by terrain if BlockedByTerrain is true.
     /// </summary>
     [Serializable]
     public class RemoveItemEvent : BattleEvent
     {
         /// <summary>
-        /// Whether the item isn't destroyed if the tile has a terrain
+        /// Whether the item isn't destroyed if the tile has a terrain.
+        /// When true, items on terrain tiles (non-floor) will not be removed.
         /// </summary>
         public bool BlockedByTerrain;
 
+        /// <inheritdoc/>
         public RemoveItemEvent()
         { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RemoveItemEvent"/> class with terrain blocking option.
+        /// </summary>
+        /// <param name="blockable">If true, items on terrain tiles will not be destroyed.</param>
         public RemoveItemEvent(bool blockable)
         {
             BlockedByTerrain = blockable;
         }
+
+        /// <inheritdoc/>
         protected RemoveItemEvent(RemoveItemEvent other)
         {
             BlockedByTerrain = other.BlockedByTerrain;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveItemEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Tile tile = ZoneManager.Instance.CurrentMap.GetTile(context.TargetTile);
@@ -74,13 +89,16 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that pulls unclaimed items on the floor to the user.
+    /// Event that pulls unclaimed items on the floor to the user's location.
+    /// Items within range that can be reached without crossing blocking terrain are moved near the user.
     /// </summary>
     [Serializable]
     public class TrawlEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new TrawlEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Dictionary<Loc, int> itemLocs = new Dictionary<Loc, int>();
@@ -146,12 +164,16 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that causes the target to drop money when defeated
+    /// Event that causes the target to drop money when defeated.
+    /// The amount is based on the target's EXP yield and level.
     /// </summary>
     [Serializable]
     public class DefeatedMoneyEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DefeatedMoneyEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             bool knockedOut = context.ContextStates.Contains<Knockout>();
@@ -170,6 +192,12 @@ namespace PMDC.Dungeon
             }
         }
 
+        /// <summary>
+        /// Calculates EXP based on yield and level.
+        /// </summary>
+        /// <param name="expYield">The base EXP yield of the monster.</param>
+        /// <param name="level">The level of the monster.</param>
+        /// <returns>The calculated EXP value.</returns>
         private int expFormula(int expYield, int level)
         {
             return (int)((ulong)expYield * (ulong)level / 5) + 1;
@@ -177,30 +205,44 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the target to drop money based on the damage dealt
+    /// Event that causes the target to drop money based on the damage dealt.
+    /// Money amount is calculated using: level * damage * Numerator / Denominator.
     /// </summary>
     [Serializable]
     public class DamageMoneyEvent : BattleEvent
     {
 
         /// <summary>
-        /// The drop money mutliplier given by level * damage dealt * numerator / denominator
+        /// The numerator for the money drop formula: level * damage * Numerator / Denominator.
         /// </summary>
         public int Numerator;
 
         /// <summary>
-        /// The drop money mutliplier given by level * damage dealt * numerator / denominator
+        /// The denominator for the money drop formula: level * damage * Numerator / Denominator.
         /// </summary>
         public int Denominator;
 
+        /// <inheritdoc/>
         public DamageMoneyEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DamageMoneyEvent"/> class with specified multiplier.
+        /// </summary>
+        /// <param name="numerator">The numerator for money calculation.</param>
+        /// <param name="denominator">The denominator for money calculation.</param>
         public DamageMoneyEvent(int numerator, int denominator) { Numerator = numerator; Denominator = denominator; }
+
+        /// <inheritdoc/>
         protected DamageMoneyEvent(DamageMoneyEvent other)
         {
             Numerator = other.Numerator;
             Denominator = other.Denominator;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DamageMoneyEvent(this); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             int damage = context.GetContextStateInt<DamageDealt>(false, 0);
@@ -214,24 +256,38 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that causes the target to drop a portion of the its money
+    /// Event that causes the target to drop a portion of their money.
+    /// The money lost is calculated as: Money * (1 - (Multiplier-1)/Multiplier).
     /// </summary>
     [Serializable]
     public class KnockMoneyEvent : BattleEvent
     {
 
         /// <summary>
-        /// The money lost multipler given by the formula, (Multiplier - 1) / Multiplier
+        /// The money loss multiplier. Money lost = Money * (1 - (Multiplier-1)/Multiplier).
+        /// A higher multiplier means less money is lost (e.g., Multiplier=4 means 25% is dropped).
         /// </summary>
         public int Multiplier;
 
+        /// <inheritdoc/>
         public KnockMoneyEvent() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="KnockMoneyEvent"/> class with specified multiplier.
+        /// </summary>
+        /// <param name="multiplier">The divisor for money calculation.</param>
         public KnockMoneyEvent(int multiplier) { Multiplier = multiplier; }
+
+        /// <inheritdoc/>
         protected KnockMoneyEvent(KnockMoneyEvent other)
         {
             Multiplier = other.Multiplier;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new KnockMoneyEvent(this); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Target.CharStates.Contains<StickyHoldState>())

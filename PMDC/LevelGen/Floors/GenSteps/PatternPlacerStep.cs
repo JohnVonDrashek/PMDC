@@ -6,6 +6,11 @@ using RogueEssence.Dungeon;
 
 namespace PMDC.LevelGen
 {
+    /// <summary>
+    /// Abstract base class for placing patterns loaded from map files onto rooms.
+    /// Patterns are read from map files where non-walkable tiles define the pattern shape.
+    /// </summary>
+    /// <typeparam name="T">The map generation context type.</typeparam>
     [Serializable]
     public abstract class PatternPlacerStep<T> : GenStep<T> where T : class, IFloorPlanGenContext
     {
@@ -39,6 +44,9 @@ namespace PMDC.LevelGen
         /// </summary>
         public ITerrainStencil<T> TerrainStencil { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance with default values.
+        /// </summary>
         public PatternPlacerStep()
         {
             this.Maps = new SpawnList<PatternPlan>();
@@ -46,6 +54,11 @@ namespace PMDC.LevelGen
             this.TerrainStencil = new DefaultTerrainStencil<T>();
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Selects a random number of patterns based on the Amount range and places them in eligible rooms or halls.
+        /// Each pattern is loaded from a map file, randomly transposed, and applied using the configured extension behavior.
+        /// </remarks>
         public override void Apply(T map)
         {
             int chosenAmount = Amount.Pick(map.Rand);
@@ -240,17 +253,32 @@ namespace PMDC.LevelGen
             }
         }
 
+        /// <summary>
+        /// Draws the pattern content at the specified locations.
+        /// </summary>
+        /// <param name="map">The map generation context.</param>
+        /// <param name="drawLocs">The locations where the pattern should be applied.</param>
         protected abstract void DrawOnLocs(T map, List<Loc> drawLocs);
     }
 
+    /// <summary>
+    /// Defines a pattern to be placed in rooms, referencing a map file and extension behavior.
+    /// </summary>
     [Serializable]
     public struct PatternPlan
     {
+        /// <summary>
+        /// Determines how the pattern extends when the room is larger than the pattern.
+        /// </summary>
         public enum PatternExtend
         {
+            /// <summary>Centers the pattern without extension.</summary>
             Single,
+            /// <summary>Extends edges outward to fill larger rooms.</summary>
             Extrapolate,
+            /// <summary>Tiles the pattern in one dimension (horizontal or vertical based on transpose).</summary>
             Repeat1D,
+            /// <summary>Tiles the pattern in both dimensions to fill the room.</summary>
             Repeat2D
         }
 
@@ -260,8 +288,16 @@ namespace PMDC.LevelGen
         [RogueEssence.Dev.DataFolder(0, "Map/")]
         public string MapID;
 
+        /// <summary>
+        /// How the pattern extends to fill rooms larger than the template.
+        /// </summary>
         public PatternExtend Pattern;
 
+        /// <summary>
+        /// Creates a new pattern plan with the specified map and extension behavior.
+        /// </summary>
+        /// <param name="mapID">The map file ID to load as a pattern template.</param>
+        /// <param name="pattern">How to extend the pattern for larger rooms.</param>
         public PatternPlan(string mapID, PatternExtend pattern)
         {
             MapID = mapID;

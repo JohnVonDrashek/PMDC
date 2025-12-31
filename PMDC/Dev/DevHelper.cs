@@ -23,12 +23,26 @@ using System.Text.RegularExpressions;
 
 namespace PMDC.Dev
 {
-
+    /// <summary>
+    /// Provides helper methods for development tools including monster data analysis,
+    /// move/ability lookups, and Lua script migration utilities.
+    /// </summary>
     public static class DevHelper
     {
-
+        /// <summary>
+        /// Delegate for retrieving named game data entries by index.
+        /// </summary>
+        /// <param name="ii">The index of the data entry to retrieve.</param>
+        /// <returns>The entry data at the specified index.</returns>
         public delegate IEntryData GetNamedData(int ii);
 
+        /// <summary>
+        /// Adds a monster and all its evolutions to the found dictionary with their encounter locations.
+        /// </summary>
+        /// <param name="found">Dictionary mapping monster IDs to their encounter tags and locations.</param>
+        /// <param name="index">The monster ID to add.</param>
+        /// <param name="tag">A tag describing how the monster was found (e.g., "STARTER", "VAULT").</param>
+        /// <param name="encounter">The zone location where the monster can be encountered.</param>
         public static void AddWithEvos(Dictionary<MonsterID, HashSet<(string, ZoneLoc)>> found, MonsterID index, string tag, ZoneLoc encounter)
         {
             addMonster(found, index, tag, encounter);
@@ -37,6 +51,13 @@ namespace PMDC.Dev
                 addMonster(found, evo, "EVOLVE", ZoneLoc.Invalid);
         }
 
+        /// <summary>
+        /// Adds a monster to the found dictionary with a tag and encounter location.
+        /// </summary>
+        /// <param name="found">Dictionary mapping monster IDs to their encounter tags and locations.</param>
+        /// <param name="index">The monster ID to add.</param>
+        /// <param name="tag">A tag describing how the monster was found (e.g., "STARTER", "VAULT").</param>
+        /// <param name="encounter">The zone location where the monster can be encountered.</param>
         private static void addMonster(Dictionary<MonsterID, HashSet<(string, ZoneLoc)>> found, MonsterID index, string tag, ZoneLoc encounter)
         {
             if (!found.ContainsKey(index))
@@ -44,6 +65,11 @@ namespace PMDC.Dev
             found[index].Add((tag, encounter));
         }
 
+        /// <summary>
+        /// Finds all members of a monster's evolutionary family, starting from the earliest stage.
+        /// </summary>
+        /// <param name="firstStage">The species ID to start searching from (will trace back to find the first stage).</param>
+        /// <returns>An enumerable of all MonsterIDs in the evolutionary family.</returns>
         public static IEnumerable<MonsterID> FindMonFamily(string firstStage)
         {
             MonsterData data = DataManager.Instance.GetMonster(firstStage);
@@ -65,11 +91,11 @@ namespace PMDC.Dev
         }
 
         /// <summary>
-        /// 
+        /// Recursively finds all evolution chains from a given monster form, filtering based on release status if needed.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="encountersOnly">For use for encounter data only.</param>
-        /// <returns></returns>
+        /// <param name="index">The monster form to find evolutions for.</param>
+        /// <param name="encountersOnly">If true, only includes released and non-temporary forms (for encounter data). If false, includes all forms.</param>
+        /// <returns>An enumerable of all evolved MonsterIDs in the evolution chain.</returns>
         private static IEnumerable<MonsterID> findEvos(MonsterID index, bool encountersOnly)
         {
             MonsterData data = DataManager.Instance.GetMonster(index.Species);
@@ -90,6 +116,14 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Recursively extracts monster spawn data from an object, handling various collection types and special spawn classes.
+        /// </summary>
+        /// <param name="foundSpecies">Dictionary to accumulate found monster species with their locations.</param>
+        /// <param name="member">The object to extract spawn data from (can be a MobSpawn, array, collection, or complex object).</param>
+        /// <param name="recruitableOnly">If true, filters out unrecruitable monster spawns.</param>
+        /// <param name="tag">A tag describing the source type (e.g., "VAULT", "HOUSE").</param>
+        /// <param name="encounter">The zone location to associate with found monsters.</param>
         private static void extractMobSpawnFromObject(Dictionary<MonsterID, HashSet<(string, ZoneLoc)>> foundSpecies, object member, bool recruitableOnly, string tag, ZoneLoc encounter)
         {
             Type type = member.GetType();
@@ -172,6 +206,14 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Extracts monster spawn data from all editable members of an object via reflection.
+        /// </summary>
+        /// <param name="foundSpecies">Dictionary to accumulate found monster species with their locations.</param>
+        /// <param name="obj">The object whose members will be inspected for spawn data.</param>
+        /// <param name="recruitableOnly">If true, filters out unrecruitable monster spawns.</param>
+        /// <param name="tag">A tag describing the source type to propagate to child members.</param>
+        /// <param name="encounter">The zone location to associate with found monsters.</param>
         private static void extractMobSpawnsFromClass(Dictionary<MonsterID, HashSet<(string, ZoneLoc)>> foundSpecies, object obj, bool recruitableOnly, string tag, ZoneLoc encounter)
         {
             //go through all members and add for them
@@ -201,6 +243,11 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Scans all zones to find every monster that can appear in the game.
+        /// </summary>
+        /// <param name="recruitableOnly">If true, only includes monsters that can be recruited (excludes unrecruitable spawns).</param>
+        /// <returns>A dictionary mapping each monster ID to a set of tags and locations where it can be found.</returns>
         public static Dictionary<MonsterID, HashSet<(string, ZoneLoc)>> GetAllAppearingMonsters(bool recruitableOnly)
         {
             //go through all dungeons
@@ -291,6 +338,12 @@ namespace PMDC.Dev
             //}
         }
 
+        /// <summary>
+        /// Finds all monsters that have a specific ability and/or a set of moves.
+        /// </summary>
+        /// <param name="ability">The ability ID to search for (can be empty to skip ability check).</param>
+        /// <param name="moves">Array of move IDs that the monster must learn.</param>
+        /// <returns>A list of MonsterIDs that match the criteria.</returns>
         public static List<MonsterID> FindMoveAbilityUsers(string ability, string[] moves)
         {
             List<MonsterID> results = new List<MonsterID>();
@@ -308,6 +361,13 @@ namespace PMDC.Dev
             return results;
         }
 
+        /// <summary>
+        /// Checks if a monster form has a specific ability and can learn all specified moves.
+        /// </summary>
+        /// <param name="ability">The ability ID to check for (can be empty to skip ability check).</param>
+        /// <param name="moves">Array of move IDs to check for.</param>
+        /// <param name="entry">The monster form data to check.</param>
+        /// <returns>True if the form has the ability and can learn all moves; otherwise false.</returns>
         public static bool HasAbilityMoves(string ability, string[] moves, BaseMonsterForm entry)
         {
             //check if form has ability given
@@ -338,9 +398,10 @@ namespace PMDC.Dev
 
 
         /// <summary>
-        /// Gets the abilities from a text file in the path, and prints the monsters that are capable of each.
+        /// Gets the abilities from a text file and prints the monsters that are capable of each.
+        /// Reads ability names from the file (separated by '/' on each line) and outputs monsters that have those abilities.
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="path">The file path to read ability names from (one line per ability, names separated by '/').</param>
         public static void PrintAbilityUsers(string path)
         {
             try
@@ -389,9 +450,10 @@ namespace PMDC.Dev
         }
 
         /// <summary>
-        /// Gets the moves from a text file in the path, and prints the monsters that are capable of using each.
+        /// Gets the moves from a text file and prints the monsters that are capable of using each.
+        /// Note: This method is currently not fully implemented (body is commented out).
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="path">The file path to read move names from (one line per move, names separated by '/').</param>
         public static void PrintMoveUsers(string path)
         {
             //try
@@ -440,6 +502,13 @@ namespace PMDC.Dev
         }
 
 
+        /// <summary>
+        /// Performs a find-and-replace operation on all Lua files in a directory using regular expressions.
+        /// </summary>
+        /// <param name="path">The directory path to search for Lua files.</param>
+        /// <param name="recursive">If true, searches recursively through subdirectories; otherwise only searches the specified directory.</param>
+        /// <param name="regexFrom">The regular expression pattern to search for.</param>
+        /// <param name="replace">The replacement string (can include regex group references like $1, $2, etc.).</param>
         private static void FindReplaceFiles(string path, bool recursive, string regexFrom, string replace)
         {
             foreach (string file in Directory.GetFiles(path, "*.lua"))
@@ -458,6 +527,10 @@ namespace PMDC.Dev
             }
         }
 
+        /// <summary>
+        /// Converts Lua scripts from the old format (pre-v0.8.1) to the new namespace-based format.
+        /// Handles script reorganization, module path updates, and removes deprecated files.
+        /// </summary>
         public static void ConvertLua()
         {
             //check against v0.8.1 or lower

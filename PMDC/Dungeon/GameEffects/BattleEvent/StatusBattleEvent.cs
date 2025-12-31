@@ -18,10 +18,8 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle effects that apply or remove statuses
-
     /// <summary>
-    /// Event that applies a status to the character
+    /// Event that applies a status to the character.
     /// </summary>
     [Serializable]
     public class StatusBattleEvent : BattleEvent
@@ -60,13 +58,30 @@ namespace PMDC.Dungeon
         public StringKey TriggerMsg;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
-        /// </summary> 
+        /// The list of battle VFXs played if the condition is met.
+        /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public StatusBattleEvent() { Anims = new List<BattleAnimEvent>(); StatusID = ""; }
+
+        /// <summary>
+        /// Creates a new StatusBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public StatusBattleEvent(string statusID, bool affectTarget, bool silentCheck)
          : this(statusID, affectTarget, silentCheck, false, false) { }
+
+        /// <summary>
+        /// Creates a new StatusBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
         public StatusBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous)
         {
             StatusID = statusID;
@@ -76,6 +91,17 @@ namespace PMDC.Dungeon
             Anonymous = anonymous;
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new StatusBattleEvent with the specified parameters and animations.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="trigger">The trigger message to display.</param>
+        /// <param name="anims">The animations to play.</param>
         public StatusBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous, StringKey trigger, params BattleAnimEvent[] anims)
         {
             StatusID = statusID;
@@ -87,6 +113,8 @@ namespace PMDC.Dungeon
             Anims = new List<BattleAnimEvent>();
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected StatusBattleEvent(StatusBattleEvent other)
         {
             StatusID = other.StatusID;
@@ -100,9 +128,17 @@ namespace PMDC.Dungeon
                 Anims.Add((BattleAnimEvent)anim.Clone());
 
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusBattleEvent(this); }
 
+        /// <summary>
+        /// Modifies the status before applying. Override to customize status states.
+        /// </summary>
+        /// <returns>True to continue applying the status, false to cancel.</returns>
         protected virtual bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status) { return true; }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -116,6 +152,16 @@ namespace PMDC.Dungeon
         }
 
 
+        /// <summary>
+        /// Applies the status effect to the target character.
+        /// </summary>
+        /// <param name="owner">The owner of the event.</param>
+        /// <param name="ownerChar">The character that owns this event.</param>
+        /// <param name="statusID">The ID of the status to apply.</param>
+        /// <param name="target">The character receiving the status.</param>
+        /// <param name="origin">The character originating the status.</param>
+        /// <param name="context">The battle context.</param>
+        /// <param name="cancel">Abort status for cancellation tracking.</param>
         protected IEnumerator<YieldInstruction> applyStatus(GameEventOwner owner, Character ownerChar, string statusID, Character target, Character origin, BattleContext context, AbortStatus cancel)
         {
             StatusEffect status = new StatusEffect(statusID);
@@ -166,36 +212,71 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that adds or substracts the stack amount of a status. 
-    /// This is usually used for stat boosts stauses such as attack, defense, evasiveness, etc.
+    /// Event that adds or subtracts the stack amount of a status.
+    /// This is usually used for stat boost statuses such as attack, defense, evasiveness, etc.
     /// </summary>
     [Serializable]
     public class StatusStackBattleEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The amount to add or subtract by
+        /// The amount to add or subtract by.
         /// </summary>
         public int Stack;
 
+        /// <inheritdoc/>
         public StatusStackBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new StatusStackBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="stack">The stack amount to add or subtract.</param>
         public StatusStackBattleEvent(string statusID, bool affectTarget, bool silentCheck, int stack) : this(statusID, affectTarget, silentCheck, false, false, stack) { }
+
+        /// <summary>
+        /// Creates a new StatusStackBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="stack">The stack amount to add or subtract.</param>
         public StatusStackBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous, int stack)
             : base(statusID, affectTarget, silentCheck, selfInflict, anonymous)
         {
             Stack = stack;
         }
+
+        /// <summary>
+        /// Creates a new StatusStackBattleEvent with a trigger message.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="stack">The stack amount to add or subtract.</param>
+        /// <param name="trigger">The trigger message to display.</param>
         public StatusStackBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous, int stack, StringKey trigger)
             : base(statusID, affectTarget, silentCheck, selfInflict, anonymous, trigger)
         {
             Stack = stack;
         }
+
+        /// <inheritdoc/>
         protected StatusStackBattleEvent(StatusStackBattleEvent other)
             : base(other)
         {
             Stack = other.Stack;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusStackBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             status.StatusStates.Set(new StackState(Stack));
@@ -204,32 +285,56 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that adds the specified type to the ElementState status state when the status is applied
+    /// Event that adds the specified type to the ElementState status state when the status is applied.
     /// </summary>
     [Serializable]
     public class StatusElementBattleEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The type to add to ElementState
+        /// The type to add to ElementState.
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string Element;
 
+        /// <inheritdoc/>
         public StatusElementBattleEvent() { Element = ""; }
+
+        /// <summary>
+        /// Creates a new StatusElementBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="element">The element type to set.</param>
         public StatusElementBattleEvent(string statusID, bool affectTarget, bool silentCheck, string element) : this(statusID, affectTarget, silentCheck, false, false, element) { }
+
+        /// <summary>
+        /// Creates a new StatusElementBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="element">The element type to set.</param>
         public StatusElementBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous, string element)
             : base(statusID, affectTarget, silentCheck, selfInflict, anonymous)
         {
             Element = element;
         }
+
+        /// <inheritdoc/>
         protected StatusElementBattleEvent(StatusElementBattleEvent other)
             : base(other)
         {
             Element = other.Element;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusElementBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             status.StatusStates.Set(new ElementState(Element));
@@ -238,25 +343,52 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that adds status states when the status is applied
+    /// Event that adds status states when the status is applied.
     /// </summary>
     [Serializable]
     public class StatusStateBattleEvent : StatusBattleEvent
     {
+        /// <summary>
+        /// The collection of status states to add to the applied status.
+        /// </summary>
         public StateCollection<StatusState> States;
 
+        /// <inheritdoc/>
         public StatusStateBattleEvent() { States = new StateCollection<StatusState>(); }
+
+        /// <summary>
+        /// Creates a new StatusStateBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="states">The status states to add.</param>
         public StatusStateBattleEvent(string statusID, bool affectTarget, bool silentCheck, StateCollection<StatusState> states) : this(statusID, affectTarget, silentCheck, false, false, states) { }
+
+        /// <summary>
+        /// Creates a new StatusStateBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="states">The status states to add.</param>
         public StatusStateBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous, StateCollection<StatusState> states) : base(statusID, affectTarget, silentCheck, selfInflict, anonymous)
         {
             States = states;
         }
+
+        /// <inheritdoc/>
         protected StatusStateBattleEvent(StatusStateBattleEvent other) : base(other)
         {
             States = other.States.Clone();
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusStateBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             foreach (StatusState state in States)
@@ -266,16 +398,29 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the value in the SlotState based on what move slot was used when the status is applied
+    /// Event that sets the value in the IDState based on what item was used when the status is applied.
     /// </summary>
     [Serializable]
     public class StatusItemBattleEvent : StatusBattleEvent
     {
+        /// <inheritdoc/>
         public StatusItemBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new StatusItemBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public StatusItemBattleEvent(string statusID, bool affectTarget, bool silentCheck) : base(statusID, affectTarget, silentCheck) { }
+
+        /// <inheritdoc/>
         protected StatusItemBattleEvent(StatusItemBattleEvent other) : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusItemBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             if (context.ActionType == BattleActionType.Item || context.ActionType == BattleActionType.Throw)
@@ -290,39 +435,60 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that disables a move slot by using the value in the SlotState status state in the specified status when the status is applied
+    /// Event that disables a move slot by using the value in the SlotState status state in the specified status when the status is applied.
     /// </summary>
     [Serializable]
     public class DisableBattleEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The status containing the SlotState status state
+        /// The status containing the SlotState status state.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string LastSlotStatusID;
 
         /// <summary>
-        /// UNUSED
+        /// UNUSED - Reserved for future random fallback behavior.
         /// </summary>
         public bool RandomFallback;
 
+        /// <inheritdoc/>
         public DisableBattleEvent() { LastSlotStatusID = ""; }
+
+        /// <summary>
+        /// Creates a new DisableBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="prevMoveID">The status ID that tracks the last used move slot.</param>
         public DisableBattleEvent(string statusID, string prevMoveID)
             : this(statusID, prevMoveID, false, false, false) { }
+
+        /// <summary>
+        /// Creates a new DisableBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="prevMoveID">The status ID that tracks the last used move slot.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="randomFallback">Whether to use random fallback (currently unused).</param>
         public DisableBattleEvent(string statusID, string prevMoveID, bool selfInflict, bool anonymous, bool randomFallback)
             : base(statusID, true, false, selfInflict, anonymous)
         {
             LastSlotStatusID = prevMoveID;
             RandomFallback = randomFallback;
         }
+
+        /// <inheritdoc/>
         protected DisableBattleEvent(DisableBattleEvent other) : base(other)
         {
             LastSlotStatusID = other.LastSlotStatusID;
             RandomFallback = other.RandomFallback;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new DisableBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             StatusEffect testStatus = target.GetStatusEffect(LastSlotStatusID);
@@ -358,17 +524,35 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that sets the value in the SlotState based on what move slot was used when the status is applied
+    /// Event that sets the value in the SlotState based on what move slot was used when the status is applied.
+    /// Used to counter-disable the attacker's move.
     /// </summary>
     [Serializable]
     public class CounterDisableBattleEvent : StatusBattleEvent
     {
+        /// <inheritdoc/>
         public CounterDisableBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new CounterDisableBattleEvent with the specified status ID.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
         public CounterDisableBattleEvent(string statusID) : base(statusID, false, true, false, false) { }
+
+        /// <summary>
+        /// Creates a new CounterDisableBattleEvent with a trigger message.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="trigger">The trigger message to display.</param>
         public CounterDisableBattleEvent(string statusID, StringKey trigger) : base(statusID, false, true, false, false, trigger) { }
+
+        /// <inheritdoc/>
         protected CounterDisableBattleEvent(CounterDisableBattleEvent other) : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CounterDisableBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             if (context.ActionType == BattleActionType.Skill && context.UsageSlot > BattleContext.DEFAULT_ATTACK_SLOT && context.UsageSlot < CharData.MAX_SKILL_SLOTS)
@@ -384,30 +568,44 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that increases the stack amount of a status if the map status is present
-    /// This is usually used for stat boosts stauses such as attack, defense, evasiveness, etc.
+    /// Event that increases the stack amount of a status if the map status is present.
+    /// This is usually used for stat boost statuses such as attack, defense, evasiveness, etc.
     /// </summary>
     [Serializable]
     public class WeatherStackEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The map status to check for
+        /// The map status to check for.
         /// </summary>
         [JsonConverter(typeof(MapStatusConverter))]
         [DataType(0, DataManager.DataType.MapStatus, false)]
         public string WeatherID;
 
+        /// <inheritdoc/>
         public WeatherStackEvent() { WeatherID = ""; }
+
+        /// <summary>
+        /// Creates a new WeatherStackEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="weatherID">The map status ID to check for bonus stacking.</param>
         public WeatherStackEvent(string statusID, bool affectTarget, bool silentCheck, string weatherID) : base(statusID, affectTarget, silentCheck, false, false)
         {
             WeatherID = weatherID;
         }
+
+        /// <inheritdoc/>
         protected WeatherStackEvent(WeatherStackEvent other) : base(other)
         {
             WeatherID = other.WeatherID;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new WeatherStackEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             int stack = 1;
@@ -420,30 +618,46 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that sets the HPState based on the character's max HP divided by the specified denominator 
-    /// This is usually used for stat boosts stauses such as attack, defense, evasiveness, etc.
+    /// Event that sets the HPState based on the character's max HP divided by the specified denominator.
+    /// Used for status effects that scale with character HP.
     /// </summary>
     [Serializable]
     public class StatusHPBattleEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The value to divide the max HP by
+        /// The value to divide the max HP by.
         /// </summary>
         public int HPFraction;
 
+        /// <inheritdoc/>
         public StatusHPBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new StatusHPBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
+        /// <param name="selfInflict">Whether the status is self-inflicted.</param>
+        /// <param name="anonymous">Whether to hide the source.</param>
+        /// <param name="hpFraction">The fraction to divide max HP by.</param>
         public StatusHPBattleEvent(string statusID, bool affectTarget, bool silentCheck, bool selfInflict, bool anonymous, int hpFraction)
             : base(statusID, affectTarget, silentCheck, selfInflict, anonymous)
         {
             HPFraction = hpFraction;
         }
+
+        /// <inheritdoc/>
         protected StatusHPBattleEvent(StatusHPBattleEvent other)
             : base(other)
         {
             HPFraction = other.HPFraction;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusHPBattleEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             status.StatusStates.Set(new HPState(Math.Max(1, origin.MaxHP / HPFraction)));
@@ -452,19 +666,31 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that calculates the damage done to the character and sets the value in the HPState status state
+    /// Event that calculates the damage done to the character and sets the value in the HPState status state.
+    /// Used for delayed damage attacks like Future Sight.
     /// </summary>
     [Serializable]
     public class FutureAttackEvent : StatusBattleEvent
     {
+        /// <inheritdoc/>
         public FutureAttackEvent() { }
+
+        /// <summary>
+        /// Creates a new FutureAttackEvent with the specified status ID.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
         public FutureAttackEvent(string statusID)
             : base(statusID, true, false)
         { }
+
+        /// <inheritdoc/>
         protected FutureAttackEvent(FutureAttackEvent other)
             : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FutureAttackEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             int dmg = DamageFormulaEvent.CalculateDamageFormula(owner, context);
@@ -475,18 +701,32 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that checks the damage done to the character and sets the value in the HPState status state 
+    /// Event that checks the damage done to the character and sets the value in the HPState status state.
+    /// Used for effects that deal damage over time based on the initial hit.
     /// </summary>
     [Serializable]
     public class GiveContinuousDamageEvent : StatusBattleEvent
     {
+        /// <inheritdoc/>
         public GiveContinuousDamageEvent() { }
+
+        /// <summary>
+        /// Creates a new GiveContinuousDamageEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public GiveContinuousDamageEvent(string statusID, bool affectTarget, bool silentCheck)
             : base(statusID, affectTarget, silentCheck, false, false) { }
+
+        /// <inheritdoc/>
         protected GiveContinuousDamageEvent(GiveContinuousDamageEvent other)
             : base(other) { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new GiveContinuousDamageEvent(this); }
 
+        /// <inheritdoc/>
         protected override bool ModStatus(GameEventOwner owner, BattleContext context, Character target, Character origin, StatusEffect status)
         {
             status.StatusStates.Set(new HPState(Math.Max(context.GetContextStateInt<DamageDealt>(0), 1)));
@@ -495,25 +735,40 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that make the user drop the target by applying the original status and if successful, applies the alternate status
+    /// Event that makes the user drop the target by applying the original status and if successful, applies the alternate status.
+    /// Used for moves like Sky Drop that carry the target before releasing them.
     /// </summary>
     [Serializable]
     public class SkyDropStatusBattleEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The alternate status to apply 
+        /// The alternate status to apply to the user.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string AltStatusID;
 
+        /// <inheritdoc/>
         public SkyDropStatusBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new SkyDropStatusBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to apply to the target.</param>
+        /// <param name="altStatusID">The alternate status ID to apply to the user.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public SkyDropStatusBattleEvent(string statusID, string altStatusID, bool affectTarget, bool silentCheck)
             : base(statusID, affectTarget, silentCheck, false, false) { AltStatusID = altStatusID; }
+
+        /// <inheritdoc/>
         protected SkyDropStatusBattleEvent(SkyDropStatusBattleEvent other)
             : base(other) { AltStatusID = other.AltStatusID; }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new SkyDropStatusBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -540,26 +795,40 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that applies the original status and if successful, applies the alternate status 
-    /// This event can only be used on statuses
+    /// Event that applies the original status and if successful, applies the alternate status.
+    /// This event can only be used on statuses.
     /// </summary>
     [Serializable]
     public class CoupledStatusBattleEvent : StatusBattleEvent
     {
         /// <summary>
-        /// The alternate status to apply
+        /// The alternate status to apply.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string AltStatusID;
 
+        /// <inheritdoc/>
         public CoupledStatusBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new CoupledStatusBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The primary status ID to apply to the target.</param>
+        /// <param name="altStatusID">The alternate status ID to apply to the origin.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="silentCheck">Whether to suppress failure messages.</param>
         public CoupledStatusBattleEvent(string statusID, string altStatusID, bool affectTarget, bool silentCheck)
             : base(statusID, affectTarget, silentCheck, false, false) { AltStatusID = altStatusID; }
+
+        /// <inheritdoc/>
         protected CoupledStatusBattleEvent(CoupledStatusBattleEvent other)
             : base(other) { AltStatusID = other.AltStatusID; }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new CoupledStatusBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -577,28 +846,39 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that causes the status to spread if the character makes contact
-    /// This event can only be used on statuses
+    /// Event that causes the status to spread if the character makes contact.
+    /// This event can only be used on statuses.
     /// </summary>
     [Serializable]
     public class StatusSpreadEvent : BattleEvent
     {
         /// <summary>
-        /// Whether to apply the status to the user or target
-        /// </summary> 
+        /// Whether to apply the status to the user or target.
+        /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public StatusSpreadEvent() { }
+
+        /// <summary>
+        /// Creates a new StatusSpreadEvent with the specified target.
+        /// </summary>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
         public StatusSpreadEvent(bool affectTarget)
         {
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected StatusSpreadEvent(StatusSpreadEvent other)
         {
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new StatusSpreadEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -623,36 +903,48 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that removes the specified status
+    /// Event that removes the specified status.
     /// </summary>
     [Serializable]
     public class RemoveStatusBattleEvent : BattleEvent
     {
         /// <summary>
-        /// The status to remove
+        /// The status to remove.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string StatusID;
-        
+
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public RemoveStatusBattleEvent() { StatusID = ""; }
+
+        /// <summary>
+        /// Creates a new RemoveStatusBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to remove.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
         public RemoveStatusBattleEvent(string statusID, bool affectTarget)
         {
             StatusID = statusID;
             AffectTarget = affectTarget;
         }
+
+        /// <inheritdoc/>
         protected RemoveStatusBattleEvent(RemoveStatusBattleEvent other)
         {
             StatusID = other.StatusID;
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveStatusBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -664,34 +956,43 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that removes all the stat changes for the specified stat
+    /// Event that removes all the stat changes for the specified stat.
     /// </summary>
     [Serializable]
     public class RemoveStatusStackBattleEvent : BattleEvent
     {
         /// <summary>
-        /// The status affected
+        /// The status affected.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string StatusID;
-        
+
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
-        
+
         /// <summary>
-        /// If the stack amount is negative, then reset the stack amount
+        /// If the stack amount is negative, then reset the stack amount.
         /// </summary>
         public bool Negative;
 
         /// <summary>
-        /// If the stack amount is positive, then reset the stack amount
+        /// If the stack amount is positive, then reset the stack amount.
         /// </summary>
         public bool Positive;
 
+        /// <inheritdoc/>
         public RemoveStatusStackBattleEvent() { StatusID = ""; }
+
+        /// <summary>
+        /// Creates a new RemoveStatusStackBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="statusID">The status ID to check.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="negative">Whether to remove if stack is negative.</param>
+        /// <param name="positive">Whether to remove if stack is positive.</param>
         public RemoveStatusStackBattleEvent(string statusID, bool affectTarget, bool negative, bool positive)
         {
             StatusID = statusID;
@@ -699,6 +1000,8 @@ namespace PMDC.Dungeon
             Negative = negative;
             Positive = positive;
         }
+
+        /// <inheritdoc/>
         protected RemoveStatusStackBattleEvent(RemoveStatusStackBattleEvent other)
         {
             StatusID = other.StatusID;
@@ -706,8 +1009,11 @@ namespace PMDC.Dungeon
             Negative = other.Negative;
             Positive = other.Positive;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveStatusStackBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -726,39 +1032,47 @@ namespace PMDC.Dungeon
     
 
     /// <summary>
-    /// Event that removes the status if the status contains the one of the specified status states
+    /// Event that removes the status if the status contains one of the specified status states.
     /// </summary>
     [Serializable]
     public class RemoveStateStatusBattleEvent : BattleEvent
     {
-
         /// <summary>
-        /// The list of status states to check for
+        /// The list of status states to check for.
         /// </summary>
         [StringTypeConstraint(1, typeof(StatusState))]
         public List<FlagType> States;
 
         /// <summary>
-        /// Whether to affect the target or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
-        
+
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log.
         /// </summary>
         [StringKey(0, true)]
         public StringKey Msg;
-        
+
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public RemoveStateStatusBattleEvent()
         {
             States = new List<FlagType>();
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new RemoveStateStatusBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="state">The status state type to check for.</param>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="msg">The message to display.</param>
+        /// <param name="anims">The animations to play.</param>
         public RemoveStateStatusBattleEvent(Type state, bool affectTarget, StringKey msg, params BattleAnimEvent[] anims) : this()
         {
             States.Add(new FlagType(state));
@@ -766,6 +1080,8 @@ namespace PMDC.Dungeon
             Msg = msg;
             Anims.AddRange(anims);
         }
+
+        /// <inheritdoc/>
         protected RemoveStateStatusBattleEvent(RemoveStateStatusBattleEvent other) : this()
         {
             States.AddRange(other.States);
@@ -774,8 +1090,11 @@ namespace PMDC.Dungeon
             foreach (BattleAnimEvent anim in other.Anims)
                 Anims.Add((BattleAnimEvent)anim.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveStateStatusBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             Character target = (AffectTarget ? context.Target : context.User);
@@ -812,28 +1131,39 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that removes its status from the user, automatically determining which ones they are
-    /// This event can only be used on statuses
+    /// Event that removes its status from the user, automatically determining which ones they are.
+    /// This event can only be used on statuses.
     /// </summary>
     [Serializable]
     public class RemoveBattleEvent : BattleEvent
     {
         /// <summary>
-        /// Whether to display the message associated with this event
-        /// </summary> 
+        /// Whether to display the message associated with this event.
+        /// </summary>
         public bool ShowMessage;
 
+        /// <inheritdoc/>
         public RemoveBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new RemoveBattleEvent with the specified message visibility.
+        /// </summary>
+        /// <param name="showMessage">Whether to show the removal message.</param>
         public RemoveBattleEvent(bool showMessage)
         {
             ShowMessage = showMessage;
         }
+
+        /// <inheritdoc/>
         protected RemoveBattleEvent(RemoveBattleEvent other)
         {
             ShowMessage = other.ShowMessage;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             yield return CoroutineManager.Instance.StartCoroutine(ownerChar.RemoveStatusEffect(((StatusEffect)owner).ID, ShowMessage));
@@ -842,14 +1172,18 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event used specifically by statuses and removes itself when the character receives damage
+    /// Event used specifically by statuses and removes itself when the character receives damage.
     /// </summary>
     [Serializable]
     public class RemoveOnDamageEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public RemoveOnDamageEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveOnDamageEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.GetContextStateInt<DamageDealt>(0) > 0)
@@ -864,7 +1198,14 @@ namespace PMDC.Dungeon
     [Serializable]
     public class RemoveOnActionEvent : BattleEvent
     {
+        /// <summary>
+        /// Whether to display a message when the status is removed.
+        /// </summary>
         public bool ShowMessage;
+
+        /// <summary>
+        /// Whether to wait for animations to finish before removing the status.
+        /// </summary>
         public bool WaitAnimations;
 
         public RemoveOnActionEvent() { }
@@ -991,25 +1332,52 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that increments the AttackHitTotal global context state
+    /// Event that boosts the highest stat of the target.
     /// </summary>
     [Serializable]
     public class AffectHighestStatBattleEvent : BattleEvent
     {
+        /// <summary>
+        /// Whether to affect the target or user.
+        /// </summary>
         public bool AffectTarget;
+
+        /// <summary>
+        /// The Attack stat status to potentially boost.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string AtkStat;
+
+        /// <summary>
+        /// The Defense stat status to potentially boost.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string DefStat;
+
+        /// <summary>
+        /// The Sp.Atk stat status to potentially boost.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string SpAtkStat;
+
+        /// <summary>
+        /// The Sp.Def stat status to potentially boost.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string SpDefStat;
+
+        /// <summary>
+        /// Whether to hide the source of the status effect.
+        /// </summary>
         public bool Anonymous;
+
+        /// <summary>
+        /// The amount to boost the stat by.
+        /// </summary>
         public int Stack;
 
         public AffectHighestStatBattleEvent()
@@ -1092,14 +1460,21 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that raises the Attack or 
+    /// Event that raises either Attack or Sp.Atk based on the target's lower defense stat.
     /// </summary>
     [Serializable]
     public class DownloadEvent : BattleEvent
     {
+        /// <summary>
+        /// The Attack stat status to boost.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string AtkStat;
+
+        /// <summary>
+        /// The Sp.Atk stat status to boost.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string SpAtkStat;

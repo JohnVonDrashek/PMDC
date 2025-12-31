@@ -13,31 +13,69 @@ namespace PMDC.LevelGen
     // TODO: v1.1: Delete
     /// <summary>
     /// Generates a boss room with specific tiles and mobs.
-    /// DEPRECATED
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <remarks>
+    /// This class is DEPRECATED and marked for deletion in v1.1.
+    /// It creates a boss battle encounter in a room with predefined terrain and mob spawns,
+    /// triggered by stepping on a specific tile.
+    /// </remarks>
+    /// <typeparam name="T">The map generation context type, which must be a <see cref="ListMapGenContext"/>.</typeparam>
     [Serializable]
     public class RoomGenSpecificBoss<T> : RoomGenSpecific<T> where T : ListMapGenContext
     {
+        /// <summary>
+        /// The boss monsters to spawn when the boss battle is triggered by stepping on the trigger tile.
+        /// </summary>
         public List<MobSpawn> Bosses;
+
+        /// <summary>
+        /// The ID of the tile used to trigger the boss battle.
+        /// </summary>
+        /// <remarks>
+        /// This tile, when stepped on, will initiate the boss encounter with the configured bosses and music.
+        /// </remarks>
         [JsonConverter(typeof(TileConverter))]
         [DataType(0, DataManager.DataType.Tile, false)]
         public string TriggerTile;
+
+        /// <summary>
+        /// The location within the room where the trigger tile is placed.
+        /// </summary>
         public Loc Trigger;
 
+        /// <summary>
+        /// The music to play during the boss battle.
+        /// </summary>
         [Music(0)]
         public string Song;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenSpecificBoss{T}"/> class.
+        /// </summary>
         public RoomGenSpecificBoss()
         {
             Bosses = new List<MobSpawn>();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenSpecificBoss{T}"/> class with the specified dimensions.
+        /// </summary>
+        /// <param name="width">The width of the room.</param>
+        /// <param name="height">The height of the room.</param>
         public RoomGenSpecificBoss(int width, int height) : base(width, height)
         {
             Bosses = new List<MobSpawn>();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenSpecificBoss{T}"/> class with full configuration.
+        /// </summary>
+        /// <param name="width">The width of the room.</param>
+        /// <param name="height">The height of the room.</param>
+        /// <param name="roomTerrain">The terrain used for the room floor.</param>
+        /// <param name="triggerTile">The ID of the tile that triggers the boss battle.</param>
+        /// <param name="trigger">The location of the trigger tile within the room.</param>
+        /// <param name="song">The music to play during the boss battle.</param>
         public RoomGenSpecificBoss(int width, int height, ITile roomTerrain, string triggerTile, Loc trigger, string song)
             : base(width, height, roomTerrain)
         {
@@ -47,6 +85,10 @@ namespace PMDC.LevelGen
             Song = song;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoomGenSpecificBoss{T}"/> class by copying another instance.
+        /// </summary>
+        /// <param name="other">The instance to copy.</param>
         protected RoomGenSpecificBoss(RoomGenSpecificBoss<T> other) : base(other)
         {
             Bosses = new List<MobSpawn>();
@@ -56,8 +98,17 @@ namespace PMDC.LevelGen
             Trigger = other.Trigger;
             Song = other.Song;
         }
+
+        /// <inheritdoc/>
         public override RoomGen<T> Copy() { return new RoomGenSpecificBoss<T>(this); }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Draws the room onto the map with specific tiles, then creates and places an effect tile
+        /// that triggers the boss battle. The effect tile is configured with the boss spawn state,
+        /// a danger flag, bounds state, and battle music. All tiles in the room are marked for
+        /// terrain post-processing.
+        /// </remarks>
         public override void DrawOnMap(T map)
         {
             if (this.Draw.Width != this.Tiles.Length || this.Draw.Height != this.Tiles[0].Length)
@@ -114,6 +165,16 @@ namespace PMDC.LevelGen
             map.GetPostProc(Trigger + this.Draw.Start).Status |= (PostProcType.Panel | PostProcType.Item | PostProcType.Terrain);
         }
 
+        /// <summary>
+        /// Exports the boss room configuration to a standalone map file for debugging purposes.
+        /// </summary>
+        /// <remarks>
+        /// This method creates a complete Map object containing the room's tiles, configured bosses,
+        /// entry points, music, and textures. The map is then saved to disk using the DataManager.
+        /// This is useful for testing and debugging the boss room design in isolation.
+        /// Monster forms and genders are randomized if not explicitly set in the spawn configuration.
+        /// </remarks>
+        /// <param name="name">The asset name for the exported map. This name is used to save the map file to the MAP_PATH location.</param>
         public void Dump(string name)
         {
             Map map = new Map();

@@ -10,8 +10,25 @@ using System.Reflection;
 
 namespace PMDC.Dev
 {
+    /// <summary>
+    /// Custom serialization binder that handles type mapping for backward compatibility
+    /// during deserialization of older save files. Maps renamed or moved types to their
+    /// current implementations.
+    /// </summary>
     public sealed class UpgradeBinder : DefaultSerializationBinder
     {
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Applies the following version-specific type mappings for backward compatibility:
+        /// <list type="bullet">
+        /// <item><description>v0.7.0: Maps RogueEssence.LevelGen.FloorNameIDZoneStep to PMDC.LevelGen.FloorNameDropZoneStep</description></item>
+        /// <item><description>v0.7.21: Maps PMDC.Dungeon.AllyDifferentEvent to PMDC.Dungeon.AlignmentDifferentEvent</description></item>
+        /// <item><description>Legacy: Maps RefreshPreEvent to ElementMobilityEvent</description></item>
+        /// <item><description>Legacy: Maps RogueEssence.IntrudingBlobWaterStep to RogueElements.BlobWaterStep</description></item>
+        /// <item><description>Legacy: Maps RogueEssence.LevelGen.MobSpawnSettingsStep to PMDC.LevelGen.MobSpawnSettingsStep</description></item>
+        /// <item><description>Legacy: Maps RogueEssence.Data.UniversalActiveEffect to PMDC.Data.UniversalActiveEffect</description></item>
+        /// </list>
+        /// </remarks>
         public override Type BindToType(string assemblyName, string typeName)
         {
             //TODO: Remove in v1.1
@@ -45,7 +62,7 @@ namespace PMDC.Dev
                     assemblyName = assemblyName.Replace("RogueEssence", "PMDC");
                     typeName = typeName.Replace("RogueEssence.LevelGen.MobSpawnSettingsStep", "PMDC.LevelGen.MobSpawnSettingsStep");
                 }
-                
+
                 if (typeName.StartsWith("RogueEssence.Data.UniversalActiveEffect"))
                 {
                     assemblyName = assemblyName.Replace("RogueEssence", "PMDC");

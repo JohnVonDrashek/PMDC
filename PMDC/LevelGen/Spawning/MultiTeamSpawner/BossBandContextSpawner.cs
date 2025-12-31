@@ -10,16 +10,24 @@ namespace PMDC.LevelGen
     /// <summary>
     /// Spawns a team by taking X amount of individual mob spawns from the map's respawn table, and adding a mob spawn extra to the leader.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of map generation context, derived from <see cref="BaseMapGenContext"/>.</typeparam>
     [Serializable]
     public class BossBandContextSpawner<T> : IMultiTeamSpawner<T>, IBossBandContextSpawner
         where T : BaseMapGenContext
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BossBandContextSpawner{T}"/> class with an empty team size.
+        /// </summary>
         public BossBandContextSpawner()
         {
             TeamSize = RandRange.Empty;
             LeaderFeatures = new List<MobSpawnExtra>();
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BossBandContextSpawner{T}"/> class with the specified team size.
+        /// </summary>
+        /// <param name="amount">A <see cref="RandRange"/> specifying the total number of team members to spawn.</param>
         public BossBandContextSpawner(RandRange amount)
         {
             TeamSize = amount;
@@ -31,6 +39,9 @@ namespace PMDC.LevelGen
         /// </summary>
         public RandRange TeamSize { get; set; }
 
+        /// <summary>
+        /// If true, creates an ExplorerTeam instead of a MonsterTeam.
+        /// </summary>
         public bool Explorer { get; set; }
 
 
@@ -40,6 +51,11 @@ namespace PMDC.LevelGen
         public List<MobSpawnExtra> LeaderFeatures { get; set; }
 
 
+        /// <summary>
+        /// Creates the team with a leader and subordinates from the map's spawn table.
+        /// </summary>
+        /// <param name="map">The map generation context.</param>
+        /// <returns>A list containing the spawned team.</returns>
         public List<Team> GetSpawns(T map)
         {
             int chosenAmount = TeamSize.Pick(map.Rand);
@@ -88,14 +104,24 @@ namespace PMDC.LevelGen
             return resultList;
         }
 
+        /// <summary>
+        /// Returns a string representation of this spawner, including its type name and team size range.
+        /// </summary>
+        /// <returns>A formatted string containing the type name and team size range.</returns>
         public override string ToString()
         {
             return string.Format("{0}[{1}]", this.GetType().GetFormattedTypeName(), TeamSize.ToString());
         }
     }
 
+    /// <summary>
+    /// Interface for boss band context spawners that create teams with a leader and subordinates.
+    /// </summary>
     public interface IBossBandContextSpawner
     {
+        /// <summary>
+        /// Gets or sets the total number of team members to spawn.
+        /// </summary>
         RandRange TeamSize { get; set; }
     }
 }

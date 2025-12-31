@@ -15,7 +15,7 @@ namespace PMDC.LevelGen
     /// One part of several steps used to create a sealed key room, or several thereof.
     /// This step takes the target rooms and surrounds them with unbreakable walls, with one key block used to unlock them.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The context type that must implement <see cref="ListMapGenContext"/>.</typeparam>
     [Serializable]
     public class KeySealStep<T> : BaseSealStep<T> where T : ListMapGenContext
     {
@@ -41,6 +41,9 @@ namespace PMDC.LevelGen
         [DataType(0, DataManager.DataType.Item, false)]
         public string KeyItem;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="KeySealStep{T}"/> class with default empty values.
+        /// </summary>
         public KeySealStep()
         {
             LockedTile = "";
@@ -48,6 +51,12 @@ namespace PMDC.LevelGen
             KeyItem = "";
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="KeySealStep{T}"/> class with the specified tiles and key item.
+        /// </summary>
+        /// <param name="sealedTile">The tile type to use for locked barriers.</param>
+        /// <param name="keyTile">The tile type that accepts the key.</param>
+        /// <param name="keyItem">The item ID required to unlock the vault.</param>
         public KeySealStep(string sealedTile, string keyTile, string keyItem) : base()
         {
             LockedTile = sealedTile;
@@ -55,6 +64,12 @@ namespace PMDC.LevelGen
             KeyItem = keyItem;
         }
 
+        /// <summary>
+        /// Places border tiles and key mechanism around sealed rooms.
+        /// Surrounds target rooms with unbreakable barriers and creates one key tile that unlocks all locked tiles when activated with the specified key item.
+        /// </summary>
+        /// <param name="map">The map context to apply borders to.</param>
+        /// <param name="sealList">A dictionary mapping locations to their seal type (Blocked, Locked, or Key).</param>
         protected override void PlaceBorders(T map, Dictionary<Loc, SealType> sealList)
         {
             List<Loc> keyList = new List<Loc>();

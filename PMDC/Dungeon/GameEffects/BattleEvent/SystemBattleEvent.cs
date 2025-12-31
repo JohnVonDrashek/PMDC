@@ -18,35 +18,35 @@ using System.Linq;
 
 namespace PMDC.Dungeon
 {
-    // Battle effects for the base system
-
     /// <summary>
-    /// Event that occurs before the user does an action
+    /// Event that occurs before the user does an action.
+    /// Sets attack stats and tracks move usage.
     /// </summary>
     [Serializable]
     public class PreActionEvent : BattleEvent
     {
         /// <summary>
-        /// The status that will store the last used slot
+        /// The status that will store the last used slot.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string LastSlotStatusID;
 
         /// <summary>
-        /// The status that will store the last used move
+        /// The status that will store the last used move.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string LastMoveStatusID;
 
         /// <summary>
-        /// The status that will store how many times the same move was used 
+        /// The status that will store how many times the same move was used.
         /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string RepeatStatusID;
 
+        /// <inheritdoc/>
         public PreActionEvent()
         {
             LastSlotStatusID = "";
@@ -54,6 +54,12 @@ namespace PMDC.Dungeon
             RepeatStatusID = "";
         }
 
+        /// <summary>
+        /// Creates a new PreActionEvent with the specified status IDs.
+        /// </summary>
+        /// <param name="lastSlotStatusID">Status ID for tracking last used move slot.</param>
+        /// <param name="lastMoveStatusID">Status ID for tracking last used move.</param>
+        /// <param name="repeatStatusID">Status ID for tracking repeated move usage.</param>
         public PreActionEvent(string lastSlotStatusID, string lastMoveStatusID, string repeatStatusID)
         {
             LastSlotStatusID = lastSlotStatusID;
@@ -61,6 +67,7 @@ namespace PMDC.Dungeon
             RepeatStatusID = repeatStatusID;
         }
 
+        /// <inheritdoc/>
         public PreActionEvent(PreActionEvent other)
         {
             LastSlotStatusID = other.LastSlotStatusID;
@@ -68,8 +75,10 @@ namespace PMDC.Dungeon
             RepeatStatusID = other.RepeatStatusID;
         }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PreActionEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //use the correct phys/special stats
@@ -131,15 +140,19 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that occurs before the target takes the hit
-    /// This sets the target's level which defense stat they will use 
+    /// Event that occurs before the target takes the hit.
+    /// This sets the target's level and which defense stat they will use.
     /// </summary>
     [Serializable]
     public class PreHitEvent : BattleEvent
     {
+        /// <inheritdoc/>
+        public PreHitEvent() { }
 
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PreHitEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.Data.Category == BattleData.SkillCategory.Physical)
@@ -154,31 +167,42 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that groups multiple battle events into one event
+    /// Event that groups multiple battle events into one event.
     /// </summary>
     [Serializable]
     public class MultiBattleEvent : BattleEvent
     {
         /// <summary>
-        /// The list of battle events to apply
+        /// The list of battle events to apply.
         /// </summary>
         public List<BattleEvent> BaseEvents;
 
+        /// <inheritdoc/>
         public MultiBattleEvent() { BaseEvents = new List<BattleEvent>(); }
+
+        /// <summary>
+        /// Creates a new MultiBattleEvent with the specified events.
+        /// </summary>
+        /// <param name="effects">The battle events to combine.</param>
         public MultiBattleEvent(params BattleEvent[] effects)
             : this()
         {
             foreach (BattleEvent battleEffect in effects)
                 BaseEvents.Add(battleEffect);
         }
+
+        /// <inheritdoc/>
         protected MultiBattleEvent(MultiBattleEvent other)
             : this()
         {
             foreach (BattleEvent battleEffect in other.BaseEvents)
                 BaseEvents.Add((BattleEvent)battleEffect.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MultiBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             foreach (BattleEvent battleEffect in BaseEvents)
@@ -187,15 +211,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that calculates whether the target is hit, taking consideration into the move accuracy,
-    /// the user's accuracy boost, whether the moved missed last turn, etc.
+    /// Event that calculates whether the target is hit, taking into consideration the move accuracy,
+    /// the user's accuracy boost, whether the move missed last turn, etc.
     /// </summary>
     [Serializable]
     public class AttemptHitEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public AttemptHitEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new AttemptHitEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //see if it hits
@@ -284,14 +312,19 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that occurs when a move is used from the menu
-    /// This sets the battle context data from the move and checks if the user has enough PP and the move is not disabled 
+    /// Event that occurs when a move is used from the menu.
+    /// This sets the battle context data from the move and checks if the user has enough PP and the move is not disabled.
     /// </summary>
     [Serializable]
     public class PreSkillEvent : BattleEvent
     {
+        /// <inheritdoc/>
+        public PreSkillEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PreSkillEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType != BattleActionType.Skill)
@@ -342,31 +375,45 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that occurs when an item is used from the menu
-    /// This sets the battle context data from the item and checks if the item is sticky
+    /// Event that occurs when an item is used from the menu.
+    /// This sets the battle context data from the item and checks if the item is sticky.
     /// </summary>
     [Serializable]
     public class PreItemEvent : BattleEvent
     {
+        /// <summary>
+        /// Mapping of item use types to their display messages.
+        /// </summary>
         [StringKey(2, false)]
         public Dictionary<ItemData.UseType, StringKey> UseMsgs;
 
+        /// <inheritdoc/>
         public PreItemEvent()
         {
             UseMsgs = new Dictionary<ItemData.UseType, StringKey>();
         }
+
+        /// <summary>
+        /// Creates a new PreItemEvent with the specified message mappings.
+        /// </summary>
+        /// <param name="useMsgs">Dictionary mapping use types to their messages.</param>
         public PreItemEvent(Dictionary<ItemData.UseType, StringKey> useMsgs)
         {
             UseMsgs = useMsgs;
         }
+
+        /// <inheritdoc/>
         public PreItemEvent(PreItemEvent other)
         {
             UseMsgs = new Dictionary<ItemData.UseType, StringKey>();
             foreach (ItemData.UseType useType in other.UseMsgs.Keys)
                 UseMsgs[useType] = other.UseMsgs[useType];
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PreItemEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType != BattleActionType.Item)
@@ -438,14 +485,19 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that occurs when an item is thrown from the menu
-    /// This sets different battle context data depending if the item is sticky, whether the item is thrown in an arc, etc
+    /// Event that occurs when an item is thrown from the menu.
+    /// This sets different battle context data depending if the item is sticky, whether the item is thrown in an arc, etc.
     /// </summary>
     [Serializable]
     public class PreThrowEvent : BattleEvent
     {
+        /// <inheritdoc/>
+        public PreThrowEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PreThrowEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.ActionType != BattleActionType.Throw)
@@ -583,34 +635,46 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that converts a SingleCharEvent to a battle event
+    /// Event that converts a SingleCharEvent to a battle event.
     /// </summary>
     [Serializable]
     public class BattlelessEvent : BattleEvent
     {
         /// <summary>
-        /// The SingleCharEvent being converted
+        /// The SingleCharEvent being converted.
         /// </summary>
         public SingleCharEvent BaseEvent;
 
         /// <summary>
-        /// Whether to affect the targer or user
+        /// Whether to affect the target or user.
         /// </summary>
         public bool AffectTarget;
 
+        /// <inheritdoc/>
         public BattlelessEvent() { }
+
+        /// <summary>
+        /// Creates a new BattlelessEvent with the specified parameters.
+        /// </summary>
+        /// <param name="affectTarget">Whether to affect the target or user.</param>
+        /// <param name="effect">The single character event to wrap.</param>
         public BattlelessEvent(bool affectTarget, SingleCharEvent effect)
         {
             AffectTarget = affectTarget;
             BaseEvent = effect;
         }
+
+        /// <inheritdoc/>
         protected BattlelessEvent(BattlelessEvent other)
         {
             BaseEvent = (SingleCharEvent)other.BaseEvent.Clone();
             AffectTarget = other.AffectTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BattlelessEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             SingleCharContext singleContext = new SingleCharContext(AffectTarget ? context.Target : context.User);
@@ -620,32 +684,43 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that groups multiple battle events into one event
+    /// Event that groups multiple battle events into one event.
+    /// Can be used for hit-consequence effects.
     /// </summary>
     [Serializable]
     public class GroupEvent : BattleEvent
     {
-        //can be used for hit-consequence effects
         /// <summary>
-        /// The list of battle events that will be applied 
+        /// The list of battle events that will be applied.
         /// </summary>
         public List<BattleEvent> BaseEvents;
 
+        /// <inheritdoc/>
         public GroupEvent() { BaseEvents = new List<BattleEvent>(); }
+
+        /// <summary>
+        /// Creates a new GroupEvent with the specified events.
+        /// </summary>
+        /// <param name="effects">The battle events to group.</param>
         public GroupEvent(params BattleEvent[] effects)
         {
             BaseEvents = new List<BattleEvent>();
             foreach (BattleEvent effect in effects)
                 BaseEvents.Add(effect);
         }
+
+        /// <inheritdoc/>
         protected GroupEvent(GroupEvent other)
             : this()
         {
             foreach (BattleEvent battleEffect in other.BaseEvents)
                 BaseEvents.Add((BattleEvent)battleEffect.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new GroupEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             foreach (BattleEvent battleEffect in BaseEvents)
@@ -654,32 +729,43 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that chooses a random battle event
+    /// Event that chooses a random battle event.
+    /// Can be used for hit-consequence effects with randomized outcomes.
     /// </summary>
     [Serializable]
     public class ChooseOneEvent : BattleEvent
     {
-        //can be used for hit-consequence effects
         /// <summary>
-        /// The list of battle events to choose from
+        /// The list of battle events to choose from.
         /// </summary>
         public List<BattleEvent> BaseEvents;
 
+        /// <inheritdoc/>
         public ChooseOneEvent() { BaseEvents = new List<BattleEvent>(); }
+
+        /// <summary>
+        /// Creates a new ChooseOneEvent with the specified events.
+        /// </summary>
+        /// <param name="effects">The battle events to choose from.</param>
         public ChooseOneEvent(params BattleEvent[] effects)
         {
             BaseEvents = new List<BattleEvent>();
             foreach (BattleEvent effect in effects)
                 BaseEvents.Add(effect);
         }
+
+        /// <inheritdoc/>
         protected ChooseOneEvent(ChooseOneEvent other)
             : this()
         {
             foreach (BattleEvent battleEffect in other.BaseEvents)
                 BaseEvents.Add((BattleEvent)battleEffect.Clone());
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ChooseOneEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             yield return CoroutineManager.Instance.StartCoroutine(BaseEvents[DataManager.Instance.Save.Rand.Next(BaseEvents.Count)].Apply(owner, ownerChar, context));
@@ -687,42 +773,59 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that displays the dialogue when interacting with an NPC
-    /// This event should usually be placed inside the NPC's MobSpawnInteractable spawn feature
+    /// Event that displays the dialogue when interacting with an NPC.
+    /// This event should usually be placed inside the NPC's MobSpawnInteractable spawn feature.
     /// </summary>
     [Serializable]
     public class NpcDialogueBattleEvent : BattleEvent
     {
         /// <summary>
-        /// The message displayed when interacting with the NPC
+        /// The message displayed when interacting with the NPC.
         /// </summary>
         public StringKey Message;
 
         /// <summary>
-        /// Whether to display the speaker portrait
+        /// Whether to hide the speaker portrait.
         /// </summary>
         public bool HideSpeaker;
 
         /// <summary>
-        /// The portrait emotion
+        /// The portrait emotion.
         /// </summary>
         public EmoteStyle Emote;
 
+        /// <inheritdoc/>
         public NpcDialogueBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new NpcDialogueBattleEvent with the specified message.
+        /// </summary>
+        /// <param name="message">The dialogue message to display.</param>
         public NpcDialogueBattleEvent(StringKey message) : this(message, false) { }
+
+        /// <summary>
+        /// Creates a new NpcDialogueBattleEvent with the specified message and speaker visibility.
+        /// </summary>
+        /// <param name="message">The dialogue message to display.</param>
+        /// <param name="hideSpeaker">Whether to hide the speaker portrait.</param>
         public NpcDialogueBattleEvent(StringKey message, bool hideSpeaker)
         {
             Message = message;
             HideSpeaker = hideSpeaker;
         }
+
+        /// <inheritdoc/>
         protected NpcDialogueBattleEvent(NpcDialogueBattleEvent other)
         {
             Message = other.Message;
             HideSpeaker = other.HideSpeaker;
             Emote = other.Emote;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new NpcDialogueBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (DataManager.Instance.CurrentReplay == null)
@@ -743,43 +846,67 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that logs a StringKey message to the dungeon log 
+    /// Event that logs a StringKey message to the dungeon log.
     /// </summary>
     [Serializable]
     public class BattleLogBattleEvent : BattleEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log.
         /// </summary>
         public StringKey Message;
 
         /// <summary>
-        /// Whether to have short delay after displaying the message
+        /// Whether to have a short delay after displaying the message.
         /// </summary>
         public bool Delay;
 
         /// <summary>
-        /// Whether to use the target or user name when formatting the message
+        /// Whether to use the target or user name when formatting the message.
         /// </summary>
         public bool UseTarget;
 
+        /// <inheritdoc/>
         public BattleLogBattleEvent() { }
+
+        /// <summary>
+        /// Creates a new BattleLogBattleEvent with the specified message.
+        /// </summary>
+        /// <param name="message">The message to display.</param>
         public BattleLogBattleEvent(StringKey message) : this(message, false) { }
+
+        /// <summary>
+        /// Creates a new BattleLogBattleEvent with the specified message and delay.
+        /// </summary>
+        /// <param name="message">The message to display.</param>
+        /// <param name="delay">Whether to delay after displaying.</param>
         public BattleLogBattleEvent(StringKey message, bool delay) : this(message, delay, false) { }
+
+        /// <summary>
+        /// Creates a new BattleLogBattleEvent with the specified parameters.
+        /// </summary>
+        /// <param name="message">The message to display.</param>
+        /// <param name="delay">Whether to delay after displaying.</param>
+        /// <param name="useTarget">Whether to use target's name instead of user's.</param>
         public BattleLogBattleEvent(StringKey message, bool delay, bool useTarget)
         {
             Message = message;
             Delay = delay;
             UseTarget = useTarget;
         }
+
+        /// <inheritdoc/>
         protected BattleLogBattleEvent(BattleLogBattleEvent other)
         {
             Message = other.Message;
             Delay = other.Delay;
             UseTarget = other.UseTarget;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BattleLogBattleEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (UseTarget)
@@ -792,35 +919,52 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that logs a string message to the dungeon log
+    /// Event that logs a string message to the dungeon log.
     /// </summary>
     [Serializable]
     public class FormatLogLocalEvent : BattleEvent
     {
         /// <summary>
-        /// The message displayed in the dungeon log 
+        /// The message displayed in the dungeon log.
         /// </summary>
         public string Message;
 
         /// <summary>
-        /// Whether to have short delay after displaying the message
+        /// Whether to have a short delay after displaying the message.
         /// </summary>
         public bool Delay;
 
+        /// <inheritdoc/>
         public FormatLogLocalEvent() { }
+
+        /// <summary>
+        /// Creates a new FormatLogLocalEvent with the specified message.
+        /// </summary>
+        /// <param name="message">The message to display.</param>
         public FormatLogLocalEvent(string message) : this(message, false) { }
+
+        /// <summary>
+        /// Creates a new FormatLogLocalEvent with the specified message and delay.
+        /// </summary>
+        /// <param name="message">The message to display.</param>
+        /// <param name="delay">Whether to delay after displaying.</param>
         public FormatLogLocalEvent(string message, bool delay)
         {
             Message = message;
             Delay = delay;
         }
+
+        /// <inheritdoc/>
         protected FormatLogLocalEvent(FormatLogLocalEvent other)
         {
             Message = other.Message;
             Delay = other.Delay;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FormatLogLocalEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             DungeonScene.Instance.LogMsg(Message);
@@ -830,41 +974,52 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that displays a message to the dungeon log once
-    /// </summary> 
+    /// Event that displays a message to the dungeon log once.
+    /// Uses context state to track if the message has already been shown.
+    /// </summary>
     [Serializable]
     public class MessageOnceEvent : BattleEvent
     {
         /// <summary>
-        /// The context state added to indicate if the message was displayed
-        /// </summary> 
+        /// The context state added to indicate if the message was displayed.
+        /// </summary>
         public ContextState AddedState;
 
         /// <summary>
-        /// Whether to add the context state globally 
-        /// </summary> 
+        /// Whether to add the context state globally.
+        /// </summary>
         public bool Global;
 
         /// <summary>
-        /// Whether to display the target or user name in the message
-        /// </summary> 
+        /// Whether to display the target or user name in the message.
+        /// </summary>
         public bool AffectTarget;
 
         /// <summary>
-        /// The message displayed in the dungeon log if the conditon is met 
-        /// </summary>  
+        /// The message displayed in the dungeon log if the condition is met.
+        /// </summary>
         [StringKey(0, true)]
         public StringKey Message;
 
         /// <summary>
-        /// The list of battle VFXs played if the condition is met
+        /// The list of battle VFXs played if the condition is met.
         /// </summary>
         public List<BattleAnimEvent> Anims;
 
+        /// <inheritdoc/>
         public MessageOnceEvent()
         {
             Anims = new List<BattleAnimEvent>();
         }
+
+        /// <summary>
+        /// Creates a new MessageOnceEvent with the specified parameters.
+        /// </summary>
+        /// <param name="state">The context state to track message display.</param>
+        /// <param name="global">Whether to use global context state.</param>
+        /// <param name="affectTarget">Whether to use target's name in message.</param>
+        /// <param name="anim">The animation to play.</param>
+        /// <param name="msg">The message to display.</param>
         public MessageOnceEvent(ContextState state, bool global, bool affectTarget, BattleAnimEvent anim, StringKey msg)
         {
             Anims = new List<BattleAnimEvent>();
@@ -874,6 +1029,8 @@ namespace PMDC.Dungeon
             Anims.Add(anim);
             Message = msg;
         }
+
+        /// <inheritdoc/>
         protected MessageOnceEvent(MessageOnceEvent other)
         {
             Anims = new List<BattleAnimEvent>();
@@ -883,8 +1040,11 @@ namespace PMDC.Dungeon
             Anims.AddRange(other.Anims);
             Message = other.Message;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MessageOnceEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (Global)
@@ -1036,23 +1196,42 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that increments the AttackHitTotal global context state,
+    /// Event that increments the AttackHitTotal global context state and tracks combat statistics.
     /// </summary>
     [Serializable]
     public class HitPostEvent : BattleEvent
     {
+        /// <summary>
+        /// The status that tracks recent hits on this turn.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string RecentHitStatusID;
+
+        /// <summary>
+        /// The status that tracks the last hit received.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string LastHitStatusID;
+
+        /// <summary>
+        /// The status that stores the ID of the last move that hit the target.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string OtherHitStatusID;
+
+        /// <summary>
+        /// The status that tracks who last attacked this character.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string TargetStatusID;
+
+        /// <summary>
+        /// The status that tracks critical hits dealt by this character.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string CritStatusID;
@@ -1159,17 +1338,28 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event after an action is used
+    /// Event that tracks action usage statistics after an action is used.
     /// </summary>
     [Serializable]
     public class UsePostEvent : BattleEvent
     {
+        /// <summary>
+        /// The status that tracks repeated move usage.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string RepeatStatusID;
+
+        /// <summary>
+        /// The status that notifies allies of the move used.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string AllyStatusID;
+
+        /// <summary>
+        /// The status applied when the user missed all targets.
+        /// </summary>
         [JsonConverter(typeof(StatusConverter))]
         [DataType(0, DataManager.DataType.Status, false)]
         public string MissedAllID;

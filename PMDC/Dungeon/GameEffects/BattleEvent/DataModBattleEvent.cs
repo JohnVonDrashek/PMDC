@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using RogueEssence.Data;
 using RogueEssence.Menu;
@@ -23,32 +23,40 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that prepares the Judgement's type and total strikes based on plates in the inventory
+    /// Event that prepares the Judgment move's type and strike count based on held plates in the inventory.
     /// </summary>
     [Serializable]
     public class PrepareJudgmentEvent : BattleEvent
     {
         /// <summary>
-        /// The item used mapped to a type
+        /// Mapping of plate item IDs to their corresponding element types.
         /// </summary>
         [JsonConverter(typeof(ItemElementDictConverter))]
         [DataType(1, DataManager.DataType.Item, false)]
         [DataType(2, DataManager.DataType.Element, false)]
         public Dictionary<string, string> TypePair;
 
+        /// <inheritdoc/>
         public PrepareJudgmentEvent() { TypePair = new Dictionary<string, string>(); }
+
+        /// <inheritdoc/>
         public PrepareJudgmentEvent(Dictionary<string, string> typePair)
         {
             TypePair = typePair;
         }
+
+        /// <inheritdoc/>
         protected PrepareJudgmentEvent(PrepareJudgmentEvent other)
             : this()
         {
             foreach (string plate in other.TypePair.Keys)
                 TypePair.Add(plate, other.TypePair[plate]);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PrepareJudgmentEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //check to make sure the strike number is 0
@@ -84,13 +92,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that changes the Judgement's type based on the current strikes made
+    /// Event that changes the Judgment move's type based on the current strike number.
     /// </summary>
     [Serializable]
     public class PassJudgmentEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public PassJudgmentEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new PassJudgmentEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             //change the type to that of the context state
@@ -105,38 +118,46 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that changes a move's from one type to another
+    /// Event that changes a move's element type from one to another.
     /// </summary>
     [Serializable]
     public class ChangeMoveElementEvent : BattleEvent
     {
-
         /// <summary>
-        /// The type to change from
+        /// The element type to change from (or default element for any type).
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string ElementFrom;
 
         /// <summary>
-        /// The type to change to
+        /// The element type to change to.
         /// </summary>
         [JsonConverter(typeof(ElementConverter))]
         [DataType(0, DataManager.DataType.Element, false)]
         public string ElementTo;
 
+        /// <inheritdoc/>
         public ChangeMoveElementEvent() { ElementFrom = ""; ElementTo = ""; }
+
+        /// <inheritdoc/>
         public ChangeMoveElementEvent(string elementFrom, string elementTo)
         {
             ElementFrom = elementFrom;
             ElementTo = elementTo;
         }
+
+        /// <inheritdoc/>
         protected ChangeMoveElementEvent(ChangeMoveElementEvent other)
         {
             ElementFrom = other.ElementFrom;
             ElementTo = other.ElementTo;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ChangeMoveElementEvent(this); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (ElementFrom == DataManager.Instance.DefaultElement || context.Data.Element == ElementFrom)
@@ -147,12 +168,15 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that sets the move type based on the type in ElementState
+    /// Event that sets the move type based on the element stored in the owning status's ElementState.
     /// </summary>
     [Serializable]
     public class ChangeMoveElementStateEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new ChangeMoveElementStateEvent(); }
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             context.Data.Element = ((StatusEffect)owner).StatusStates.GetWithDefault<ElementState>().Element;
@@ -163,29 +187,36 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that removes a SkillState from the battle data
+    /// Event that removes specified SkillStates from the battle data.
     /// </summary>
     [Serializable]
     public class RemoveMoveStateEvent : BattleEvent
     {
-
         /// <summary>
-        /// The list of SkillStates to remove
+        /// The list of SkillState types to remove from the move.
         /// </summary>
         [StringTypeConstraint(1, typeof(SkillState))]
         public List<FlagType> States;
 
+        /// <inheritdoc/>
         public RemoveMoveStateEvent() { States = new List<FlagType>(); }
+
+        /// <inheritdoc/>
         public RemoveMoveStateEvent(Type state) : this()
         {
             States.Add(new FlagType(state));
         }
+
+        /// <inheritdoc/>
         protected RemoveMoveStateEvent(RemoveMoveStateEvent other) : this()
         {
             States.AddRange(other.States);
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new RemoveMoveStateEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             foreach (FlagType state in States)
@@ -196,14 +227,19 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that changes the move type depending on the map seed and the unique character ID
+    /// Event that changes the move type based on a deterministic hash of the map seed and character ID.
+    /// Used for the Hidden Power move.
     /// </summary>
     [Serializable]
     public class HiddenPowerEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public HiddenPowerEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new HiddenPowerEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             List<string> possibleElements = new List<string>();
@@ -221,14 +257,18 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that changes the move to the character's primary type
+    /// Event that changes the move element to match the user's primary type.
     /// </summary>
     [Serializable]
     public class MatchAttackToTypeEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public MatchAttackToTypeEvent() { }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new MatchAttackToTypeEvent(); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             context.Data.Element = context.User.Element1;
@@ -238,18 +278,24 @@ namespace PMDC.Dungeon
 
 
     /// <summary>
-    /// Event that changes the attack to physical or special depending on the user's best base attacking stat
-    /// </summary> 
+    /// Event that sets the move category to physical or special based on the user's higher base attack stat.
+    /// </summary>
     [Serializable]
     public class BestCategoryEvent : BattleEvent
     {
+        /// <inheritdoc/>
         public BestCategoryEvent() { }
+
+        /// <inheritdoc/>
         protected BestCategoryEvent(BestCategoryEvent other)
         {
 
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new BestCategoryEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.User.Atk < context.User.MAtk)
@@ -261,27 +307,35 @@ namespace PMDC.Dungeon
     }
 
     /// <summary>
-    /// Event that changes physical attack to special and vice versa
-    /// </summary> 
+    /// Event that swaps the move category between physical and special.
+    /// </summary>
     [Serializable]
     public class FlipCategoryEvent : BattleEvent
     {
         /// <summary>
-        /// Whether this is being applied before or after the user's stat calculation.
-        /// </summary> 
+        /// When true, toggles the CrossCategory context state for midway stat recalculation.
+        /// </summary>
         public bool MidwayCross;
 
+        /// <inheritdoc/>
         public FlipCategoryEvent() { }
+
+        /// <inheritdoc/>
         public FlipCategoryEvent(bool midway)
         {
             MidwayCross = midway;
         }
+
+        /// <inheritdoc/>
         protected FlipCategoryEvent(FlipCategoryEvent other)
         {
             MidwayCross = other.MidwayCross;
         }
+
+        /// <inheritdoc/>
         public override GameEvent Clone() { return new FlipCategoryEvent(this); }
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, BattleContext context)
         {
             if (context.StrikesMade == 0)

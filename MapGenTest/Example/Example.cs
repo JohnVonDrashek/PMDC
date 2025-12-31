@@ -12,11 +12,24 @@ using PMDC.Dungeon;
 
 namespace MapGenTest
 {
+    /// <summary>
+    /// Interactive test harness for debugging procedural map generation.
+    /// Provides a console-based menu system for selecting zones, structures, and floors
+    /// to generate and visualize, with support for stress testing and custom seeds.
+    /// </summary>
     public static class Example
     {
-        static Dictionary<string, ZoneData> loadedZones;
+        /// <summary>
+        /// Cache of loaded zone data to avoid repeated disk reads during testing.
+        /// </summary>
+        public static Dictionary<string, ZoneData> loadedZones;
 
-        private static ZoneData getCachedZone(string zoneIndex)
+        /// <summary>
+        /// Retrieves zone data from cache or loads it from disk if not cached.
+        /// </summary>
+        /// <param name="zoneIndex">The zone identifier to retrieve.</param>
+        /// <returns>The cached or newly loaded ZoneData.</returns>
+        public static ZoneData GetCachedZone(string zoneIndex)
         {
             ZoneData zone;
             if (loadedZones.TryGetValue(zoneIndex, out zone))
@@ -26,7 +39,15 @@ namespace MapGenTest
             return zone;
         }
 
-        private static T getRegValueOrDefault<T>(string key, T defaultVal)
+        /// <summary>
+        /// Retrieves a value from the Windows registry, returning a default if not found or on error.
+        /// Used to persist menu selections between test runs for faster iteration.
+        /// </summary>
+        /// <typeparam name="T">The type of value to retrieve.</typeparam>
+        /// <param name="key">The registry key name.</param>
+        /// <param name="defaultVal">The default value if key is not found.</param>
+        /// <returns>The registry value or default.</returns>
+        public static T GetRegValueOrDefault<T>(string key, T defaultVal)
         {
             try
             {
@@ -39,6 +60,10 @@ namespace MapGenTest
             return defaultVal;
         }
 
+        /// <summary>
+        /// Main entry point for the interactive map generation tester.
+        /// Displays a menu of available zones and handles navigation through the testing hierarchy.
+        /// </summary>
         public static void Run()
         {
             loadedZones = new Dictionary<string, ZoneData>();
@@ -82,7 +107,7 @@ namespace MapGenTest
                         Console.WriteLine(String.Format(choiceStr, choiceList.ToArray()));
                     }
 
-                    string zoneIndex = getRegValueOrDefault<string>("ZoneChoice", "");
+                    string zoneIndex = GetRegValueOrDefault<string>("ZoneChoice", "");
                     if (String.IsNullOrEmpty(zoneIndex))
                     {
                         ConsoleKeyInfo key = Console.ReadKey();
@@ -118,7 +143,7 @@ namespace MapGenTest
                     if (!String.IsNullOrEmpty(zoneIndex))
                     {
                         Registry.SetValue(DiagManager.REG_PATH, "ZoneChoice", zoneIndex);
-                        StructureMenu(state, zoneIndex, getCachedZone(zoneIndex));
+                        StructureMenu(state, zoneIndex, GetCachedZone(zoneIndex));
                         Registry.SetValue(DiagManager.REG_PATH, "ZoneChoice", "");
                     }
                 }
@@ -135,12 +160,25 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Formats a menu item with its selection key and description.
+        /// </summary>
+        /// <param name="index">The zero-based index of the menu item.</param>
+        /// <param name="str">The description text for the menu item.</param>
+        /// <returns>A formatted string like "A) Description".</returns>
         public static string GetSelectionString(int index, string str)
         {
             char select = (char)('A' + index);
             return select.ToString() + ") " + str;
         }
 
+        /// <summary>
+        /// Displays the structure selection menu for a chosen zone.
+        /// Allows selecting individual structures (segments) within the zone or stress testing the entire zone.
+        /// </summary>
+        /// <param name="prevState">The navigation breadcrumb from previous menus.</param>
+        /// <param name="zoneIndex">The identifier of the selected zone.</param>
+        /// <param name="zone">The zone data containing structures to display.</param>
         public static void StructureMenu(string prevState, string zoneIndex, ZoneData zone)
         {
             try
@@ -178,7 +216,7 @@ namespace MapGenTest
                         Console.WriteLine(String.Format(choiceStr, choiceList.ToArray()));
                     }
 
-                    int structureIndex = getRegValueOrDefault<int>("StructChoice", -1);
+                    int structureIndex = GetRegValueOrDefault<int>("StructChoice", -1);
                     if (structureIndex == -1)
                     {
                         ConsoleKeyInfo key = Console.ReadKey();
@@ -230,6 +268,14 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Displays the floor selection menu for a chosen structure.
+        /// Allows selecting individual floors for generation or stress testing the entire structure.
+        /// </summary>
+        /// <param name="prevState">The navigation breadcrumb from previous menus.</param>
+        /// <param name="zoneIndex">The identifier of the parent zone.</param>
+        /// <param name="structureIndex">The index of the selected structure within the zone.</param>
+        /// <param name="structure">The structure/segment containing floors to display.</param>
         public static void FloorMenu(string prevState, string zoneIndex, int structureIndex, ZoneSegmentBase structure)
         {
             try
@@ -241,7 +287,7 @@ namespace MapGenTest
                     Console.WriteLine(state);
                     Console.WriteLine("Choose a Floor: 0-{0}|ESC=Back|F2=Stress Test", (structure.FloorCount - 1).ToString());
 
-                    int floorNum = getRegValueOrDefault<int>("FloorChoice", -1);
+                    int floorNum = GetRegValueOrDefault<int>("FloorChoice", -1);
                     if (floorNum == -1)
                     {
                         floorNum = GetInt(true);
@@ -292,6 +338,14 @@ namespace MapGenTest
         }
 
 
+        /// <summary>
+        /// Displays and generates a specific floor map with interactive visualization.
+        /// Supports regeneration with new seeds, custom seed input, step-in debugging, and stress testing.
+        /// </summary>
+        /// <param name="prevState">The navigation breadcrumb from previous menus.</param>
+        /// <param name="zoneIndex">The identifier of the parent zone.</param>
+        /// <param name="floorIndex">The segment and floor ID location.</param>
+        /// <param name="structure">The structure containing the floor to generate.</param>
         public static void MapMenu(string prevState, string zoneIndex, SegLoc floorIndex, ZoneSegmentBase structure)
         {
             ulong zoneSeed = MathUtils.Rand.NextUInt64();
@@ -299,13 +353,13 @@ namespace MapGenTest
             try
             {
                 ulong newSeed;
-                if (UInt64.TryParse(getRegValueOrDefault<string>("SeedChoice", ""), out newSeed))
+                if (UInt64.TryParse(GetRegValueOrDefault<string>("SeedChoice", ""), out newSeed))
                     zoneSeed = newSeed;
 
                 Registry.SetValue(DiagManager.REG_PATH, "SeedChoice", zoneSeed.ToString());
 
                 int newMapCount;
-                if (Int32.TryParse(getRegValueOrDefault<string>("MapCountChoice", ""), out newMapCount))
+                if (Int32.TryParse(GetRegValueOrDefault<string>("MapCountChoice", ""), out newMapCount))
                     mapCount = newMapCount;
 
                 Registry.SetValue(DiagManager.REG_PATH, "MapCountChoice", newMapCount.ToString());
@@ -416,6 +470,11 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Reads an integer value from console input with support for backspace editing.
+        /// </summary>
+        /// <param name="includeAmt">If true, F2 key returns -2 for stress test mode.</param>
+        /// <returns>The entered integer, -1 for Escape, or -2 for F2 (if includeAmt is true).</returns>
         public static int GetInt(bool includeAmt)
         {
             int result = 0;
@@ -444,6 +503,15 @@ namespace MapGenTest
             return result;
         }
 
+        /// <summary>
+        /// Creates a zone generation context with deterministic seeding for a specific floor.
+        /// </summary>
+        /// <param name="zoneSeed">The master seed for the entire zone.</param>
+        /// <param name="zoneIndex">The zone identifier.</param>
+        /// <param name="floorIndex">The segment and floor location.</param>
+        /// <param name="structure">The structure containing the floor.</param>
+        /// <param name="mapsLoaded">Number of maps already loaded (affects seed calculation).</param>
+        /// <returns>A configured ZoneGenContext ready for map generation.</returns>
         public static ZoneGenContext CreateZoneGenContext(ulong zoneSeed, string zoneIndex, SegLoc floorIndex, ZoneSegmentBase structure, int mapsLoaded)
         {
             ReNoise totalNoise = new ReNoise(zoneSeed);
@@ -455,6 +523,13 @@ namespace MapGenTest
             return newContext;
         }
 
+        /// <summary>
+        /// Sets the floor-specific seed on a zone generation context.
+        /// </summary>
+        /// <param name="newContext">The context to configure.</param>
+        /// <param name="noiseSeed">The noise seed for floor generation.</param>
+        /// <param name="floorIndex">The segment and floor location.</param>
+        /// <param name="mapsLoaded">Number of maps already loaded.</param>
         public static void SetFloorSeed(ZoneGenContext newContext, ulong noiseSeed, SegLoc floorIndex, int mapsLoaded)
         {
             INoise idNoise = new ReNoise(noiseSeed);
@@ -465,6 +540,15 @@ namespace MapGenTest
             newContext.Seed = idNoise.GetUInt64(finalSeed);
         }
 
+        /// <summary>
+        /// Creates a zone generation context for a specific structure/segment.
+        /// Initializes zone steps with deterministic seeds for reproducible generation.
+        /// </summary>
+        /// <param name="structSeed">The seed for the structure.</param>
+        /// <param name="zoneIndex">The zone identifier.</param>
+        /// <param name="structureIndex">The index of the structure within the zone.</param>
+        /// <param name="structure">The structure to generate context for.</param>
+        /// <returns>A configured ZoneGenContext for the structure.</returns>
         public static ZoneGenContext CreateZoneGenContextSegment(ulong structSeed, string zoneIndex, int structureIndex, ZoneSegmentBase structure)
         {
             INoise structNoise = new ReNoise(structSeed);
@@ -485,6 +569,11 @@ namespace MapGenTest
             return newContext;
         }
 
+        /// <summary>
+        /// Stress tests all released zones by generating each floor multiple times.
+        /// Collects timing statistics and records any failing seeds for debugging.
+        /// </summary>
+        /// <param name="amount">Number of times to generate each zone.</param>
         public static void StressTestAll(int amount)
         {
             ExampleDebug.Printing = -1;
@@ -506,7 +595,7 @@ namespace MapGenTest
             {
                 Console.WriteLine("Generating zone " + key);
                 string zoneIndex = key;
-                ZoneData zone = getCachedZone(key);
+                ZoneData zone = GetCachedZone(key);
 
                 for (int ii = 0; ii < amount; ii++)
                 {
@@ -549,6 +638,13 @@ namespace MapGenTest
             ExampleDebug.Printing = 0;
         }
 
+        /// <summary>
+        /// Stress tests a single zone by generating all its floors multiple times.
+        /// Reports timing statistics per structure and overall.
+        /// </summary>
+        /// <param name="zone">The zone data to test.</param>
+        /// <param name="zoneIndex">The zone identifier.</param>
+        /// <param name="amount">Number of times to generate the zone.</param>
         public static void StressTestZone(ZoneData zone, string zoneIndex, int amount)
         {
             ExampleDebug.Printing = -1;
@@ -600,6 +696,14 @@ namespace MapGenTest
         }
 
 
+        /// <summary>
+        /// Stress tests a single structure by generating all its floors multiple times.
+        /// Collects detailed statistics on terrain, items, enemies, and generation times.
+        /// </summary>
+        /// <param name="structure">The structure/segment to test.</param>
+        /// <param name="zoneIndex">The parent zone identifier.</param>
+        /// <param name="structureIndex">The index of the structure within the zone.</param>
+        /// <param name="amount">Number of times to generate the structure.</param>
         public static void StressTestStructure(ZoneSegmentBase structure, string zoneIndex, int structureIndex, int amount)
         {
             ExampleDebug.Printing = -1;
@@ -680,6 +784,14 @@ namespace MapGenTest
         }
 
 
+        /// <summary>
+        /// Stress tests a single floor by generating it multiple times with random seeds.
+        /// Collects detailed statistics on terrain, items, enemies, and generation times.
+        /// </summary>
+        /// <param name="structure">The parent structure containing the floor.</param>
+        /// <param name="zoneIndex">The parent zone identifier.</param>
+        /// <param name="floorIndex">The segment and floor location.</param>
+        /// <param name="amount">Number of times to generate the floor.</param>
         public static void StressTestFloor(ZoneSegmentBase structure, string zoneIndex, SegLoc floorIndex, int amount)
         {
             ExampleDebug.Printing = -1;
@@ -716,6 +828,18 @@ namespace MapGenTest
             ExampleDebug.Printing = 0;
         }
 
+        /// <summary>
+        /// Generates a single floor and collects statistics for stress testing.
+        /// </summary>
+        /// <param name="watch">Stopwatch for timing the generation.</param>
+        /// <param name="save">The game progress state to use during generation.</param>
+        /// <param name="structure">The structure containing the floor.</param>
+        /// <param name="zoneContext">The configured zone generation context.</param>
+        /// <param name="generatedTerrain">Dictionary to accumulate terrain tile counts.</param>
+        /// <param name="generatedItems">Dictionary to accumulate item spawn counts.</param>
+        /// <param name="generatedEnemies">Dictionary to accumulate enemy spawn counts.</param>
+        /// <param name="generatedStats">Dictionary to accumulate miscellaneous statistics.</param>
+        /// <param name="generationTimes">List to record generation duration.</param>
         public static void TestFloor(Stopwatch watch, GameProgress save, ZoneSegmentBase structure, ZoneGenContext zoneContext, Dictionary<string, int> generatedTerrain, Dictionary<string, int> generatedItems, Dictionary<string, int> generatedEnemies, Dictionary<string, int> generatedStats, List<TimeSpan> generationTimes)
         {
             DataManager.Instance.SetProgress(save);
@@ -789,6 +913,15 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Prints a formatted analysis of generated content including terrain distribution,
+        /// item spawns, and enemy spawns.
+        /// </summary>
+        /// <param name="gens">Total number of generations performed.</param>
+        /// <param name="generatedTiles">Accumulated terrain tile counts by type.</param>
+        /// <param name="generatedItems">Accumulated item spawn counts by ID.</param>
+        /// <param name="generatedEnemies">Accumulated enemy spawn counts by species.</param>
+        /// <param name="miscStats">Miscellaneous statistics like tile counts and NPC caps.</param>
         public static void PrintContentAnalysis(int gens, Dictionary<string, int> generatedTiles, Dictionary<string, int> generatedItems, Dictionary<string, int> generatedEnemies, Dictionary<string, int> miscStats)
         {
             StringBuilder finalString = new StringBuilder();
@@ -858,6 +991,11 @@ namespace MapGenTest
             DiagManager.Instance.LogInfo(finalString.ToString());
         }
 
+        /// <summary>
+        /// Prints timing statistics (min/median/max) and lists any failing seeds from stress testing.
+        /// </summary>
+        /// <param name="generationTimes">List of generation durations to analyze.</param>
+        /// <param name="failingSeeds">List of seeds that caused generation failures.</param>
         public static void PrintTimeAnalysis(List<TimeSpan> generationTimes, List<SeedFailure> failingSeeds)
         {
             generationTimes.Sort();
@@ -879,6 +1017,13 @@ namespace MapGenTest
                 DiagManager.Instance.LogInfo(String.Format("  {0} {1} {2} {3}\n    {4}", fail.loc.ID, fail.loc.StructID.Segment, fail.loc.StructID.ID, fail.zoneSeed, fail.ex.Message));
         }
 
+        /// <summary>
+        /// Prints two-tier timing statistics with per-category breakdowns and overall summary.
+        /// Used for zone and structure stress tests.
+        /// </summary>
+        /// <param name="generationTimes">Dictionary of timing lists keyed by category (floor/structure/zone).</param>
+        /// <param name="failingSeeds">List of seeds that caused generation failures.</param>
+        /// <param name="category">Category prefix for output (e.g., "Z" for zone, "S" for structure, "F" for floor).</param>
         public static void PrintTimeAnalysisTier2(Dictionary<string, List<TimeSpan>> generationTimes, List<SeedFailure> failingSeeds, string category)
         {
             List<TimeSpan> flatTimes = new List<TimeSpan>();
@@ -925,6 +1070,10 @@ namespace MapGenTest
             }
         }
 
+        /// <summary>
+        /// Prints a detailed exception trace including all inner exceptions.
+        /// </summary>
+        /// <param name="ex">The exception to print.</param>
         public static void PrintError(Exception ex)
         {
             Exception innerException = ex;
@@ -942,12 +1091,32 @@ namespace MapGenTest
 
     }
 
+    /// <summary>
+    /// Records a map generation failure with its associated seed for reproducible debugging.
+    /// </summary>
     public class SeedFailure
     {
+        /// <summary>
+        /// The exception that occurred during generation.
+        /// </summary>
         public Exception ex;
+
+        /// <summary>
+        /// The zone location (zone ID, structure, floor) where the failure occurred.
+        /// </summary>
         public ZoneLoc loc;
+
+        /// <summary>
+        /// The zone seed that can be used to reproduce the failure.
+        /// </summary>
         public ulong zoneSeed;
 
+        /// <summary>
+        /// Creates a new seed failure record.
+        /// </summary>
+        /// <param name="ex">The exception that occurred.</param>
+        /// <param name="loc">The location of the failure.</param>
+        /// <param name="zoneSeed">The seed that caused the failure.</param>
         public SeedFailure(Exception ex, ZoneLoc loc, ulong zoneSeed)
         {
             this.ex = ex;

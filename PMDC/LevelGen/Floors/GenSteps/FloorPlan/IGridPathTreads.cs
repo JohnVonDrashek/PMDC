@@ -4,56 +4,78 @@ using RogueElements;
 
 namespace PMDC.LevelGen
 {
+    /// <summary>
+    /// Interface for grid path generators that create tread-style layouts with large rooms on the sides.
+    /// </summary>
     public interface IGridPathTreads
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether the layout is oriented vertically (large rooms on top/bottom) or horizontally (large rooms on left/right).
+        /// </summary>
         bool Vertical { get; set; }
+
+        /// <summary>
+        /// Gets or sets the range of small room spawn density as a percentage of possible room locations.
+        /// </summary>
         RandRange RoomPercent { get; set; }
+
+        /// <summary>
+        /// Gets or sets the range of hallway connections between adjacent small rooms as a percentage of possible connections.
+        /// </summary>
         RandRange ConnectPercent { get; set; }
+
+        /// <summary>
+        /// Gets or sets the components that will be applied to the large "tread" rooms.
+        /// </summary>
         ComponentCollection LargeRoomComponents { get; set; }
     }
     
     /// <summary>
     /// Creates a grid plan with two large "tread" rooms along the sides and a set of rooms in the middle.
-    /// Inverse of GridPathBeetle.
+    /// Inverse of GridPathBeetle. The large rooms form the main pathways, with smaller rooms branching off between them.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The context type implementing <see cref="IRoomGridGenContext"/> for room grid generation.</typeparam>
     [Serializable]
     public class GridPathTreads<T> : GridPathStartStepGeneric<T>, IGridPathTreads
         where T : class, IRoomGridGenContext
     {
         /// <summary>
-        /// Choose a horizontal or vertical orientation.
+        /// Gets or sets a value indicating whether the layout is oriented vertically (large rooms on top/bottom) or horizontally (large rooms on left/right).
         /// </summary>
         public bool Vertical { get; set; }
 
         /// <summary>
-        /// The number of small rooms attached to the main large rooms, as a percent of the rooms possible.
+        /// Gets or sets the range for small room spawn density as a percentage of possible room locations (0-100).
         /// </summary>
         public RandRange RoomPercent { get; set; }
 
         /// <summary>
-        /// The number of connections between adjacent small rooms, as a percent of the connections possible.
+        /// Gets or sets the range for hallway connections between adjacent small rooms as a percentage of possible connections (0-100).
         /// </summary>
-        public RandRange ConnectPercent { get; set; }  
-        
+        public RandRange ConnectPercent { get; set; }
+
         /// <summary>
-        /// The room types that can be used for the giant rooms in the layout.
+        /// Gets or sets the weighted spawn list of room generators used to create the two large tread rooms.
         /// </summary>
         public SpawnList<RoomGen<T>> GiantRoomsGen;
-        
+
         /// <summary>
-        /// Components that the giant rooms will be labeled with.
+        /// Gets or sets the components that will be applied to the large tread rooms.
         /// </summary>
         public ComponentCollection LargeRoomComponents { get; set; }
         
-        
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GridPathTreads{T}"/> class.
+        /// </summary>
         public GridPathTreads()
             : base()
         {
             GiantRoomsGen = new SpawnList<RoomGen<T>>();
             LargeRoomComponents = new ComponentCollection();
         }
-        
+
+        /// <inheritdoc/>
         public override void ApplyToPath(IRandom rand, GridPlan floorPlan)
         {
             int mainLength = Vertical ? floorPlan.GridHeight : floorPlan.GridWidth;
@@ -121,11 +143,23 @@ namespace PMDC.LevelGen
             AddAdditionalHallwayConnections(rand, floorPlan, rooms);
         }
 
+        /// <summary>
+        /// Returns a string representation of the grid path tread configuration.
+        /// </summary>
+        /// <returns>A formatted string containing the class name, orientation, room percentage, and connection percentage.</returns>
         public override string ToString()
         {
             return string.Format("{0}: Vert:{1} Room:{2}% Connect:{3}%", this.GetType().GetFormattedTypeName(), this.Vertical, this.RoomPercent, this.ConnectPercent);
         }
 
+        /// <summary>
+        /// Creates hallway connections from a middle room upward and downward to the large tread rooms.
+        /// Attempts to connect the specified room to both the top and bottom tread rooms via hallways.
+        /// </summary>
+        /// <param name="rand">The random number generator for probabilistic room/hallway generation.</param>
+        /// <param name="floorPlan">The grid plan to modify with hallway connections.</param>
+        /// <param name="room">The middle room location to create connections from.</param>
+        /// <param name="mainLength">The length of the main axis (height if vertical, width if horizontal).</param>
         protected void AddHallwayConnections(IRandom rand, GridPlan floorPlan, Loc room, int mainLength)
         {
             int roomTier = Vertical ? room.Y : room.X;
@@ -191,6 +225,13 @@ namespace PMDC.LevelGen
             GenContextDebug.DebugProgress("Connect Leg Down");
         }
 
+        /// <summary>
+        /// Creates additional lateral hallway connections between middle rooms based on the connection percentage.
+        /// Rooms that can reach a neighboring room on the opposite side will have side hallways connecting them.
+        /// </summary>
+        /// <param name="rand">The random number generator for probabilistic selection of connections.</param>
+        /// <param name="floorPlan">The grid plan to modify with additional hallway connections.</param>
+        /// <param name="rooms">The list of middle room locations to consider for side connections.</param>
         protected void AddAdditionalHallwayConnections(IRandom rand, GridPlan floorPlan, List<Loc> rooms)
         {
             //This stores a list of locs that can generate a left or up migration for a side hallway connection.
