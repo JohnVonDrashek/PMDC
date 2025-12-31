@@ -6,16 +6,6 @@ Game data models for monsters, characters, and related systems. Extends RogueEss
 
 This folder contains data classes that define monster statistics, evolution mechanics, rarity tiers, and universal effect systems. The core class `MonsterFormData` extends RogueEssence's `BaseMonsterForm` to provide Pokemon-style stat calculations, gender weights, and skill learning categories.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `MonsterFormData.cs` | Pokemon form data including base stats (HP/Atk/Def/MAtk/MDef/Speed), gender weights, generation, and skill categories (TM/Egg/Tutor moves). Extends `BaseMonsterForm` from RogueEssence. |
-| `MonsterFeatureData.cs` | Indexed feature data for monsters including evolution family, evolution stage flags, elemental types, and best/worst stat calculations. |
-| `PromoteBranch.cs` | Evolution/promotion requirement system with 25+ condition types (level, item, friendship, time, weather, stats, moves, gender, location, etc.). |
-| `RarityData.cs` | Maps monsters to items by rarity tier. Indexes items with `FamilyState` to build monster-specific rarity tables. |
-| `UniversalActiveEffect.cs` | Universal effect system for calculating range modifiers from passives, including category-based, weather-based, and element-based range bonuses. |
-
 ## Key Concepts
 
 ### Stat System

@@ -6,12 +6,6 @@ Floor-level generation for individual dungeon floors. This module orchestrates r
 
 Floor generation transforms a blank map into a complete dungeon floor with interconnected rooms, hallways, and special features. The process uses a room plan that defines spatial relationships between areas before rendering them to tiles.
 
-## Directory Structure
-
-| Folder | Description |
-|--------|-------------|
-| [GenSteps/](./GenSteps/) | Generation steps for floor features, rooms, and mechanics |
-
 ## Key Concepts
 
 ### Floor Generation Order

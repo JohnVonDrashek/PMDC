@@ -6,12 +6,6 @@ Zone-level generation that coordinates features across multiple dungeon floors. 
 
 Zone steps operate at a higher level than floor steps, determining how features like boss encounters, vaults, and monster houses are distributed across a range of floors. This ensures consistent pacing and variety throughout a dungeon segment.
 
-## Directory Structure
-
-| Folder | Description |
-|--------|-------------|
-| [ZoneSteps/](./ZoneSteps/) | Zone step implementations for feature distribution |
-
 ## Key Concepts
 
 ### Zone Generation

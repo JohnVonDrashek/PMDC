@@ -21,4 +21,9 @@ publish/
 
 # OS files
 Thumbs.db
-.DS_Storefnalibs.tar.bz2
+.DS_Store
+fnalibs.tar.bz2
+
+# MCP server
+mcp-server/node_modules/
+mcp-server/dist/

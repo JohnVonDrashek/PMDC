@@ -6,26 +6,6 @@ Entity spawning systems for placing monsters, items, and teams on dungeon floors
 
 Spawning operates at multiple levels: individual mob configuration, team composition, and floor-wide placement strategies. The system supports conditional spawning based on game state, map conditions, and random factors.
 
-## Directory Structure
-
-| Folder | Description |
-|--------|-------------|
-| [MobSpawn/](./MobSpawn/) | Mob spawn checks and extra features |
-| [MultiTeamSpawner/](./MultiTeamSpawner/) | Multi-monster team spawners |
-
-## Files
-
-| File | Description |
-|------|-------------|
-| `RescueSpawner.cs` | Spawns rescue target NPCs |
-| `MoneyTrailSpawnStep.cs` | Places money items in trail patterns |
-| `SpacedRoomSpawnStep.cs` | Spawns entities with spacing constraints |
-| `SpeciesItemSpawner.cs` | Base class for species-specific item spawning |
-| `SpeciesItemContextSpawner.cs` | Context-aware species item spawning |
-| `SpeciesItemActiveTeamSpawner.cs` | Spawns based on active team species |
-| `SpeciesItemElementSpawner.cs` | Spawns items matching species element |
-| `SpeciesItemListSpawner.cs` | Spawns from species-specific item lists |
-
 ## Key Concepts
 
 ### MobSpawn System

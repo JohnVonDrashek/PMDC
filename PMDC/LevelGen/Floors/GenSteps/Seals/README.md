@@ -6,17 +6,6 @@ Room sealing mechanics that lock existing rooms behind various unlock mechanisms
 
 Seal steps take rooms marked with specific components and surround them with unbreakable walls, leaving only sealed doors as entry points. Different seal types use different unlock mechanisms, from consumable keys to boss defeats.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `BaseSealStep.cs` | Abstract base class handling border detection and wall placement |
-| `BossSealStep.cs` | Seals vault rooms that unlock when boss is defeated |
-| `KeySealStep.cs` | Seals rooms requiring a key item to unlock |
-| `SwitchSealStep.cs` | Seals rooms requiring switch activation to unlock |
-| `GuardSealStep.cs` | Seals rooms with guard enemies |
-| `TerrainSealStep.cs` | Seals using terrain-based barriers |
-
 ## Key Concepts
 
 ### Seal Types

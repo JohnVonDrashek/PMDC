@@ -6,13 +6,6 @@ Water terrain generation using pattern-based placement. Creates lakes, rivers, a
 
 Water generation uses a pattern-based approach where pre-designed map files define water shapes. These patterns are then placed at random valid locations on the dungeon floor, allowing for consistent water features while maintaining randomization.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `PatternWaterStep.cs` | Places water patterns loaded from map files |
-| `IPatternWaterStep.cs` | Interface defining pattern water step contract |
-
 ## Key Concepts
 
 ### PatternWaterStep

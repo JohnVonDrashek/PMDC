@@ -6,17 +6,6 @@ Zone step implementations that distribute features across dungeon floors. These 
 
 Zone steps inherit from `SpreadZoneStep` which provides a spread plan for feature distribution. Each step defines what floor-level generation steps to add when a floor is selected for the feature.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `SpreadBossZoneStep.cs` | Distributes boss battles with reward vaults across floors |
-| `SpreadVaultZoneStep.cs` | Distributes sealed vaults with items, tiles, and mobs |
-| `SpreadHouseZoneStep.cs` | Distributes monster houses (standard, chest, or hall variants) |
-| `DetourSpreadZoneStep.cs` | Distributes hidden detour rooms |
-| `FloorNameDropZoneStep.cs` | Configures floor naming/theming |
-| `SaveVarsZoneStep.cs` | Sets save variables on specific floors |
-
 ## Key Concepts
 
 ### SpreadBossZoneStep

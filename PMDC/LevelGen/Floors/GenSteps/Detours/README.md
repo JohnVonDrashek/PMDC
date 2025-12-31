@@ -6,14 +6,6 @@ Hidden room generation that creates secret areas accessible only through specifi
 
 Detours add optional challenge rooms to dungeon floors. These rooms are carved into walls adjacent to the main path and sealed with locked doors. Players must find keys or activate switches to access the treasures within.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `BaseDetourStep.cs` | Abstract base class providing room carving, hall tunneling, and entity placement |
-| `KeyDetourStep.cs` | Creates rooms unlocked by consuming a key item |
-| `SwitchDetourStep.cs` | Creates rooms unlocked by pressing a switch tile elsewhere on the floor |
-
 ## Key Concepts
 
 ### Detour Architecture

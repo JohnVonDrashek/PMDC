@@ -6,34 +6,9 @@ Game effect system containing status effects, state management, and battle event
 
 GameEffects implements the state and event systems that power PMDC's combat and status mechanics. It uses a state-based architecture where effects attach data to game entities (characters, items, skills, map statuses) and events trigger logic during gameplay phases.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `CharState.cs` | States attached to characters (e.g., `HitAndRunState`, `AnchorState`) |
-| `ContextState.cs` | Battle context states for damage calculation (e.g., `DmgMult`, `DamageDealt`) |
-| `ElementEffectEvent.cs` | Type effectiveness modification events |
-| `GroundItemEvent.cs` | Events for items on the ground |
-| `HPChangeEvent.cs` | Events triggered on HP changes |
-| `ItemGivenEvent.cs` | Events for item transfers |
-| `ItemState.cs` | States attached to items (e.g., `BerryState`, `WandState`, `HeldState`) |
-| `MapStatusGivenEvent.cs` | Events for map-wide status effects |
-| `MapStatusState.cs` | States for map statuses (e.g., `ShopPriceState`, `MapTickState`) |
-| `MoveChangeEvent.cs` | Events that modify move properties |
-| `RefreshEvent.cs` | Events triggered on character refresh |
-| `SingleCharEvent.cs` | Events affecting a single character |
-| `SkillState.cs` | States attached to skills/moves |
-| `StatusGivenEvent.cs` | Events for status application |
-| `StatusState.cs` | States attached to status effects (e.g., `StackState`, `CountDownState`) |
-| `TerrainState.cs` | States for terrain tiles |
-| `TileState.cs` | States for dungeon tiles |
-| `UniversalState.cs` | Global game states |
-
 ## Subfolder
 
-| Folder | Description |
-|--------|-------------|
-| [BattleEvent/](./BattleEvent/README.md) | Battle event implementations (damage, healing, status, counters) |
+- [BattleEvent/](./BattleEvent/README.md) - Battle event implementations (damage, healing, status, counters)
 
 ## Key Concepts
 

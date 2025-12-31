@@ -6,13 +6,6 @@ Avalonia user controls providing custom UI components for the data editor.
 
 These user controls are XAML-based Avalonia components paired with code-behind files. They provide specialized editing interfaces that integrate with the RogueEssence data editor framework.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| TeamMemberSpawnView.axaml | XAML layout with search textboxes, data grids for monsters/skills/intrinsics, and spawn configuration controls |
-| TeamMemberSpawnView.axaml.cs | Code-behind handling focus management, Enter-key navigation, data grid selection, and collection change events |
-
 ## Key Features
 
 ### TeamMemberSpawnView
@@ -29,16 +22,6 @@ These user controls are XAML-based Avalonia components paired with code-behind f
 ```
 SpeciesTextBox -> SkillTextBox0 -> SkillTextBox1 -> SkillTextBox2 -> SkillTextBox3 -> IntrinsicTextBox -> MinTextBox -> MaxTextBox
 ```
-
-## Event Handlers
-
-| Handler | Purpose |
-|---------|---------|
-| `*_OnGotFocus` | Updates ViewModel focus index, triggers appropriate data grid filtering |
-| `*_OnLostFocus` | Auto-selects matching item if search text matches top result |
-| `*_OnEnterCommand` | Selects current match and advances to next input |
-| `*DataGrid_OnCellPointerPressed` | Handles click selection in data grids |
-| `*_OnValueChanged` | Enforces level range constraints |
 
 ## Related
 

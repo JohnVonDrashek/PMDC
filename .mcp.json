@@ -7,6 +7,10 @@
     "rogueessence": {
       "command": "node",
       "args": ["/Users/gfelter/code/RogueEssence/rogueessence-mcp-server/dist/index.js"]
+    },
+    "pmdc": {
+      "command": "node",
+      "args": ["mcp-server/dist/index.js"]
     }
   }
 }

@@ -2,6 +2,8 @@
 
 A roguelike dungeon crawler built on the **RogueEssence** engine, featuring procedural dungeon generation, turn-based combat, and tactical mechanics.
 
+> **Deep Dive:** See `docs/claude/` for detailed architecture, code flows, and conventions.
+
 ## Claude Code Rules
 
 - **Do not commit without explicit user consent** - Always ask before running `git commit`

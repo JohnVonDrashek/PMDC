@@ -8,26 +8,8 @@ The Dungeon module implements the runtime gameplay mechanics that occur during d
 
 ## Subfolders
 
-| Folder | Description |
-|--------|-------------|
-| [AI/](./AI/README.md) | AI behavior plans that control NPC and ally decision-making |
-| [GameEffects/](./GameEffects/README.md) | Status effects, battle events, and state management systems |
-
-## Architecture
-
-```
-PMDC.Dungeon
-    |
-    +-- AI/
-    |   +-- AIPlan.cs (base class)
-    |   +-- AttackFoesPlan.cs, ExplorePlan.cs, etc.
-    |
-    +-- GameEffects/
-        +-- CharState.cs, StatusState.cs, etc.
-        +-- BattleEvent/
-            +-- BattleEvent.cs (base class)
-            +-- StatusBattleEvent.cs, DamageModBattleEvent.cs, etc.
-```
+- [AI/](./AI/README.md) - AI behavior plans that control NPC and ally decision-making
+- [GameEffects/](./GameEffects/README.md) - Status effects, battle events, and state management systems
 
 ## Key Concepts
 

@@ -2,12 +2,6 @@
 
 Interactive zone browsing and stress testing functionality for map generation testing.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `Example.cs` | Main entry point with zone browser UI and stress test implementations |
-
 ## Features
 
 ### Interactive Zone Browser
@@ -31,19 +25,6 @@ Stress tests report:
 - **Monster spawns** - Species distribution
 - **Generation times** - Min/median/max per floor
 - **Failing seeds** - Seeds that caused generation errors
-
-## Key Functions
-
-| Function | Purpose |
-|----------|---------|
-| `Run()` | Main entry point; displays zone selection menu |
-| `StructureMenu()` | Structure selection within a zone |
-| `FloorMenu()` | Floor number input and selection |
-| `MapMenu()` | Map generation and interactive viewer |
-| `StressTestAll()` | Bulk test all released zones |
-| `StressTestZone()` | Bulk test single zone |
-| `StressTestStructure()` | Bulk test single structure |
-| `StressTestFloor()` | Bulk test single floor |
 
 ## Registry Persistence
 

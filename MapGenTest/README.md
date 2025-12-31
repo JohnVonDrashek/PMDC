@@ -10,16 +10,6 @@ MapGenTest allows developers to:
 - Debug generation failures by inspecting specific seeds
 - Step through the generation process to understand room/hall placement
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `Program.cs` | Entry point; parses CLI args, initializes game data, runs tests |
-| `ExampleDebug.cs` | Console visualization and step-through debugging for map generation |
-| `ExpTester.cs` | Experience/leveling system tester |
-| `DebugState.cs` | State tracking for debug visualization |
-| `Example/Example.cs` | Interactive zone/floor browser and stress testing logic |
-
 ## Usage
 
 ```bash

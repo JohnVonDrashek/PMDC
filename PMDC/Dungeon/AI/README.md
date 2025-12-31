@@ -6,34 +6,6 @@ AI behavior plans that control NPC and ally decision-making in dungeons. Each pl
 
 The AI system uses a plan-based architecture where each `AIPlan` subclass implements specific behavior logic. Plans are evaluated through the `Think()` method, which analyzes the game state and returns an appropriate `GameAction`. Multiple plans can be chained together via tactics to create complex AI behaviors.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `AIPlan.cs` | **Base class** for all AI plans. Defines `AIFlags`, `AttackChoice`, `PositionChoice` enums and core helper methods |
-| `AttackFoesPlan.cs` | Primary combat plan - approaches and attacks visible enemies |
-| `AvoidPlan.cs` | Movement plan that maintains distance from targets while staying in attack range |
-| `AvoidAllPlan.cs` | Flees from all characters regardless of alignment |
-| `AvoidAlliesPlan.cs` | Specifically avoids allied characters |
-| `AvoidFoesPlan.cs` | Flees from hostile characters |
-| `AvoidFoesAbortPlan.cs` | Flee behavior that aborts under certain conditions |
-| `BossPlan.cs` | Special boss AI with enhanced behavior patterns |
-| `CultDancePlan.cs` | Specialized ritual/dance movement pattern |
-| `ExplorePlan.cs` | Dungeon exploration - moves toward unexplored areas and items |
-| `FindItemPlan.cs` | Searches for and navigates to items on the map |
-| `FleeStairsPlan.cs` | Panic behavior - heads directly toward dungeon exit |
-| `FollowLeaderPlan.cs` | Team AI - follows the party leader at a set distance |
-| `OrbitLeaderPlan.cs` | Circles around the leader at a fixed distance |
-| `PreparePlan.cs` | Setup behavior - uses buff moves before engaging |
-| `RetreaterPlan.cs` | Hit-and-run tactics - attacks then retreats |
-| `SpamAttackPlan.cs` | Aggressive stance - repeatedly uses attacks without moving |
-| `StalkerPlan.cs` | Pursuit behavior - tracks targets across the dungeon |
-| `StayInRangePlan.cs` | Maintains optimal attack distance from targets |
-| `ThiefPlan.cs` | Item-focused AI - steals items and flees |
-| `WaitPlan.cs` | Idle behavior - waits in place |
-| `WaitPeriodPlan.cs` | Waits for a specified duration before activating |
-| `WaitUntilAttackedPlan.cs` | Dormant until receiving damage |
-
 ## Key Concepts
 
 ### AIFlags

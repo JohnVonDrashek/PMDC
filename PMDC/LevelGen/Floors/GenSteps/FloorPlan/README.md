@@ -6,18 +6,6 @@ Grid-based floor layout algorithms that determine room placement and connectivit
 
 Floor planning operates on a grid where each cell can contain a room or hall. These algorithms create the structural blueprint of a dungeon floor, establishing which rooms exist, where they're located, and how they connect.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `AddBossRoomStep.cs` | Attaches a boss room and connected vault to an existing layout |
-| `GridPathBeetle.cs` | Creates a large central room with smaller rooms branching off like legs |
-| `GridPathPyramid.cs` | Places a giant room with branching paths emanating from below it |
-| `FloorStairsDistanceStep.cs` | Ensures stairs are placed at appropriate distances |
-| `SetGridInnerComponentStep.cs` | Tags inner rooms with components for filtering |
-| `IGridPathEdge.cs` | Interface for edge-based path generation |
-| `IGridPathTreads.cs` | Interface for tread-pattern paths |
-
 ## Key Concepts
 
 ### Grid-Based Layout

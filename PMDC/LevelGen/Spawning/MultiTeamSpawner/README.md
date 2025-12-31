@@ -6,12 +6,6 @@ Team spawners that create groups of monsters with coordinated composition. Used 
 
 Multi-team spawners generate complete teams rather than individual monsters. They can pull from floor spawn tables, apply leader-specific modifications, and create both monster teams and explorer teams.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `BossBandContextSpawner.cs` | Creates boss teams from floor's spawn table with leader features |
-
 ## Key Concepts
 
 ### BossBandContextSpawner

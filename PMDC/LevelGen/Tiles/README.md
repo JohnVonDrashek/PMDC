@@ -6,18 +6,6 @@ Tile-level generation for terrain painting, effect tiles, and environmental feat
 
 Tile generation steps operate after rooms are drawn, adding environmental features like water, special effect tiles, and terrain modifications. These steps work at the individual tile level rather than room level.
 
-## Directory Structure
-
-| Folder | Description |
-|--------|-------------|
-| [Water/](./Water/) | Water terrain pattern generation |
-
-## Files
-
-| File | Description |
-|------|-------------|
-| `SetCompassStep.cs` | Configures compass tiles to point at points of interest |
-
 ## Key Concepts
 
 ### SetCompassStep
@@ -48,15 +36,6 @@ Effect tiles are placed via `IPlaceableGenContext<EffectTile>`:
 - Tiles have IDs referencing `TileData` definitions
 - Tiles can have state attached (`TileStates`)
 - State enables dynamic behavior (destination lists, unlock requirements)
-
-### Common Tile States
-
-| State | Description |
-|-------|-------------|
-| `TileListState` | List of tile locations (compass destinations, linked doors) |
-| `UnlockState` | Item required to unlock |
-| `DangerState` | Whether tile triggers danger (time limit) |
-| `BoundsState` | Associated bounds (monster house walls) |
 
 ## Related
 

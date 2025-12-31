@@ -6,15 +6,6 @@ Procedural dungeon generation system for PMDC. This module contains all the step
 
 The level generation system uses a step-based pipeline architecture where each `GenStep` modifies a generation context in sequence. The pipeline is configured per-floor and orchestrated at the zone level, allowing for consistent theming across dungeon segments while maintaining floor-by-floor variation.
 
-## Directory Structure
-
-| Folder | Description |
-|--------|-------------|
-| [Floors/](./Floors/) | Floor-level generation including room layouts, special rooms, and floor features |
-| [Spawning/](./Spawning/) | Entity spawning systems for monsters, items, and teams |
-| [Tiles/](./Tiles/) | Tile-level generation including terrain painting and water features |
-| [Zones/](./Zones/) | Zone-level generation that spreads features across multiple floors |
-
 ## Key Concepts
 
 ### Generation Pipeline
