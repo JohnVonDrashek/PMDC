@@ -1124,6 +1124,11 @@ Extracts from C# source files:
   async ({ class_name, response_format }) => {
     const classDoc = await findClassByName(class_name);
 
+    // Attach examples to the classDoc
+    if (classDoc) {
+      classDoc.examples = await getExamplesForClass(classDoc.name);
+    }
+
     if (!classDoc) {
       // Find similar classes for suggestions
       const suggestions = await findSimilarClasses(class_name, 5);
@@ -1170,6 +1175,18 @@ Extracts from C# source files:
 
     if (classDoc.remarks) {
       lines.push("## Remarks", "", classDoc.remarks, "");
+    }
+
+    if (classDoc.examples.length > 0) {
+      lines.push("## Examples", "");
+      lines.push("```csharp");
+      for (const example of classDoc.examples) {
+        lines.push(`// ${example.file}:${example.line}`);
+        lines.push(example.code);
+        lines.push("");
+      }
+      lines.push("```");
+      lines.push("");
     }
 
     if (classDoc.properties.length > 0) {
