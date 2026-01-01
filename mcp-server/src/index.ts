@@ -1213,6 +1213,59 @@ Extracts from C# source files:
   }
 );
 
+// Tool: Get examples only
+server.tool(
+  "pmdc_get_examples",
+  `Get usage examples for a PMDC class.
+
+Returns real code snippets from the codebase showing how the class is instantiated.
+Lighter weight than pmdc_get_class_docs when you just need to see usage patterns.`,
+  {
+    class_name: z.string()
+      .min(1)
+      .describe("Name of the class to get examples for"),
+    limit: z.number()
+      .min(1)
+      .max(10)
+      .default(5)
+      .describe("Maximum number of examples to return")
+  },
+  async ({ class_name, limit }) => {
+    const examples = await getExamplesForClass(class_name);
+
+    if (examples.length === 0) {
+      return {
+        content: [{
+          type: "text",
+          text: `No usage examples found for '${class_name}' in the PMDC codebase.`
+        }]
+      };
+    }
+
+    const limitedExamples = examples.slice(0, limit);
+
+    const lines = [
+      `# Examples: ${class_name}`,
+      "",
+      `Found ${examples.length} usage example${examples.length === 1 ? '' : 's'}:`,
+      "",
+      "```csharp"
+    ];
+
+    for (const example of limitedExamples) {
+      lines.push(`// ${example.file}:${example.line}`);
+      lines.push(example.code);
+      lines.push("");
+    }
+
+    lines.push("```");
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }]
+    };
+  }
+);
+
 // Tool: Scaffold BattleEvent
 server.tool(
   "pmdc_scaffold_battleevent",
