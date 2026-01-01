@@ -149,6 +149,31 @@ async function extractExamplesFromFile(
       // Check if this is a class we care about
       if (!classNames.has(typeName)) continue;
 
+      // Skip copy constructor patterns: new ClassName(this) or new ClassName(other)
+      const argsNode = creation.childForFieldName("arguments");
+      if (argsNode) {
+        const argsText = argsNode.text.trim();
+        // Skip patterns like (this), (other), (source), (original) - copy constructor calls
+        if (/^\(\s*(this|other|source|original)\s*\)$/i.test(argsText)) {
+          continue;
+        }
+      }
+
+      // Skip if inside a Clone() method - these are always copy constructors
+      let parent = creation.parent;
+      while (parent) {
+        if (parent.type === "method_declaration") {
+          const methodName = parent.childForFieldName("name");
+          if (methodName && methodName.text === "Clone") {
+            break; // Will be skipped
+          }
+        }
+        parent = parent.parent;
+      }
+      if (parent && parent.type === "method_declaration") {
+        continue; // Skip - we're inside a Clone() method
+      }
+
       // Extract context (the line + 1 before)
       const startLine = creation.startPosition.row;
       const endLine = creation.endPosition.row;
