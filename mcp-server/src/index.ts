@@ -195,6 +195,12 @@ type ClassCategory = keyof typeof CLASS_CATEGORIES;
 // CLASS DOCUMENTATION PARSING (using tree-sitter)
 // =============================================================================
 
+interface ClassExample {
+  code: string;       // 2-3 lines including the instantiation
+  file: string;       // Relative path from PMDC/
+  line: number;       // Starting line of snippet
+}
+
 interface ClassDoc {
   name: string;
   namespace: string;
@@ -204,6 +210,7 @@ interface ClassDoc {
   properties: Array<{ name: string; type: string; summary: string }>;
   methods: Array<{ name: string; signature: string; summary: string }>;
   filePath: string;
+  examples: ClassExample[];
 }
 
 /**
@@ -356,7 +363,8 @@ async function parseClassFile(filePath: string): Promise<ClassDoc[]> {
         remarks,
         properties,
         methods,
-        filePath
+        filePath,
+        examples: []
       });
     }
 
