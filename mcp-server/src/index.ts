@@ -178,6 +178,106 @@ async function extractExamplesFromFile(
 }
 
 /**
+ * Collect all known class names from all categories.
+ */
+async function collectKnownClassNames(): Promise<Set<string>> {
+  const names = new Set<string>();
+  for (const category of Object.keys(CLASS_CATEGORIES) as ClassCategory[]) {
+    const classes = await findClassesInCategory(category);
+    for (const cls of classes) {
+      names.add(cls.name);
+    }
+  }
+  return names;
+}
+
+/**
+ * Generate a signature for an example to detect duplicates.
+ * Focuses on parameter structure rather than exact values.
+ */
+function getExampleSignature(code: string): string {
+  // Normalize: remove specific values, keep structure
+  return code
+    .replace(/\"[^\"]*\"/g, '"STR"')     // Replace string literals
+    .replace(/\b\d+\b/g, 'NUM')           // Replace numbers
+    .replace(/\s+/g, ' ')                  // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Filter examples to keep diverse set (different parameter patterns).
+ */
+function filterDiverseExamples(examples: ClassExample[], maxCount: number = 5): ClassExample[] {
+  const seen = new Set<string>();
+  const diverse: ClassExample[] = [];
+
+  for (const example of examples) {
+    const sig = getExampleSignature(example.code);
+    if (!seen.has(sig)) {
+      seen.add(sig);
+      diverse.push(example);
+      if (diverse.length >= maxCount) break;
+    }
+  }
+
+  return diverse;
+}
+
+/**
+ * Build the examples cache by scanning all PMDC source files.
+ * Called lazily on first request for examples.
+ */
+async function buildExamplesCache(): Promise<void> {
+  if (examplesCache !== null) return;
+
+  // First, collect all known class names
+  knownClassNames = await collectKnownClassNames();
+  examplesCache = new Map<string, ClassExample[]>();
+
+  // Collect all .cs files to scan
+  const filesToScan: string[] = [];
+
+  function collectFiles(dir: string) {
+    if (!fs.existsSync(dir)) return;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory() && !["obj", "bin", ".git"].includes(entry.name)) {
+        collectFiles(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith(".cs")) {
+        filesToScan.push(fullPath);
+      }
+    }
+  }
+
+  collectFiles(PMDC_DIR);
+
+  // Extract examples from each file
+  for (const filePath of filesToScan) {
+    const fileExamples = await extractExamplesFromFile(filePath, knownClassNames);
+    for (const [className, examples] of fileExamples) {
+      if (!examplesCache.has(className)) {
+        examplesCache.set(className, []);
+      }
+      examplesCache.get(className)!.push(...examples);
+    }
+  }
+
+  // Apply diversity filtering to each class
+  for (const [className, examples] of examplesCache) {
+    examplesCache.set(className, filterDiverseExamples(examples, 5));
+  }
+}
+
+/**
+ * Get examples for a specific class (lazy-loads cache).
+ */
+async function getExamplesForClass(className: string): Promise<ClassExample[]> {
+  await buildExamplesCache();
+  return examplesCache?.get(className) || [];
+}
+
+/**
  * Collect all preceding doc comments (///) for a node.
  */
 function getDocComments(node: Node): string {
