@@ -95,6 +95,89 @@ function findNodesByType(node: Node, type: string, results: Node[] = []): Node[]
 }
 
 /**
+ * Extract lines from source content around a given position.
+ * Returns the line containing the position plus preceding context.
+ */
+function extractContextLines(
+  content: string,
+  startLine: number,
+  endLine: number,
+  contextLinesBefore: number = 1
+): string {
+  const lines = content.split('\n');
+  const fromLine = Math.max(0, startLine - contextLinesBefore);
+  const toLine = Math.min(lines.length - 1, endLine);
+  return lines.slice(fromLine, toLine + 1).join('\n').trim();
+}
+
+/**
+ * Extract instantiation examples from a C# file for known classes.
+ */
+async function extractExamplesFromFile(
+  filePath: string,
+  classNames: Set<string>
+): Promise<Map<string, ClassExample[]>> {
+  const examples = new Map<string, ClassExample[]>();
+
+  try {
+    await initializeParser();
+    if (!csharpParser) return examples;
+
+    let content = fs.readFileSync(filePath, "utf-8");
+    if (content.charCodeAt(0) === 0xFEFF) {
+      content = content.slice(1);
+    }
+
+    const tree = csharpParser.parse(content);
+    if (!tree) return examples;
+
+    // Find all object creation expressions: new ClassName(...)
+    const creations = findNodesByType(tree.rootNode, "object_creation_expression");
+
+    for (const creation of creations) {
+      // Get the type being instantiated
+      const typeNode = creation.childForFieldName("type");
+      if (!typeNode) continue;
+
+      // Extract base class name (handle generics like Foo<T>)
+      let typeName = typeNode.text;
+      const genericIndex = typeName.indexOf('<');
+      if (genericIndex > 0) {
+        typeName = typeName.substring(0, genericIndex);
+      }
+
+      // Check if this is a class we care about
+      if (!classNames.has(typeName)) continue;
+
+      // Extract context (the line + 1 before)
+      const startLine = creation.startPosition.row;
+      const endLine = creation.endPosition.row;
+      const code = extractContextLines(content, startLine, endLine, 1);
+
+      // Skip very long examples (likely complex nested structures)
+      if (code.split('\n').length > 5) continue;
+
+      const relativePath = filePath.replace(PMDC_DIR, "PMDC").replace(/\\/g, "/");
+
+      const example: ClassExample = {
+        code,
+        file: relativePath,
+        line: startLine + 1  // 1-indexed for display
+      };
+
+      if (!examples.has(typeName)) {
+        examples.set(typeName, []);
+      }
+      examples.get(typeName)!.push(example);
+    }
+  } catch (err) {
+    // Silently skip files that fail to parse
+  }
+
+  return examples;
+}
+
+/**
  * Collect all preceding doc comments (///) for a node.
  */
 function getDocComments(node: Node): string {
@@ -190,6 +273,10 @@ const CLASS_CATEGORIES = {
 } as const;
 
 type ClassCategory = keyof typeof CLASS_CATEGORIES;
+
+// Cache for extracted examples (lazy-loaded)
+let examplesCache: Map<string, ClassExample[]> | null = null;
+let knownClassNames: Set<string> | null = null;
 
 // =============================================================================
 // CLASS DOCUMENTATION PARSING (using tree-sitter)
