@@ -918,11 +918,21 @@ server.tool(
   `Search for PMDC classes across all categories by name or summary.
 
 Searches class names and XML documentation summaries. Returns matches ranked by relevance.
-Use this when you're not sure which category a class belongs to, or to find classes related to a concept.`,
+Use this when you're not sure which category a class belongs to, or to find classes related to a concept.
+
+Optionally filter by category to narrow results (e.g., search "flee" in category "aiplan").
+
+Categories: battleevent, aiplan, genstep, zonestep, roomgen, charstate, statusstate, contextstate, data`,
   {
     query: z.string()
       .min(2)
       .describe("Search query (e.g., 'damage', 'poison', 'spawn')"),
+    category: z.enum([
+      "battleevent", "aiplan", "genstep", "zonestep",
+      "roomgen", "charstate", "statusstate", "contextstate", "data"
+    ])
+      .optional()
+      .describe("Optional category to filter results (e.g., 'aiplan', 'battleevent')"),
     limit: z.number()
       .min(1)
       .max(50)
@@ -932,7 +942,7 @@ Use this when you're not sure which category a class belongs to, or to find clas
       .default("markdown")
       .describe("Output format")
   },
-  async ({ query, limit, response_format }) => {
+  async ({ query, category: filterCategory, limit, response_format }) => {
     const queryLower = query.toLowerCase();
     const results: Array<{
       name: string;
@@ -944,8 +954,13 @@ Use this when you're not sure which category a class belongs to, or to find clas
     // Split query into words for multi-word matching
     const queryWords = queryLower.split(/\s+/).filter(w => w.length >= 2);
 
-    // Search across all categories
-    for (const category of Object.keys(CLASS_CATEGORIES) as ClassCategory[]) {
+    // Determine which categories to search
+    const categoriesToSearch = filterCategory
+      ? [filterCategory]
+      : Object.keys(CLASS_CATEGORIES) as ClassCategory[];
+
+    // Search across selected categories
+    for (const category of categoriesToSearch) {
       const classes = await findClassesInCategory(category);
 
       for (const cls of classes) {
@@ -1026,14 +1041,15 @@ Use this when you're not sure which category a class belongs to, or to find clas
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({ query, count: sorted.length, results: sorted }, null, 2)
+          text: JSON.stringify({ query, category: filterCategory || "all", count: sorted.length, results: sorted }, null, 2)
         }]
       };
     }
 
     // Markdown format
+    const categoryNote = filterCategory ? ` in category "${filterCategory}"` : "";
     const lines = [
-      `# Search Results: "${query}"`,
+      `# Search Results: "${query}"${categoryNote}`,
       "",
       `Found ${sorted.length} matching classes:`,
       "",
@@ -1243,7 +1259,10 @@ server.tool(
   "pmdc_get_examples",
   `Get usage examples for a PMDC class.
 
-Returns real code snippets from the codebase showing how the class is instantiated.
+Returns real code snippets from the PMDC C# source showing how the class is instantiated.
+Note: Many game classes (AI plans, status effects) are configured via data files rather than
+C# code, so examples may not be available for all classes.
+
 Lighter weight than pmdc_get_class_docs when you just need to see usage patterns.`,
   {
     class_name: z.string()
@@ -1262,7 +1281,7 @@ Lighter weight than pmdc_get_class_docs when you just need to see usage patterns
       return {
         content: [{
           type: "text",
-          text: `No usage examples found for '${class_name}' in the PMDC codebase.`
+          text: `No C# instantiation examples found for '${class_name}'.\n\nThis class may be configured via game data files rather than instantiated in C# code. Use pmdc_get_class_docs for the class API, or pmdc_scaffold_* to generate boilerplate.`
         }]
       };
     }
@@ -1589,6 +1608,175 @@ namespace PMDC.LevelGen
     return {
       content: [{ type: "text", text: code }]
     };
+  }
+);
+
+// Tool: Get documentation
+server.tool(
+  "pmdc_get_docs",
+  `Access AI-optimized documentation for PMDC development.
+
+Available documents:
+- architecture: System overview, class hierarchies, and component relationships
+- flows: Traced code paths for key operations like battle resolution and level generation
+- conventions: Coding patterns, naming conventions, and best practices
+
+Omit the name parameter to list all available docs.`,
+  {
+    name: z.string()
+      .optional()
+      .describe("Document name (architecture, flows, conventions). Omit to list all.")
+  },
+  async ({ name }) => {
+    if (!name) {
+      // List available docs
+      if (!fs.existsSync(DOCS_DIR)) {
+        return {
+          content: [{
+            type: "text",
+            text: `No documentation directory found at ${DOCS_DIR}`
+          }]
+        };
+      }
+
+      const files = fs.readdirSync(DOCS_DIR).filter(f => f.endsWith(".md"));
+      const lines = [
+        "# Available Documentation",
+        "",
+        "| Name | Description |",
+        "|------|-------------|",
+        "| architecture | System overview, class hierarchies, component relationships |",
+        "| flows | Traced code paths for battle resolution, level generation |",
+        "| conventions | Coding patterns, naming conventions, best practices |",
+        "",
+        `*${files.length} documents available. Use \`pmdc_get_docs\` with a name to read.*`
+      ];
+
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+
+    const filePath = path.join(DOCS_DIR, `${name}.md`);
+
+    if (!fs.existsSync(filePath)) {
+      return {
+        content: [{
+          type: "text",
+          text: `Document '${name}' not found.\n\nAvailable: architecture, flows, conventions`
+        }]
+      };
+    }
+
+    const content = fs.readFileSync(filePath, "utf-8");
+    return { content: [{ type: "text", text: content }] };
+  }
+);
+
+// Tool: List interfaces
+server.tool(
+  "pmdc_list_interfaces",
+  `List PMDC/RogueEssence context interfaces with their capabilities.
+
+Context interfaces define what operations are available during map generation:
+- ITiledGenContext: Basic tile operations
+- IFloorPlanGenContext: Room-based floor planning
+- IRoomGridGenContext: Grid-based room layouts
+- IPlaceableGenContext: Entity placement
+- BaseMapGenContext: Full PMDC map features
+
+Use this to understand which context type your GenStep needs.`,
+  {},
+  async () => {
+    const interfaces = [
+      {
+        name: "ITiledGenContext",
+        description: "Basic tile operations - set/get tiles, check bounds",
+        inherits: "IGenContext",
+        key_members: ["SetTile()", "GetTile()", "TileBlocked()", "RoomTerrain", "WallTerrain"],
+        usage: "Use for simple tile manipulation GenSteps"
+      },
+      {
+        name: "IFloorPlanGenContext",
+        description: "Room-based floor planning with FloorPlan access",
+        inherits: "ITiledGenContext",
+        key_members: ["RoomPlan (FloorPlan)", "AddRoom()", "GetRoom()", "TransferToMap()"],
+        usage: "Use for room-based generation without grid constraints"
+      },
+      {
+        name: "IRoomGridGenContext",
+        description: "Grid-based room layouts with GridPlan access",
+        inherits: "IFloorPlanGenContext",
+        key_members: ["GridPlan", "GridWidth", "GridHeight", "GetRoom(x, y)"],
+        usage: "Use for grid-aligned dungeon layouts"
+      },
+      {
+        name: "IPlaceableGenContext<T>",
+        description: "Entity placement for items, enemies, etc.",
+        inherits: "IGenContext",
+        generic_t: "T = entity type (MapItem, MobSpawn, EffectTile, etc.)",
+        key_members: ["PlaceItems()", "GetFreeTiles()", "GetAllFreeTiles()"],
+        usage: "Use when spawning entities at specific locations"
+      },
+      {
+        name: "ISpawningGenContext<T>",
+        description: "Spawn list access for weighted random spawning",
+        inherits: "IGenContext",
+        generic_t: "T = spawnable type (typically same as IPlaceableGenContext<T>)",
+        key_members: ["Spawner (IMultiRandPicker<T>)"],
+        usage: "Use when you need weighted random selection from spawn tables"
+      },
+      {
+        name: "BaseMapGenContext",
+        description: "Full PMDC map context - combines all interfaces",
+        inherits: "ITiledGenContext, IFloorPlanGenContext, IRoomGridGenContext, IPlaceableGenContext<...>, ISpawningGenContext<...>",
+        key_members: ["Map (Map)", "RoomPlan", "GridPlan", "GenEntrances()", "GenExits()"],
+        usage: "Use when you need full map access (most common for PMDC GenSteps)"
+      }
+    ];
+
+    const lines = [
+      "# Context Interfaces",
+      "",
+      "These interfaces define what operations are available during map generation.",
+      "Choose the most specific interface that provides what your GenStep needs.",
+      "",
+      "## Inheritance Hierarchy",
+      "```",
+      "IGenContext (base)",
+      "├── ITiledGenContext (tiles)",
+      "│   └── IFloorPlanGenContext (rooms)",
+      "│       └── IRoomGridGenContext (grid)",
+      "├── IPlaceableGenContext<T> (entity placement)",
+      "└── ISpawningGenContext<T> (spawn tables)",
+      "",
+      "BaseMapGenContext implements ALL of the above",
+      "```",
+      ""
+    ];
+
+    for (const iface of interfaces) {
+      lines.push(`## ${iface.name}`);
+      lines.push("");
+      lines.push(iface.description);
+      lines.push("");
+      lines.push(`**Inherits:** \`${iface.inherits}\``);
+      if ((iface as any).generic_t) {
+        lines.push(`**Generic Type:** ${(iface as any).generic_t}`);
+      }
+      lines.push("");
+      lines.push("**Key Members:**");
+      for (const member of iface.key_members) {
+        lines.push(`- \`${member}\``);
+      }
+      lines.push("");
+      lines.push(`**When to use:** ${iface.usage}`);
+      lines.push("");
+    }
+
+    lines.push("---");
+    lines.push("");
+    lines.push("*For full interface definitions, see RogueElements and RogueEssence source.*");
+
+    return { content: [{ type: "text", text: lines.join("\n") }] };
   }
 );
 
