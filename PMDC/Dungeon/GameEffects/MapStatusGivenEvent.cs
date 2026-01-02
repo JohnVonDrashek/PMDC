@@ -45,6 +45,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusCharEvent(this);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
         {
             if (status != owner || character == null)
@@ -111,6 +114,9 @@ namespace PMDC.Dungeon
             foreach (string weather in other.WeatherPair.Keys)
                 WeatherPair.Add(weather, other.WeatherPair[weather]);
         }
+
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new WeatherFormeChangeEvent(this);
 
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
@@ -194,6 +200,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new ReplaceStatusGroupEvent(this);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
         {
             //the owner must not be the newly added status
@@ -270,6 +279,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusBattleLogEvent(this);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
         {
             if (status != owner || character != null)
@@ -317,6 +329,9 @@ namespace PMDC.Dungeon
         {
             Message = other.Message;
         }
+
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusMoveLogEvent(this);
 
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
@@ -369,6 +384,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusSoundEvent(this);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
         {
             if (status != owner || character != null)
@@ -390,6 +408,9 @@ namespace PMDC.Dungeon
         /// Initializes a new instance with default values.
         /// </summary>
         public MapStatusVisibleIfCountdownEvent() { }
+
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusVisibleIfCountdownEvent();
 
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
@@ -433,6 +454,9 @@ namespace PMDC.Dungeon
         /// Copy constructor for cloning an existing MapStatusSpawnStartGuardsEvent.
         /// </summary>
         public MapStatusSpawnStartGuardsEvent(MapStatusSpawnStartGuardsEvent other) { GuardStatus = other.GuardStatus; }
+
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusSpawnStartGuardsEvent(this);
 
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
@@ -528,6 +552,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusBGMEvent(this);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)
         {
             if (status != owner || character != null)
@@ -549,6 +576,9 @@ namespace PMDC.Dungeon
         /// Initializes a new instance with default values.
         /// </summary>
         public MapStatusCombineCheckEvent() { }
+
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new MapStatusCombineCheckEvent();
 
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, Character character, MapStatus status, bool msg)

@@ -20,6 +20,9 @@ namespace PMDC.Dungeon
     public class AutoCurseItemEvent : ItemGivenEvent
     {
         /// <inheritdoc/>
+        public override GameEvent Clone() => new AutoCurseItemEvent();
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
             if (!context.User.EquippedItem.Cursed)
@@ -43,6 +46,9 @@ namespace PMDC.Dungeon
     [Serializable]
     public class CurseWarningEvent : ItemGivenEvent
     {
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new CurseWarningEvent();
+
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
@@ -161,6 +167,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new FakeItemEvent(this);
+
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {
             ItemFake fake = new ItemFake(context.Item.Value, context.Item.HiddenValue);
@@ -269,6 +278,9 @@ namespace PMDC.Dungeon
     [Serializable]
     public class CheckEquipPassValidityEvent : ItemGivenEvent
     {
+        /// <inheritdoc/>
+        public override GameEvent Clone() => new CheckEquipPassValidityEvent();
+
         /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, ItemCheckContext context)
         {

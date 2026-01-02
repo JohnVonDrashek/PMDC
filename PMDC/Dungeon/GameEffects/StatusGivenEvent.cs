@@ -374,7 +374,9 @@ namespace PMDC.Dungeon
         public StatusStackBoostMod(StatusStackBoostMod other) : this() { States.AddRange(other.States); Stack = other.Stack; }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new StatusStackBoostMod(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (owner == context.Status)//done BY the pending status
@@ -434,7 +436,9 @@ namespace PMDC.Dungeon
         public StatusCountBoostMod(StatusCountBoostMod other) : this() { States.AddRange(other.States); Stack = other.Stack; }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new StatusCountBoostMod(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (owner == context.Status)//done BY the pending status
@@ -488,7 +492,9 @@ namespace PMDC.Dungeon
         protected StatusHPBoostMod(StatusHPBoostMod other) : this() { States.AddRange(other.States); }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new StatusHPBoostMod(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (owner == context.Status)//done BY the pending status
@@ -563,7 +569,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new CountDownBoostMod(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (owner == context.Status && context.User != null)// done BY pending status
@@ -636,7 +644,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new SelfCurerEvent(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             //multiply turns, rounded down
@@ -690,7 +700,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new SameStatusCheck(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (owner != context.Status)//can't check on self
@@ -741,7 +753,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new SameTargetedStatusCheck(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (owner != context.Status)//can't check on self
@@ -792,7 +806,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new OKStatusCheck(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (context.Status == owner)//this check is done BY the pending status only
@@ -846,7 +862,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new EmptySlotStatusCheck(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (context.Status == owner)//this check is done BY the pending status only
@@ -898,7 +916,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new GenderStatusCheck(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (context.Status == owner)//this check is done BY the pending status only
@@ -960,7 +980,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new TypeCheck(this);
 
+        /// <inheritdoc/>
         public override IEnumerator<YieldInstruction> Apply(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (context.Status == owner)//this check is done BY the pending status only
@@ -1310,7 +1332,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new StatChangeCheck(this);
 
+        /// <inheritdoc/>
         protected override IEnumerator<YieldInstruction> BlockEffect(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (context.msg && Message.IsValid())
@@ -1366,7 +1390,9 @@ namespace PMDC.Dungeon
         }
 
         /// <inheritdoc/>
+        public override GameEvent Clone() => new StatChangeReflect(this);
 
+        /// <inheritdoc/>
         protected override IEnumerator<YieldInstruction> BlockEffect(GameEventOwner owner, Character ownerChar, StatusCheckContext context)
         {
             if (context.User != null)
